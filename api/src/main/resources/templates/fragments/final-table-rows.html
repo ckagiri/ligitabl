@@ -1,7 +1,7 @@
 <!doctype html>
 <html xmlns:th="http://www.thymeleaf.org">
   <body>
-    <!--
+    <!--/*
       Entirely Alpine-rendered (x-for over `teams`), as in fragments/prediction-table.html, so a swap
       can reorder rows in place. Interactivity comes from the component (canEdit), so the read-only
       public view mounts the same fragment.
@@ -13,8 +13,8 @@
 
       A copy rather than `interactive-table`, which is built on standings/fixtures/points/GD/form,
       none of which exist before GW1.
-    -->
-    <!-- One x-for with `columns-2` splitting it, so each row is keyed stably by team code and a selection patches one row instead of rebuilding a column. -->
+    */-->
+    <!--/* One x-for with `columns-2` splitting it, so each row is keyed stably by team code and a selection patches one row instead of rebuilding a column. */-->
     <div th:fragment="table" class="gap-x-6 sm:columns-2">
       <template x-for="team in teams" :key="team.code">
         <div
@@ -28,7 +28,7 @@
           ]"
           class="prediction-row mb-1 flex break-inside-avoid items-center gap-2 overflow-hidden rounded-md border border-gray-100 py-2 pr-3 transition-all duration-200"
         >
-              <!-- Zone band: colour only, so it never competes with the row tints. -->
+              <!--/* Zone band: colour only, so it never competes with the row tints. */-->
               <span
                 class="h-8 w-1 flex-shrink-0 rounded-r"
                 :class="zoneBarClass(team.position)"
@@ -55,7 +55,7 @@
               ></span>
 
               <span class="flex min-w-0 flex-1 items-center gap-1">
-                <!-- Selection dot: the first tap of a swap. -->
+                <!--/* Selection dot: the first tap of a swap. */-->
                 <span
                   x-show="isSelected(team.code)"
                   class="flex-shrink-0 text-xs font-medium text-blue-600"
@@ -67,10 +67,10 @@
                 </span>
               </span>
 
-              <!--
+              <!--/*
                 Live columns: where the team sits now, and the gap, on the prediction's row so "I
                 said 3rd, they're 1st" reads left to right. Only while `hasLiveProgress`.
-              -->
+              */-->
               <template x-if="hasLiveProgress">
                 <span class="flex flex-shrink-0 items-center gap-1.5">
                   <span
@@ -102,12 +102,12 @@
       </template>
     </div>
 
-    <!--
+    <!--/*
       The revealed result: prediction beside the real finish, with each row's distance.
       Server-rendered; resultRankings is non-null only once the row is scored. The thead is
       conditional: unconditional, it rendered as an empty strip with no rows; absent, nothing says
       which number is the finish and which the gap.
-    -->
+    */-->
     <table th:fragment="result" class="min-w-full divide-y divide-gray-200">
       <thead th:if="${resultRankings != null and !resultRankings.isEmpty()}">
         <tr class="bg-gray-50">

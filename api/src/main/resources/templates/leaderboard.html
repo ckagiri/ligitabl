@@ -55,16 +55,16 @@
         @htmx:after-swap.window="if ($event.detail.target && $event.detail.target.id === 'leaderboard-content') loading = false"
         @htmx:response-error.window="if ($event.detail.target && $event.detail.target.id === 'leaderboard-content') loading = false"
       >
-        <!-- Header -->
+        <!--/* Header */-->
         <div class="px-4 sm:px-6 py-4 border-b border-gray-200">
           <h1 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
             Leaderboard
           </h1>
 
           <div class="space-y-2">
-            <!-- Top-level group tabs. :class uses object syntax: the server pre-applies active
+            <!--/* Top-level group tabs. :class uses object syntax: the server pre-applies active
                  classes via th:classappend so the tab is styled before Alpine boots, and only the
-                 object form can remove them on click. -->
+                 object form can remove them on click. */-->
             <div class="flex gap-1.5">
               <button
                 type="button"
@@ -112,8 +112,8 @@
               </button>
             </div>
 
-            <!-- Quarter sub-tabs. The inactive panel is hidden by a server-written inline style,
-                 not x-cloak, which would hide both panels until Alpine boots. -->
+            <!--/* Quarter sub-tabs. The inactive panel is hidden by a server-written inline style,
+                 not x-cloak, which would hide both panels until Alpine boots. */-->
             <div
               x-show="activeGroup === 'quarters'"
               data-group="quarters"
@@ -154,7 +154,7 @@
               </div>
             </div>
 
-            <!-- Sprint sub-tabs -->
+            <!--/* Sprint sub-tabs */-->
             <div
               x-show="activeGroup === 'sprints'"
               data-group="sprints"
@@ -201,7 +201,7 @@
           </div>
         </div>
 
-        <!-- Loading spinner — shown while htmx.ajax is in flight -->
+        <!--/* Loading spinner — shown while htmx.ajax is in flight */-->
         <div
           x-show="loading"
           x-cloak
@@ -229,7 +229,7 @@
           Loading...
         </div>
 
-        <!-- Stays in the DOM, never swapped; #leaderboard-content inside is the HTMX target. -->
+        <!--/* Stays in the DOM, never swapped; #leaderboard-content inside is the HTMX target. */-->
         <div x-show="!loading">
           <div
             id="leaderboard-content"
@@ -352,9 +352,9 @@
                       >
                     </td>
 
-                    <!-- max-sm:pr-0 hands the spare space to the name, the column short of room on a
+                    <!--/* max-sm:pr-0 hands the spare space to the name, the column short of room on a
                          phone; the right-aligned next column keeps its own padding. Below 340px the
-                         w-32 cap gives it back. Same cut-off as the what-if score rows. -->
+                         w-32 cap gives it back. Same cut-off as the what-if score rows. */-->
                     <td
                       class="sticky left-[56px] z-10 px-3 max-sm:pr-0 py-4 whitespace-nowrap w-36 max-[340px]:w-32 sm:w-32 lg:w-44"
                       th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'bg-indigo-50' : 'bg-white group-hover:bg-gray-50'}"
@@ -479,18 +479,18 @@
                   </tr>
                 </tbody>
 
-                <!-- Sticky user row when not on current page -->
+                <!--/* Sticky user row when not on current page */-->
                 <tfoot
                   th:if="${userPosition != null && !userInCurrentPage}"
                   class="border-t-2 border-indigo-300"
                 >
                   <tr class="bg-gradient-to-r from-indigo-50 to-blue-50">
                     <td colspan="8" class="px-3 py-4">
-                      <!-- gap-4 flex-wrap, not space-x-6: this row does not wrap on a phone and
-                           the stats overflow the cell. -->
+                      <!--/* gap-4 flex-wrap, not space-x-6: this row does not wrap on a phone and
+                           the stats overflow the cell. */-->
                       <div class="flex items-center gap-4 flex-wrap">
-                        <!-- Position + "You" stacked over the name: on a narrow screen the two
-                             sat side by side and squeezed each other. -->
+                        <!--/* Position + "You" stacked over the name: on a narrow screen the two
+                             sat side by side and squeezed each other. */-->
                         <div class="flex flex-col min-w-0">
                           <div class="flex items-center">
                             <span class="text-indigo-600 mr-1.5 text-base"
@@ -599,7 +599,7 @@
               </table>
             </div>
 
-            <!-- Pagination -->
+            <!--/* Pagination */-->
             <div
               th:if="${totalEntries > 0 and !#lists.isEmpty(leaderboard)}"
               class="mt-4 flex items-center justify-between"
@@ -650,7 +650,7 @@
         </div>
       </div>
 
-      <!-- Modal loading spinner: lives outside #user-detail-modal so it survives innerHTML wipes -->
+      <!--/* Modal loading spinner: lives outside #user-detail-modal so it survives innerHTML wipes */-->
       <div
         id="modal-loading"
         class="hidden fixed inset-0 z-40 flex items-center justify-center"

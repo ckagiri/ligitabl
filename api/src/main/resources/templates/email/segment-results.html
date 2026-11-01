@@ -55,10 +55,10 @@
     </style>
 </head>
 <body>
-    <!--
+    <!--/*
       th:block wrappers around the mutually exclusive branches: th:if and a fragment/text
       processor on the same element is the documented trap in docs/backend-dev.md.
-    -->
+    */-->
     <div class="header">
         <th:block th:if="${isSeasonFinale == true}">
             <h1>🏆 That's the season</h1>
@@ -78,19 +78,19 @@
             <p>Results are in and you finished in the top three. Here's how it went.</p>
         </th:block>
 
-        <!--
+        <!--/*
           One block per CLOSED window the reader placed in. No "so far" block: a partial-window rank
           reflects when someone joined as much as how they played.
-        -->
+        */-->
         <div class="placement" th:each="p : ${placements}">
             <div class="rank">
                 <span th:text="${p.name}">Sprint 1</span> —
                 <span th:text="${p.rank == 1 ? 'winner' : (p.rank == 2 ? 'runner-up' : 'third')}">runner-up</span>
             </div>
-            <!--
+            <!--/*
               Literal characters, not entities: the text part is this body with tags stripped, so
               "&middot;" would arrive as those seven characters.
-            -->
+            */-->
             <div class="detail">
                 <span th:text="${p.rank}">2</span> of <span th:text="${p.totalParticipants}">40</span>
                 · <span th:text="${p.totalScore}">180</span> points

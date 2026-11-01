@@ -14,7 +14,7 @@
              hx-target="#matches-page"
              hx-swap="outerHTML">
 
-          <!-- Header -->
+          <!--/* Header */-->
           <div class="px-4 sm:px-6 py-4 border-b border-gray-200">
             <div class="flex flex-col gap-3">
               <div class="flex items-center justify-between">
@@ -35,7 +35,7 @@
                 </button>
               </div>
 
-              <!-- Out-of-sync banner (admin-only) -->
+              <!--/* Out-of-sync banner (admin-only) */-->
               <th:block sec:authorize="hasRole('ADMIN')">
                 <div th:if="${isOutOfSync}" class="rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm px-4 py-3">
                   Standings for this round are out of sync with round <span th:text="${currentRound}">22</span>. Refinalize to recompute.
@@ -50,7 +50,7 @@
             </div>
           </div>
 
-          <!-- Matches List -->
+          <!--/* Matches List */-->
           <div class="px-4 sm:px-6 py-4">
             <div class="space-y-3">
               <div
@@ -58,10 +58,10 @@
                 class="border border-gray-200 rounded-lg px-4 py-3 hover:shadow-md transition"
               >
 
-                <!-- Row 1: Home | Score or VS | Away -->
+                <!--/* Row 1: Home | Score or VS | Away */-->
                 <div class="flex items-center justify-between sm:justify-center sm:gap-3 gap-2">
 
-                  <!-- Home team -->
+                  <!--/* Home team */-->
                   <div class="flex items-center justify-start sm:justify-end gap-2 w-[40%] sm:flex-1">
                     <span
                       class="text-sm font-medium text-gray-900 truncate text-left sm:hidden"
@@ -73,7 +73,7 @@
                     >Chelsea</span>
                   </div>
 
-                  <!-- Score (finished/live) or VS (anything else) -->
+                  <!--/* Score (finished/live) or VS (anything else) */-->
                   <div class="flex-shrink-0 flex items-center gap-1.5 min-w-[56px] justify-center">
                     <th:block th:if="${match.status == 'FINISHED' or match.status == 'LIVE'}">
                       <span
@@ -91,7 +91,7 @@
                     </th:block>
                   </div>
 
-                  <!-- Away team -->
+                  <!--/* Away team */-->
                   <div class="flex items-center justify-end sm:justify-start gap-2 w-[40%] sm:flex-1">
                     <span
                       class="text-sm font-medium text-gray-900 truncate text-right sm:hidden"
@@ -105,7 +105,7 @@
 
                 </div>
 
-                <!-- Row 2: Status badge + kickoff + admin sync button — centered -->
+                <!--/* Row 2: Status badge + kickoff + admin sync button — centered */-->
                 <div class="flex items-center justify-center gap-2 mt-2">
 
                   <span
@@ -154,7 +154,7 @@
                     th:text="${match.formattedTime}"
                   >2026-02-12T14:23:00Z</span>
 
-                  <!-- Admin: sync button (hidden for FINISHED/POSTPONED) -->
+                  <!--/* Admin: sync button (hidden for FINISHED/POSTPONED) */-->
                   <th:block sec:authorize="hasRole('ADMIN')">
                     <span
                       th:if="${match.matchday != viewingRound}"
@@ -172,7 +172,7 @@
                         <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
                       </svg>
                     </button>
-                    <!-- Manage button (hidden for FINISHED unless in setup mode, which unlocks transitions/reschedule) -->
+                    <!--/* Manage button (hidden for FINISHED unless in setup mode, which unlocks transitions/reschedule) */-->
                     <button
                       th:if="${match.status != 'FINISHED' or seasonInSetupMode}"
                       th:attr="hx-get=@{/matches/{slug}/admin-modal(slug=${match.slug},round=${viewingRound},home=${match.homeTeam},away=${match.awayTeam})}"
@@ -192,7 +192,7 @@
               </div>
             </div>
 
-            <!-- Admin footer: setup-mode toggle (left) opposite Refresh/Finalize/Refinalize (right) -->
+            <!--/* Admin footer: setup-mode toggle (left) opposite Refresh/Finalize/Refinalize (right) */-->
             <div class="mt-4 flex items-center justify-between">
               <div>
                 <th:block sec:authorize="hasRole('SUPER_ADMIN')">

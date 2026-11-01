@@ -5,7 +5,7 @@
   layout:decorate="~{layout/base}"
 >
   <body>
-    <!-- No px/py wrapper: layout/base.html's <main> already supplies the padding. -->
+    <!--/* No px/py wrapper: layout/base.html's <main> already supplies the padding. */-->
     <div layout:fragment="content">
       <div
         class="mx-auto max-w-5xl"
@@ -13,12 +13,12 @@
         th:attr="data-rows=${rowsJson},data-zones=${zonesJson},data-entry-open=${entryOpen and !isGuest},data-has-entry=${hasEntry},data-live-rows=${liveRowsJson}"
       >
         <div class="mb-6 overflow-hidden rounded-lg bg-white shadow-sm">
-          <!--
+          <!--/*
             Dark banner header, echoing the shared scorecard so the page and the image people post
             look like the same artifact.
-          -->
+          */-->
           <div class="bg-gray-900 px-6 py-5">
-            <!-- Stacked and centred on mobile, side by side from sm up. -->
+            <!--/* Stacked and centred on mobile, side by side from sm up. */-->
             <div
               class="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left"
             >
@@ -40,7 +40,7 @@
                 </p>
               </div>
 
-              <!-- The title pick as a claim, "I predict that / Arsenal / will win the league": the line people screenshot. -->
+              <!--/* The title pick as a claim, "I predict that / Arsenal / will win the league": the line people screenshot. */-->
               <div
                 class="w-full max-w-xs rounded-lg border border-indigo-400/40 bg-white/5 px-5 py-4 text-center sm:w-auto"
                 x-show="teams.length > 0"
@@ -58,7 +58,7 @@
             </div>
           </div>
 
-          <!-- State chip on its own quiet strip, so it never competes with the banner. -->
+          <!--/* State chip on its own quiet strip, so it never competes with the banner. */-->
           <div
             class="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-gray-200 bg-gray-50 px-6 py-2"
           >
@@ -78,10 +78,10 @@
               >✅ Scored</span
             >
 
-            <!--
+            <!--/*
               The way back for a player who came from the pill on their prediction page; the navbar
               keeps the Final Table understated. Mirrors that pill. Not for guests.
-            -->
+            */-->
             <a
               th:if="${isGuest == false}"
               th:href="@{/my-table}"
@@ -103,7 +103,7 @@
             </a>
           </div>
 
-          <!-- Guest, still open: read-only with a sign-up CTA. The game is an on-ramp. -->
+          <!--/* Guest, still open: read-only with a sign-up CTA. The game is an on-ramp. */-->
           <th:block th:if="${isGuest == true and entryOpen == true}">
             <div class="border-b border-indigo-100 bg-indigo-50 px-6 py-3">
               <div class="flex flex-wrap items-center justify-between gap-3">
@@ -119,10 +119,10 @@
             </div>
           </th:block>
 
-          <!--
+          <!--/*
             th:if picks the state at render; x-show retires it when the first save lands, since a
             save doesn't re-render the page.
-          -->
+          */-->
           <th:block
             th:if="${isGuest == false and hasEntry == false and entryOpen == true}"
           >
@@ -137,10 +137,10 @@
             </div>
           </th:block>
 
-          <!--
+          <!--/*
             Signed in, no table, and entry has closed: they missed it. Say so plainly rather than
             leaving the baseline unexplained — and no CTA, because there is nothing to act on.
-          -->
+          */-->
           <th:block
             th:if="${isGuest == false and hasEntry == false and entryOpen == false}"
           >
@@ -152,10 +152,10 @@
             </div>
           </th:block>
 
-          <!--
+          <!--/*
             Guest, already locked: no CTA. Inviting someone into a game that has closed is a promise
             the app cannot keep — say what happened instead.
-          -->
+          */-->
           <th:block th:if="${isGuest == true and entryOpen == false}">
             <div class="border-b border-gray-200 bg-gray-50 px-6 py-3">
               <p class="text-sm text-gray-700">
@@ -165,9 +165,9 @@
             </div>
           </th:block>
 
-          <!--
+          <!--/*
             Locked, not yet scored, nothing to track against yet: the wait is the point.
-          -->
+          */-->
           <th:block
             th:if="${isGuest == false and hasEntry == true and entryOpen == false and revealed == false and liveProgress == false}"
           >
@@ -179,7 +179,7 @@
             </div>
           </th:block>
 
-          <!-- Locked, not yet scored, standings exist: the row numbers compare positions, and the copy must say the score is still sealed. -->
+          <!--/* Locked, not yet scored, standings exist: the row numbers compare positions, and the copy must say the score is still sealed. */-->
           <th:block th:if="${liveProgress == true}">
             <div class="border-b border-indigo-100 bg-indigo-50 px-6 py-3">
               <p class="text-sm text-indigo-900">
@@ -189,11 +189,11 @@
             </div>
           </th:block>
 
-          <!--
+          <!--/*
             Revealed: the score, out of the season's own maximum. Each tile's caption says where its
             number comes from ("90 of 200", "2 × 10"); denominators come from the season. Champion
             is its own tile so the Bonus caption stays "zeroes × 10".
-          -->
+          */-->
           <th:block th:if="${revealed == true}">
             <div class="grid grid-cols-2 gap-px border-b border-gray-200 bg-gray-200 sm:grid-cols-5">
               <div class="bg-white px-6 py-3">
@@ -251,10 +251,10 @@
                   2 × 10
                 </div>
               </div>
-              <!--
+              <!--/*
                 A bare "0" here would not say whether the champion was missed or whether the game
                 has a champion rule at all, so the caption carries the verdict either way.
-              -->
+              */-->
               <div class="bg-white px-6 py-3">
                 <div class="text-xs uppercase tracking-wide text-gray-500">Champion</div>
                 <div
@@ -278,7 +278,7 @@
             </div>
           </th:block>
 
-          <!-- Zone legend, only where the bands mean something (i.e. not on the result table). -->
+          <!--/* Zone legend, only where the bands mean something (i.e. not on the result table). */-->
           <th:block th:if="${revealed == false}">
             <div
               class="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-gray-200 bg-gray-50 px-6 py-2 text-[11px] font-medium"
@@ -304,7 +304,7 @@
                 class="ml-auto flex items-center gap-3 text-gray-500"
               >
                 <span>Tap two teams to swap them</span>
-                <!-- A second Reset at the top, so undoing a mis-tap near the top needs no scroll. Same reset(). -->
+                <!--/* A second Reset at the top, so undoing a mis-tap near the top needs no scroll. Same reset(). */-->
                 <button
                   type="button"
                   x-show="getDirtyCount() > 0"
@@ -320,10 +320,10 @@
           </th:block>
 
           <div class="px-6 py-4">
-            <!--
+            <!--/*
               th:insert on the same th:block as the th:if, not th:replace on an inner div: a
               th:block with only a th:if still renders its children, so both branches showed.
-            -->
+            */-->
             <th:block
               th:if="${revealed == true}"
               th:insert="~{fragments/final-table-rows :: result}"
@@ -334,9 +334,9 @@
             ></th:block>
           </div>
 
-          <!-- Save: shown only while the table can still be changed and the viewer owns it. -->
+          <!--/* Save: shown only while the table can still be changed and the viewer owns it. */-->
           <th:block th:if="${entryOpen == true and isGuest == false}">
-            <!-- No floating pill, unlike predictions.html: two columns keep the table and actions on one screen. -->
+            <!--/* No floating pill, unlike predictions.html: two columns keep the table and actions on one screen. */-->
             <div
               class="flex flex-col items-center gap-3 border-t border-gray-200 px-6 py-5"
             >
@@ -344,10 +344,10 @@
                 <div
                   th:replace="~{fragments/final-table-actions :: save-button('rounded-full')}"
                 ></div>
-                <!--
+                <!--/*
                   Back to originalTeams (the last save, or the starting table). Client-side only, so
                   it never touches the stored table or the settle time.
-                -->
+                */-->
                 <button
                   type="button"
                   x-show="getDirtyCount() > 0"
@@ -376,7 +376,7 @@
             </div>
           </th:block>
 
-          <!-- Dev-only, and visually distinct so it can never read as a player action. -->
+          <!--/* Dev-only, and visually distinct so it can never read as a player action. */-->
           <th:block th:if="${devPreviewEnabled == true}">
             <div class="border-t-2 border-dashed border-amber-400 bg-amber-50 px-6 py-3">
               <p class="mb-2 text-xs font-semibold uppercase text-amber-800">
@@ -404,11 +404,11 @@
           </th:block>
         </div>
 
-        <!--
+        <!--/*
           Alpine-driven, not th:if on hasEntry: saving is a fetch that never re-renders, so the card
           appears when finalTablePage flips hasEntry. The URL is rendered before the first save but
           not offered until then.
-        -->
+        */-->
         <div x-show="hasEntry" x-cloak>
           <div th:replace="~{fragments/final-table-share :: card}"></div>
         </div>
@@ -419,7 +419,7 @@
             class="text-indigo-600 hover:underline"
             >Leaderboard</a
           >
-          <!-- x-show on hasEntry, not th:if on shareUrl: the URL is rendered before a table exists, and 404s until the first save. -->
+          <!--/* x-show on hasEntry, not th:if on shareUrl: the URL is rendered before a table exists, and 404s until the first save. */-->
           <a
             th:if="${shareUrl != null}"
             th:href="${shareUrl}"
@@ -428,10 +428,10 @@
             class="text-indigo-600 hover:underline"
             >Public link</a
           >
-          <!--
+          <!--/*
             Scoring can't be inferred from the page. Links the Final Table FAQ page, not /faq,
             which opens on the main game's rules.
-          -->
+          */-->
           <a
             th:href="@{/faq/final-table}"
             class="text-gray-500 hover:text-indigo-600 hover:underline"

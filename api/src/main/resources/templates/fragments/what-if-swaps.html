@@ -1,4 +1,4 @@
-<!--
+<!--/*
   What-If swaps: the swaps tried in the sandbox for this round, a read-only reminder on the user's
   own table. Read-only because the real allowance is far smaller than a sandbox holds; the user
   re-applies what they want by tapping, so the allowance is accounted in one place.
@@ -9,7 +9,7 @@
 
   With swaps saved it shows the list, expanded; with none, a pitch and a link to What-If. The empty
   state is why it always renders; the call site limits it to the current round.
--->
+*/-->
 <div
   th:fragment="swaps"
   x-cloak
@@ -59,8 +59,8 @@
         <ul class="divide-y divide-gray-100">
           <template x-for="(entry, idx) in whatIfSwaps" :key="entry.teamACode + entry.teamBCode + idx">
             <li class="px-6 py-3">
-              <!-- One line per swap, kept intact by shrinking the type on narrow screens
-                   rather than scrolling. Same treatment as fragments/swap-history.html. -->
+              <!--/* One line per swap, kept intact by shrinking the type on narrow screens
+                   rather than scrolling. Same treatment as fragments/swap-history.html. */-->
               <span
                 class="text-xs sm:text-sm font-mono text-gray-700 whitespace-nowrap max-w-full block"
               >
@@ -78,13 +78,13 @@
             </li>
           </template>
         </ul>
-        <!-- The closing verb follows the action button's label (fragments/prediction-actions.html),
+        <!--/* The closing verb follows the action button's label (fragments/prediction-actions.html),
              with the same expression swap-instructions.html uses. Pre-season reads "update": acting
-             on this means a swap was made, and the button relabels to Update then. -->
+             on this means a swap was made, and the button relabels to Update then. */-->
         <p class="px-6 py-3 text-[11px] text-gray-400 leading-relaxed border-t border-gray-100">
           Tried out in your What-If sandbox — nothing here has been applied to your table.
-          <!-- canSwap, not canInteract: in cooldown the table rearranges but can't save, so "save"
-               would be a promise the page can't keep. The same line swap-instructions.html draws. -->
+          <!--/* canSwap, not canInteract: in cooldown the table rearranges but can't save, so "save"
+               would be a promise the page can't keep. The same line swap-instructions.html draws. */-->
           <span x-show="canSwap || isInitialPrediction">
             Tap two teams above to make a swap for real, then
             <span x-text="(isInitialPrediction || isPreSeasonRegistration) ? 'submit' : 'update'"
@@ -92,9 +92,9 @@
             >
             to save it.
           </span>
-          <!-- Rearranging still works here, saving doesn't — said in the card so it doesn't
+          <!--/* Rearranging still works here, saving doesn't — said in the card so it doesn't
                dead-end on "nothing has been applied" with no reason why. Split on isRoundOpen as
-               swap-instructions.html does: a closed round isn't a cooldown. -->
+               swap-instructions.html does: a closed round isn't a cooldown. */-->
           <span x-show="roundAllowsEditing && !canSwap && !isInitialPrediction && isRoundOpen">
             Rearrange above to plan, but nothing saves until your cooldown ends.
           </span>
@@ -107,8 +107,8 @@
       </div>
     </template>
 
-    <!-- Empty state: the discovery pitch. Same hx-get as the What-If pill at the top of the page,
-         so this is a second route to it rather than a separate entry point. -->
+    <!--/* Empty state: the discovery pitch. Same hx-get as the What-If pill at the top of the page,
+         so this is a second route to it rather than a separate entry point. */-->
     <template x-if="whatIfSwaps.length === 0">
       <div class="px-6 py-4">
         <p class="text-sm text-gray-600 leading-relaxed">

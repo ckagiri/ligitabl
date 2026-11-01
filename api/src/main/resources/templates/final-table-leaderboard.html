@@ -28,7 +28,7 @@
         <h1 class="mt-2 text-2xl font-semibold text-gray-900">
           Final Table Leaderboard
         </h1>
-        <!-- Says what is ranked: one whole-season call out of a ceiling, not a sum of gameweeks. -->
+        <!--/* Says what is ranked: one whole-season call out of a ceiling, not a sum of gameweeks. */-->
         <p class="mt-1 text-sm text-gray-500">
           One prediction, made before kickoff and scored against the finished
           table.
@@ -39,10 +39,10 @@
       </header>
 
       <div th:fragment="leaderboardContent" id="leaderboardContent">
-        <!--
+        <!--/*
           Nothing is scored yet, so name everyone who has entered and link their tables rather than
           show a bare count. The scores stay off the public page until the reveal.
-        -->
+        */-->
         <th:block th:if="${revealed == false}">
           <div
             class="rounded-lg border border-gray-200 bg-gray-50 p-6 text-center"
@@ -63,7 +63,7 @@
               >
             </p>
 
-            <!-- A wrapping roll call, not a ranking, and unpaged: there are no scores to fetch. -->
+            <!--/* A wrapping roll call, not a ranking, and unpaged: there are no scores to fetch. */-->
             <p
               th:if="${entrants != null and !entrants.isEmpty()}"
               class="mt-3 text-sm leading-relaxed text-gray-600"
@@ -117,10 +117,10 @@
                   >
                     Exact
                   </th>
-                  <!--
+                  <!--/*
                     Settled, not swaps: swap count isn't a tiebreak here, and beside a rank it reads
                     as "fewest is best", the main game's rule. Settled time is the third tiebreak.
-                  -->
+                  */-->
                   <th
                     scope="col"
                     title="When this table was last changed — the tiebreak after score and exact calls"
@@ -135,10 +135,10 @@
                   th:each="entry, iter : ${leaderboard}"
                   th:classappend="${entry.publicId == currentUserPublicId} ? 'bg-indigo-50' : ''"
                 >
-                  <!--
+                  <!--/*
                     displayPositions collapses genuine ties to =4/=4/6; row_number() alone would
                     number tied rows distinctly.
-                  -->
+                  */-->
                   <td
                     class="px-3 py-2 text-sm text-gray-500"
                     th:text="${displayPositions[iter.index]}"
@@ -167,11 +167,11 @@
                   >
                     0
                   </td>
-                  <!--
+                  <!--/*
                     #temporals can't format an Instant without a zone. systemDefault() is right
                     here: the tiebreak orders rows, so every row must be read on the server clock.
                     The share card shows one timestamp, so it localises.
-                  -->
+                  */-->
                   <td
                     th:with="settled=${entry.settledAt != null
                       ? entry.settledAt.atZone(T(java.time.ZoneId).systemDefault()) : null}"
@@ -179,10 +179,10 @@
                     th:title="${settled != null ? #temporals.format(settled, 'd MMM yyyy, HH:mm') : null}"
                   >
                     <th:block th:if="${settled == null}">—</th:block>
-                    <!--
+                    <!--/*
                       Date and time both visible, stacked to keep the column narrow: this is the
                       tiebreak, and a tooltip would hide the part that separates same-day players.
-                    -->
+                    */-->
                     <th:block th:if="${settled != null}">
                       <span th:text="${#temporals.format(settled, 'd MMM')}">12 Aug</span>
                       <span
@@ -197,7 +197,7 @@
             </table>
           </div>
 
-          <!-- The viewer's own standing, when they're off the current page. -->
+          <!--/* The viewer's own standing, when they're off the current page. */-->
           <th:block th:if="${userEntry != null}">
             <div
               class="mt-4 rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-sm"

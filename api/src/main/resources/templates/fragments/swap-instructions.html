@@ -1,17 +1,17 @@
-<!-- Contextual Swap Instructions Banner Fragment -->
+<!--/* Contextual Swap Instructions Banner Fragment */-->
 <div
   th:fragment="instructions(isGuest, canSwap, isInitialPredictionEditable)"
   th:if="${isGuest || canSwap || isInitialPredictionEditable}"
   class="px-6 pt-4"
 >
-  <!-- Initial state: No team selected, no swaps made -->
+  <!--/* Initial state: No team selected, no swaps made */-->
   <div
     x-cloak
     x-show="selectedTeam === null && getSwapCount() === 0"
     class="bg-gray-50 border border-gray-200 rounded-lg p-3"
   >
-    <!-- items-start, not items-center: the cooldown / round-closed states run to two lines and the
-         icon should sit with the first, not float in the middle. -->
+    <!--/* items-start, not items-center: the cooldown / round-closed states run to two lines and the
+         icon should sit with the first, not float in the middle. */-->
     <div class="flex items-start">
       <svg
         class="h-4 w-4 text-gray-500 mr-2 mt-0.5 flex-shrink-0"
@@ -26,7 +26,7 @@
           d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
         />
       </svg>
-      <!-- Two lines per state on mobile, so the second half isn't missed; inline from sm: up. -->
+      <!--/* Two lines per state on mobile, so the second half isn't missed; inline from sm: up. */-->
       <div class="text-sm text-gray-600 space-y-1">
         <div th:if="${isGuest}" class="space-y-1 sm:space-y-0">
           <p class="sm:inline">Click a team to select it.</p>
@@ -66,7 +66,7 @@
     </div>
   </div>
 
-  <!-- Team selected state -->
+  <!--/* Team selected state */-->
   <div
     x-cloak
     x-show="selectedTeam !== null"
@@ -97,7 +97,7 @@
     </div>
   </div>
 
-  <!-- Swap limit exceeded (red) - Non-guest only -->
+  <!--/* Swap limit exceeded (red) - Non-guest only */-->
   <div
     th:if="${!isGuest}"
     x-cloak
@@ -117,8 +117,8 @@
         />
       </svg>
       <div class="text-sm text-red-800">
-        <!-- The situation and the way out are two separate thoughts, so they get
-             two paragraphs rather than one comma-spliced run-on. -->
+        <!--/* The situation and the way out are two separate thoughts, so they get
+             two paragraphs rather than one comma-spliced run-on. */-->
         <p>
           <strong>Swap limit exceeded!</strong>
           You've made <span x-text="getSwapCount()"></span> swaps but
@@ -147,7 +147,7 @@
     </div>
   </div>
 
-  <!-- Swaps made (within limit) - Non-guest -->
+  <!--/* Swaps made (within limit) - Non-guest */-->
   <div
     th:if="${!isGuest}"
     x-cloak
@@ -167,7 +167,7 @@
         />
       </svg>
       <div class="text-sm text-amber-800">
-        <!-- Two paragraphs: what happened and what to do (including the cooldown/locked wait), then the ways back out. -->
+        <!--/* Two paragraphs: what happened and what to do (including the cooldown/locked wait), then the ways back out. */-->
         <p>
           You've made
           <strong
@@ -189,7 +189,7 @@
           </span>
         </p>
 
-        <!-- The escape hatches, always their own line. -->
+        <!--/* The escape hatches, always their own line. */-->
         <p class="mt-1">
           <span
             x-show="undoing"
@@ -214,7 +214,7 @@
     </div>
   </div>
 
-  <!-- Swaps made - Guest -->
+  <!--/* Swaps made - Guest */-->
   <div
     th:if="${isGuest}"
     x-cloak

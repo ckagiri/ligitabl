@@ -1,4 +1,4 @@
-<!-- Minimal User Detail Modal -->
+<!--/* Minimal User Detail Modal */-->
 <div
   th:fragment="user-details"
   class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-start justify-center px-3 pt-16 pb-6 overflow-y-auto"
@@ -7,7 +7,7 @@
   <div
     class="relative w-full max-w-2xl p-6 border shadow-lg rounded-xl bg-white"
   >
-    <!-- Header: static across round navigation -->
+    <!--/* Header: static across round navigation */-->
     <div
       class="flex items-center justify-between pb-4 border-b border-gray-200"
     >
@@ -36,15 +36,15 @@
       </button>
     </div>
 
-    <!-- Prediction section: swapped on round navigation -->
+    <!--/* Prediction section: swapped on round navigation */-->
     <div id="modal-prediction-content" class="relative mt-4" th:with="totalTeams=${#lists.size(user.currentPrediction)}, midpoint=${totalTeams / 2}, hasData=${totalTeams > 0}">
 
-      <!-- Loading overlay: shown via hx-on::before-request, replaced by swap on completion -->
+      <!--/* Loading overlay: shown via hx-on::before-request, replaced by swap on completion */-->
       <div id="round-nav-loading" class="hidden absolute inset-0 bg-white/80 items-center justify-center z-10 rounded">
         <span class="text-sm font-medium text-indigo-600">Loading...</span>
       </div>
 
-      <!-- Hidden inputs carried through navigation -->
+      <!--/* Hidden inputs carried through navigation */-->
       <input type="hidden" class="modal-param" name="publicId" th:value="${user.publicId}">
       <input type="hidden" class="modal-param" name="displayName" th:value="${user.displayName}">
       <input type="hidden" class="modal-param" name="position" th:value="${user.position}">
@@ -57,17 +57,17 @@
       <input type="hidden" class="modal-param" name="seasonId" th:if="${seasonId != null}" th:value="${seasonId}">
       <input type="hidden" class="modal-param" name="from" th:if="${from != null}" th:value="${from}">
 
-      <!-- Round nav bar -->
+      <!--/* Round nav bar */-->
       <div class="flex items-center justify-between mb-3">
         <div>
           <span class="text-base font-semibold text-gray-700">GW <span th:text="${round}">18</span></span>
-          <!-- Mobile: compact -->
+          <!--/* Mobile: compact */-->
           <span th:if="${scored != false}" class="sm:hidden text-sm text-gray-500 ml-2">
             <span th:text="${user.roundScore}">42</span> pts
             <span th:replace="~{fragments/score-emoji :: emoji(${user.roundScore})}"></span>
             · <span th:text="${user.roundZeroes}">2</span> <span th:text="${user.roundZeroes == 1 ? 'Ø' : 'Øs'}">Øs</span>
           </span>
-          <!-- Desktop: full -->
+          <!--/* Desktop: full */-->
           <span th:if="${scored != false}" class="hidden sm:inline text-sm text-gray-500 ml-2">
             <span th:text="${user.roundScore}">42</span> pts
             <span th:replace="~{fragments/score-emoji :: emoji(${user.roundScore})}"></span>
@@ -118,11 +118,11 @@
         Joined at gw<span th:text="${joinedAtGw}">8</span> — showing their first prediction.
       </p>
 
-      <!-- Predictions render whenever we have them, scored or not. Before the round is
-           scored every hit is null, so the table shows the picks without deltas. -->
+      <!--/* Predictions render whenever we have them, scored or not. Before the round is
+           scored every hit is null, so the table shows the picks without deltas. */-->
       <p th:if="${hasData == false}" class="text-sm text-gray-400 text-center py-4">No predictions for this round</p>
       <div th:if="${hasData == true}" class="grid grid-cols-2 gap-x-4">
-        <!-- First column: first half -->
+        <!--/* First column: first half */-->
         <div class="space-y-2">
           <div class="flex items-center" th:each="pred, iter : ${user.currentPrediction}" th:if="${iter.index < midpoint}">
             <span
@@ -139,7 +139,7 @@
             >
           </div>
         </div>
-        <!-- Second column: second half -->
+        <!--/* Second column: second half */-->
         <div class="space-y-2">
           <div class="flex items-center" th:each="pred, iter : ${user.currentPrediction}" th:if="${iter.index >= midpoint}">
             <span
@@ -158,9 +158,9 @@
         </div>
       </div>
 
-      <!-- Footer: deep link to this user's full public prediction for the round in view.
+      <!--/* Footer: deep link to this user's full public prediction for the round in view.
            Shows the clean canonical path as its label, while the href also carries the `from`
-           marker so that page can render a Back link straight back to where we came from. -->
+           marker so that page can render a Back link straight back to where we came from. */-->
       <div th:if="${publicPredictionHref != null}" class="mt-4 pt-3 border-t border-gray-200 text-right">
         <a
           th:href="${publicPredictionHref}"

@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- Background set inline on <html>: body's bg-gray-50 arrives with the stylesheet, so until then
-     the browser paints its own canvas (white flash, dark over-scroll in dark mode). -->
+<!--/* Background set inline on <html>: body's bg-gray-50 arrives with the stylesheet, so until then
+     the browser paints its own canvas (white flash, dark over-scroll in dark mode). */-->
 <html
   xmlns:th="http://www.thymeleaf.org"
   xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
@@ -9,7 +9,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- The app is light-only; without this, dark-mode phones paint a dark default canvas. -->
+    <!--/* The app is light-only; without this, dark-mode phones paint a dark default canvas. */-->
     <meta name="color-scheme" content="light" />
     <meta name="_csrf" th:content="${_csrf?.token}" />
     <meta name="_csrf_header" th:content="${_csrf?.headerName}" />
@@ -23,7 +23,7 @@
     <link rel="alternate icon" th:href="@{/favicon.ico}" />
     <link rel="apple-touch-icon" th:href="@{/apple-touch-icon.png}" />
 
-    <!-- Font -->
+    <!--/* Font */-->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -31,17 +31,17 @@
       rel="stylesheet"
     />
 
-    <!-- App CSS (served from src/main/resources/static/css/main.css) -->
-    <!-- <link rel="stylesheet" th:href="@{/css/main.css}"> -->
+    <!--/* App CSS (served from src/main/resources/static/css/main.css) */-->
+    <!--/* <link rel="stylesheet" th:href="@{/css/main.css}"> */-->
 
-    <!-- Tailwind CSS -->
-    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+    <!--/* Tailwind CSS */-->
+    <!--/* <script src="https://cdn.tailwindcss.com"></script> */-->
     <link rel="stylesheet" th:href="@{/dist/css/main.css}" />
 
-    <!-- htmx, the app bundle and Alpine are self-hosted (npm run copy:vendor): Alpine booting
+    <!--/* htmx, the app bundle and Alpine are self-hosted (npm run copy:vendor): Alpine booting
          un-cloaks the page, so third-party handshakes delayed first paint. All `defer`, in document
          order: app.js registers the Alpine.data components, so it must precede Alpine. Never
-         `async`, which drops that order. -->
+         `async`, which drops that order. */-->
     <script defer th:src="@{/vendor/htmx.min.js}"></script>
     <script defer th:src="@{/dist/js/app.js}"></script>
     <script defer th:src="@{/vendor/alpine.min.js}"></script>
@@ -324,7 +324,7 @@
     ></script>
   </head>
   <body class="bg-gray-50 min-h-screen" x-data="{ mobileMenuOpen: false }">
-    <!-- Loading Toast (Fixed Position - Responsive) -->
+    <!--/* Loading Toast (Fixed Position - Responsive) */-->
     <div
       id="saving-toast"
       class="hidden fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-indigo-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg shadow-lg max-w-[90vw] sm:max-w-none"
@@ -352,11 +352,11 @@
         <span class="font-medium text-sm sm:text-base">Saving changes...</span>
       </div>
     </div>
-    <!-- Navigation -->
+    <!--/* Navigation */-->
     <nav class="bg-white shadow-sm sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
-          <!-- Logo + Desktop Nav -->
+          <!--/* Logo + Desktop Nav */-->
           <div class="flex items-center">
             <a th:href="@{/home}" class="flex items-center text-indigo-600">
               <span class="text-2xl mr-1">⚽</span>
@@ -364,11 +364,11 @@
                 >LigiPredictor</span
               >
             </a>
-            <!-- Desktop nav from lg, not md: phone landscape clears md but is too narrow for the full bar. -->
+            <!--/* Desktop nav from lg, not md: phone landscape clears md but is too narrow for the full bar. */-->
             <div class="hidden lg:flex ml-10 space-x-4">
-              <!-- activeNav is a section key, not a URL: the round pager pushes
+              <!--/* activeNav is a section key, not a URL: the round pager pushes
                    /rounds/{n}/standings via hx-push-url, so comparing against the href above
-                   would drop the highlight as soon as the user changed round. -->
+                   would drop the highlight as soon as the user changed round. */-->
               <a
                 th:href="@{/leaderboard}"
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
@@ -398,10 +398,10 @@
                 th:aria-current="${activeNav == 'contests'} ? 'page' : null"
                 >Contests</a
               >
-              <!--
+              <!--/*
                 Guests: Final Table only while entry is still open — it is an on-ramp, and pointing
                 someone at a game they can no longer join is worse than staying quiet.
-              -->
+              */-->
               <a
                 th:if="${!isLoggedIn and showFinalTableNav}"
                 th:href="@{/final-table}"
@@ -410,7 +410,7 @@
                 th:aria-current="${activeNav == 'finaltable'} ? 'page' : null"
                 >Final Table</a
               >
-              <!-- Guests: About/FAQ shown directly (desktop) -->
+              <!--/* Guests: About/FAQ shown directly (desktop) */-->
               <a
                 th:unless="${isLoggedIn}"
                 th:href="@{/about}"
@@ -428,16 +428,16 @@
                 >FAQ</a
               >
 
-              <!-- Logged in: About/FAQ tucked under More dropdown (desktop) -->
+              <!--/* Logged in: About/FAQ tucked under More dropdown (desktop) */-->
               <div
                 th:if="${isLoggedIn}"
                 class="relative"
                 x-data="{ moreMenuOpen: false }"
               >
-                <!-- The trigger lights up for its children too: these pages have no other nav
+                <!--/* The trigger lights up for its children too: these pages have no other nav
                      item when logged in, so without this a user on /faq sees nothing selected
                      anywhere. Lighter than a child's pill so the two don't compete once open.
-                     No aria-current — that is for links, and this is a button. -->
+                     No aria-current — that is for links, and this is a button. */-->
                 <button
                   @click="moreMenuOpen = !moreMenuOpen"
                   @click.away="moreMenuOpen = false"
@@ -502,7 +502,7 @@
                 </div>
               </div>
 
-              <!-- Admin dropdown (desktop) -->
+              <!--/* Admin dropdown (desktop) */-->
               <div
                 th:if="${isAdmin}"
                 class="relative"
@@ -568,10 +568,10 @@
                       @click="adminMenuOpen = false"
                       >Matches</a
                     >
-                    <!--
+                    <!--/*
                       The dropdown closes on click, so an indicator on the button itself would be
                       gone before it was seen — point at the shared overlay near the modal root.
-                    -->
+                    */-->
                     <button
                       type="button"
                       hx-get="/admin/impersonation/modal"
@@ -589,10 +589,10 @@
             </div>
           </div>
 
-          <!-- Desktop Right -->
+          <!--/* Desktop Right */-->
           <div class="hidden lg:flex items-center space-x-4">
-            <!-- Href varies (/my-table vs /my-table/guest) but the section does not — the
-                 reason activeNav is keyed by section rather than compared to the href. -->
+            <!--/* Href varies (/my-table vs /my-table/guest) but the section does not — the
+                 reason activeNav is keyed by section rather than compared to the href. */-->
             <a
               th:href="${predictionsNavLink} ?: '/my-table/guest'"
               class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
@@ -614,7 +614,7 @@
               >Sign Up</a
             >
 
-            <!-- Desktop user dropdown -->
+            <!--/* Desktop user dropdown */-->
             <div
               th:if="${isLoggedIn}"
               class="flex items-center space-x-3"
@@ -768,7 +768,7 @@
             </div>
           </div>
 
-          <!-- Mobile user initials avatar -->
+          <!--/* Mobile user initials avatar */-->
           <div th:if="${isLoggedIn}" class="lg:hidden mr-1">
             <span
               class="inline-flex items-center justify-center h-7 w-7 rounded-full bg-indigo-600 text-white text-xs font-semibold select-none"
@@ -778,7 +778,7 @@
             >
           </div>
 
-          <!-- Mobile menu button -->
+          <!--/* Mobile menu button */-->
           <div class="lg:hidden">
             <button
               type="button"
@@ -811,7 +811,7 @@
           </div>
         </div>
 
-        <!-- Mobile menu -->
+        <!--/* Mobile menu */-->
         <div
           x-show="mobileMenuOpen"
           x-cloak
@@ -820,8 +820,8 @@
           class="lg:hidden pb-3 border-t border-gray-200"
         >
           <div class="flex flex-col space-y-0.5 pt-2">
-            <!-- hover:bg-indigo-50 rides along on the active row: the base hover:bg-gray-50
-                 would otherwise lighten the pill on hover and read as a glitch. -->
+            <!--/* hover:bg-indigo-50 rides along on the active row: the base hover:bg-gray-50
+                 would otherwise lighten the pill on hover and read as a glitch. */-->
             <a
               th:href="${predictionsNavLink} ?: '/my-table/guest'"
               class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
@@ -859,7 +859,7 @@
               th:aria-current="${activeNav == 'contests'} ? 'page' : null"
               >Contests</a
             >
-            <!-- Guests: Final Table only while entry is still open (see desktop note). -->
+            <!--/* Guests: Final Table only while entry is still open (see desktop note). */-->
             <a
               th:if="${!isLoggedIn and showFinalTableNav}"
               th:href="@{/final-table}"
@@ -868,7 +868,7 @@
               th:aria-current="${activeNav == 'finaltable'} ? 'page' : null"
               >Final Table</a
             >
-            <!-- Guests: About/FAQ shown directly (mobile) -->
+            <!--/* Guests: About/FAQ shown directly (mobile) */-->
             <a
               th:unless="${isLoggedIn}"
               th:href="@{/about}"
@@ -886,16 +886,16 @@
               >FAQ</a
             >
 
-            <!-- Divides where you play from what you administer. Above this line are the places
+            <!--/* Divides where you play from what you administer. Above this line are the places
                  the game happens; below are the utility sections, which are collapsible because
                  they are visited rarely. Without the rule the whole menu reads as one flat list
-                 of equal-weight rows and scans as longer than it is. -->
+                 of equal-weight rows and scans as longer than it is. */-->
             <div
               th:if="${isLoggedIn}"
               class="mt-1 pt-1 border-t border-gray-100"
             ></div>
 
-            <!-- Logged in: About/FAQ tucked under a collapsible More section (mobile) -->
+            <!--/* Logged in: About/FAQ tucked under a collapsible More section (mobile) */-->
             <div th:if="${isLoggedIn}" x-data="{ mobileMoreOpen: false }">
               <button
                 type="button"
@@ -990,7 +990,7 @@
                   th:aria-current="${activeNav == 'admin-matches'} ? 'page' : null"
                   >Matches</a
                 >
-                <!-- See the desktop button: the menu closes on click, so the overlay is the indicator. -->
+                <!--/* See the desktop button: the menu closes on click, so the overlay is the indicator. */-->
                 <button
                   type="button"
                   hx-get="/admin/impersonation/modal"
@@ -1019,7 +1019,7 @@
                 >Sign Up</a
               >
 
-              <!-- Mobile logged in user -->
+              <!--/* Mobile logged in user */-->
               <div th:if="${isLoggedIn}" class="px-3 py-2">
                 <div class="border-b border-gray-200 pb-3 mb-3">
                   <p
@@ -1037,7 +1037,7 @@
                   </p>
                 </div>
 
-                <!-- Secondary links — text-sm, smaller icons -->
+                <!--/* Secondary links — text-sm, smaller icons */-->
                 <a
                   th:href="@{/profile/settings}"
                   class="flex items-center text-gray-600 hover:bg-gray-50 py-2 rounded-md text-sm font-medium"
@@ -1124,13 +1124,13 @@
       </div>
     </nav>
 
-    <!-- Verify-email nudge (dismissable, returns after 7 days) -->
+    <!--/* Verify-email nudge (dismissable, returns after 7 days) */-->
     <th:block th:if="${emailUnverified == true}">
       <div th:replace="~{fragments/verify-email-banner :: banner}"></div>
     </th:block>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- Flash Messages -->
+      <!--/* Flash Messages */-->
       <div
         th:if="${message}"
         x-data="{ show: true }"
@@ -1201,7 +1201,7 @@
         </div>
       </div>
 
-      <!-- Clear localStorage on login/logout -->
+      <!--/* Clear localStorage on login/logout */-->
       <script
         th:if="${clearTablePrediction} or ${clearPrefs}"
         th:inline="javascript"
@@ -1217,7 +1217,7 @@
       </script>
 
       <div layout:fragment="content">
-        <!-- Page content goes here -->
+        <!--/* Page content goes here */-->
       </div>
     </main>
 
@@ -1255,12 +1255,12 @@
       </div>
     </footer>
 
-    <!-- Impersonation: modal mount point + self-hiding banner (mirrors #results-banner pattern) -->
+    <!--/* Impersonation: modal mount point + self-hiding banner (mirrors #results-banner pattern) */-->
     <div id="impersonation-modal-root"></div>
-    <!--
+    <!--/*
       Shown while the impersonation modal is in flight (hx-indicator from both menus). The global
       .htmx-indicator rule toggles `display: inline`, which breaks centring — override to flex.
-    -->
+    */-->
     <style>
       #impersonation-modal-loading { display: none; }
       .htmx-request #impersonation-modal-loading,

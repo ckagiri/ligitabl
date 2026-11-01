@@ -2,10 +2,10 @@
 <html xmlns:th="http://www.thymeleaf.org">
   <body>
 
-    <!-- Renders nothing: used after a successful action to clear the modal container -->
+    <!--/* Renders nothing: used after a successful action to clear the modal container */-->
     <th:block th:fragment="done"></th:block>
 
-    <!-- Inline error: replaces modal content on server-side errors -->
+    <!--/* Inline error: replaces modal content on server-side errors */-->
     <div
       th:fragment="error-message"
       class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
@@ -23,7 +23,7 @@
       </div>
     </div>
 
-    <!-- Main admin modal -->
+    <!--/* Main admin modal */-->
     <div
       th:fragment="modal"
       x-data="{ selectedStatus: '', origDate: '', origTime: '', kickOffDate: '', kickOffTime: '' }"
@@ -44,7 +44,7 @@
     >
       <div class="relative top-20 mx-auto p-6 border w-11/12 max-w-md shadow-lg rounded-lg bg-white">
 
-        <!-- Header -->
+        <!--/* Header */-->
         <div class="flex items-center justify-between pb-4 border-b border-gray-200">
           <div>
             <h3 class="text-base font-bold text-gray-900" th:text="${matchLabel}">Chelsea · Arsenal</h3>
@@ -63,7 +63,7 @@
           >✕</button>
         </div>
 
-        <!-- Change Status -->
+        <!--/* Change Status */-->
         <th:block th:if="${not #lists.isEmpty(validTransitions)}">
           <div class="mt-4">
             <h4 class="text-sm font-semibold text-gray-700 mb-2">Change Status</h4>
@@ -87,7 +87,7 @@
                 >SCHEDULED</option>
               </select>
 
-              <!-- Score inputs: only visible when FINISHED is selected -->
+              <!--/* Score inputs: only visible when FINISHED is selected */-->
               <div x-show="selectedStatus === 'FINISHED'" class="flex gap-3 mt-3" x-cloak>
                 <div class="flex-1">
                   <label class="block text-xs text-gray-500 mb-1">Home</label>
@@ -124,14 +124,14 @@
           </div>
         </th:block>
 
-        <!-- Divider between sections when both are visible -->
+        <!--/* Divider between sections when both are visible */-->
         <div
           th:if="${canReschedule and not #lists.isEmpty(validTransitions)}"
           x-show="selectedStatus === ''"
           class="border-t border-gray-200 my-4"
         ></div>
 
-        <!-- Move to Round: only shown when no status transition is selected -->
+        <!--/* Move to Round: only shown when no status transition is selected */-->
         <th:block th:if="${canReschedule}">
           <div class="mt-4" x-data="{ selectedRound: '' }" x-show="selectedStatus === ''">
             <h4 class="text-sm font-semibold text-gray-700 mb-2">Move to Round</h4>

@@ -1,5 +1,5 @@
-<!-- Predict CTA Copy Fragment -->
-<!--
+<!--/* Predict CTA Copy Fragment */-->
+<!--/*
   Parameters:
     isPreSeasonRegistration: Boolean - unmerged pre-season registration (atRoundNumber == 0).
 
@@ -7,7 +7,7 @@
   with the same localStorage init. `imported` is true only for a genuine guest import, which
   ligitabl.js gates on `isInitialPrediction && !isOpeningRound`; callers listen for
   `guest-storage-cleared` to reset it.
--->
+*/-->
 <th:block th:fragment="copy(isPreSeasonRegistration)">
   <span x-show="imported">We've loaded your prediction - review it and submit
     to join the competition.</span>

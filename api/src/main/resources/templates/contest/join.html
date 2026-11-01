@@ -8,7 +8,7 @@
     <div layout:fragment="content">
       <div class="max-w-lg mx-auto px-4 py-12">
 
-        <!-- ── State 1: no code — blank form ── -->
+        <!--/* ── State 1: no code — blank form ── */-->
         <th:block th:if="${contest == null and errorCode == null}">
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
             <h1 class="text-2xl font-bold text-gray-900 mb-2">Join a Private Contest</h1>
@@ -40,7 +40,7 @@
           </div>
         </th:block>
 
-        <!-- ── State 2: error (invalid code or closed) ── -->
+        <!--/* ── State 2: error (invalid code or closed) ── */-->
         <th:block th:if="${errorCode != null}">
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
             <h1 class="text-2xl font-bold text-gray-900 mb-6">Join a Private Contest</h1>
@@ -79,7 +79,7 @@
               </div>
             </th:block>
 
-            <!-- Generic join errors shown after a failed confirm POST -->
+            <!--/* Generic join errors shown after a failed confirm POST */-->
             <th:block th:if="${errorCode == 'ALREADY_MEMBER'}">
               <div class="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <svg class="h-5 w-5 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,7 +120,7 @@
               </div>
             </th:block>
 
-            <!-- Try again form -->
+            <!--/* Try again form */-->
             <form method="get" action="/contests/join">
               <label for="code-retry" class="block text-sm font-medium text-gray-700 mb-1">
                 Try a different code
@@ -147,11 +147,11 @@
           </div>
         </th:block>
 
-        <!-- ── State 3: valid code — preview card + confirm ── -->
+        <!--/* ── State 3: valid code — preview card + confirm ── */-->
         <th:block th:if="${contest != null}">
           <h1 class="text-2xl font-bold text-gray-900 mb-6">You've been invited to join</h1>
 
-          <!-- Preview card -->
+          <!--/* Preview card */-->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
             <div class="flex items-start gap-4">
               <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
@@ -212,7 +212,7 @@
       </div>
     </div>
 
-    <!-- ── HTMX preview fragment (used by /contests page inline join form) ── -->
+    <!--/* ── HTMX preview fragment (used by /contests page inline join form) ── */-->
     <th:block th:fragment="preview-fragment">
       <th:block th:if="${errorCode != null}">
         <div class="flex items-center gap-2 text-sm text-red-600 py-2">
@@ -224,7 +224,7 @@
         </div>
       </th:block>
 
-      <!-- Preview card -->
+      <!--/* Preview card */-->
       <th:block th:if="${contest != null}">
         <div class="bg-gray-50 rounded-lg border border-gray-200 p-4 mb-3">
           <div class="flex items-start justify-between gap-2">

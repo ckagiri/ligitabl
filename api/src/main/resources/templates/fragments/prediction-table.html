@@ -1,13 +1,13 @@
 <div xmlns:th="http://www.thymeleaf.org">
-  <!-- Comparison Options (Show standings, fixtures, points checkboxes) -->
-  <!-- Parameters (both required):
+  <!--/* Comparison Options (Show standings, fixtures, points checkboxes) */-->
+  <!--/* Parameters (both required):
        hasFormData: Boolean - hides the "Show form" checkbox and legend when there is no form data
        showMoveHelperText: Boolean - shows the arrow-key legend, which only fits the arrow-based
          Actual/Delta of interactive-table; false for plain-number callers
-  -->
-  <!-- compareOptionsOpen comes from the page's prediction component (_predictionBase) rather
+  */-->
+  <!--/* compareOptionsOpen comes from the page's prediction component (_predictionBase) rather
        than a local x-data island: the table toolbar needs to read it as well, to hide its short
-       arrow key while the fuller legend in here is on screen. -->
+       arrow key while the fuller legend in here is on screen. */-->
   <div
     x-cloak
     x-init="$el.previousElementSibling && $el.previousElementSibling.hasAttribute('x-skeleton') && $el.previousElementSibling.remove()"
@@ -39,8 +39,8 @@
         Compare options
       </button>
 
-      <!-- Mobile: tappable header card with a live summary of what's active, so the
-         collapsed state still tells you what's currently showing on the table. -->
+      <!--/* Mobile: tappable header card with a live summary of what's active, so the
+         collapsed state still tells you what's currently showing on the table. */-->
       <button
         type="button"
         @click="compareOptionsOpen = !compareOptionsOpen"
@@ -80,8 +80,8 @@
         x-cloak
         class="space-y-3 mt-3 max-sm:space-y-1 max-sm:mt-0 max-sm:border-t max-sm:border-gray-200 max-sm:px-4 max-sm:py-4"
       >
-        <!-- 2-column grid — all rows share the same gap so spacing is uniform. max-sm:min-h-[44px]
-           rows give each checkbox a properly-sized mobile tap target; desktop sizing is unchanged. -->
+        <!--/* 2-column grid — all rows share the same gap so spacing is uniform. max-sm:min-h-[44px]
+           rows give each checkbox a properly-sized mobile tap target; desktop sizing is unchanged. */-->
         <div
           class="grid grid-cols-2 gap-x-6 gap-y-3 w-fit max-sm:w-full max-sm:gap-x-3 max-sm:gap-y-1"
         >
@@ -116,7 +116,7 @@
               autocomplete="off"
               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5"
             />
-            <!-- The longest label, kept on one line down to 340px; narrower, nowrap would overrun the next column. Same cut-off as the what-if score rows. -->
+            <!--/* The longest label, kept on one line down to 340px; narrower, nowrap would overrun the next column. Same cut-off as the what-if score rows. */-->
             <span class="whitespace-nowrap max-[340px]:whitespace-normal">Show fixtures</span>
           </label>
           <label
@@ -131,7 +131,7 @@
             />
             <span>Show form</span>
           </label>
-          <!-- Form legend — visible when showForm is on -->
+          <!--/* Form legend — visible when showForm is on */-->
           <div
             th:if="${hasFormData}"
             x-show="showForm"
@@ -259,9 +259,9 @@
           </label>
         </div>
 
-        <!-- Shown in both views so flipped arrows are explained. "move" is the editing frame (move
+        <!--/* Shown in both views so flipped arrows are explained. "move" is the editing frame (move
              this row to match reality); "climb"/"drop" the forecast frame, about the team itself
-             (predicted 1st, actually 8th: expected to climb). -->
+             (predicted 1st, actually 8th: expected to climb). */-->
         <p
           th:if="${showMoveHelperText}"
           x-show="showStandings && deltaMode !== 'off'"
@@ -285,8 +285,8 @@
           </span>
         </p>
 
-        <!-- With the arrows off there is no direction to name, so the colour is all that's left
-             to explain — and it means distance from reality, not direction. -->
+        <!--/* With the arrows off there is no direction to name, so the colour is all that's left
+             to explain — and it means distance from reality, not direction. */-->
         <p
           th:if="${showMoveHelperText}"
           x-show="showStandings && deltaMode === 'off'"
@@ -301,23 +301,23 @@
     </div>
   </div>
 
-  <!-- Interactive Current-Round Table -->
-  <!-- max-sm:pt-1: the compare-options panel above already ends in pb-2, so the full py-4 on a
-       phone stacked into a visible gap above the toolbar. -->
+  <!--/* Interactive Current-Round Table */-->
+  <!--/* max-sm:pt-1: the compare-options panel above already ends in pb-2, so the full py-4 on a
+       phone stacked into a visible gap above the toolbar. */-->
   <div
     th:fragment="interactive-table(alwaysHoverable)"
     class="px-4 sm:px-6 py-4 max-sm:pt-1"
   >
-    <!-- Switches between the user's prediction and the real standings. The actual-table side is
+    <!--/* Switches between the user's prediction and the real standings. The actual-table side is
          read-only (canInteract derives from positionsReversed), so this is a view switch rather
-         than an edit mode — naming both sides makes that legible before you press it. -->
+         than an edit mode — naming both sides makes that legible before you press it. */-->
     <div
       x-show="showStandings"
       class="flex flex-wrap items-center justify-end gap-x-2 gap-y-2 mb-3"
     >
-      <!-- Read-only, then the arrow key: the table-wide state reads before a note about one
+      <!--/* Read-only, then the arrow key: the table-wide state reads before a note about one
            column, at every width. Only while the actual table is showing — that is when
-           "you can't swap here" is news. -->
+           "you can't swap here" is news. */-->
       <span
         x-show="positionsReversed"
         x-cloak
@@ -333,9 +333,9 @@
         </svg>
         Read-only
       </span>
-      <!-- Short arrow key: covers for the compare-options panel being collapsed, where the
+      <!--/* Short arrow key: covers for the compare-options panel being collapsed, where the
            colour-naming legend is out of sight — so it hides when that panel is open, being
-           the weaker of the two. -->
+           the weaker of the two. */-->
       <span
         x-show="!compareOptionsOpen && deltaMode !== 'off'"
         x-cloak
@@ -350,8 +350,8 @@
           <span x-text="deltaMode === 'inverted' ? 'drop' : 'move'">move</span> down
         </span>
       </span>
-      <!-- The switch and the invert button travel together: the invert button acts on the delta
-           column the switch controls, so it must never wrap away from it onto its own line. -->
+      <!--/* The switch and the invert button travel together: the invert button acts on the delta
+           column the switch controls, so it must never wrap away from it onto its own line. */-->
       <div class="inline-flex shrink-0 items-center gap-x-2">
         <div
           class="inline-flex rounded-md border border-gray-300 overflow-hidden text-sm font-medium"
@@ -364,8 +364,8 @@
             :class="!positionsReversed ? 'bg-indigo-50 text-indigo-700' : 'bg-white text-gray-600 hover:bg-gray-50'"
             class="px-4 py-2 sm:px-3 sm:py-1.5 whitespace-nowrap transition-colors"
           >
-            <!-- Below 340px the full labels push the invert button out of the row. Same cut-off as
-                 the "Show fixtures" checkbox above. -->
+            <!--/* Below 340px the full labels push the invert button out of the row. Same cut-off as
+                 the "Show fixtures" checkbox above. */-->
             <span class="max-[340px]:hidden">My Table</span>
             <span class="hidden max-[340px]:inline">Pred</span>
           </button>
@@ -380,10 +380,10 @@
             <span class="hidden max-[340px]:inline">Actual</span>
           </button>
         </div>
-        <!-- Cycles how the delta column reads — arrows, flipped arrows, or no arrows at all —
+        <!--/* Cycles how the delta column reads — arrows, flipped arrows, or no arrows at all —
              never its number. Offered in both views, since the delta reads the same way in each.
              No aria-pressed: it is a two-state attribute and this control has three, so the
-             live aria-label carries the state instead. -->
+             live aria-label carries the state instead. */-->
         <button
           type="button"
           @click="cycleDeltaMode()"
@@ -413,7 +413,7 @@
               stroke-width="2"
               d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
             />
-            <!-- Slash marks the off state, the way a muted icon does. -->
+            <!--/* Slash marks the off state, the way a muted icon does. */-->
             <path
               x-show="deltaMode === 'off'"
               stroke-linecap="round"
@@ -533,8 +533,8 @@
               </td>
               <td class="px-2 sm:px-3 py-4">
                 <div class="flex items-center min-w-0">
-                  <!-- Badge wrapper owns the spacing so the live dot can sit outside the
-                       badge's corner without being clipped or nudging the team code. -->
+                  <!--/* Badge wrapper owns the spacing so the live dot can sit outside the
+                       badge's corner without being clipped or nudging the team code. */-->
                   <div class="relative mr-2 sm:mr-3 flex-shrink-0">
                     <div
                       class="h-7 w-7 sm:h-8 sm:w-8 rounded flex items-center justify-center text-xs font-bold"
@@ -548,7 +548,7 @@
                     ></span>
                   </div>
                   <div class="min-w-0 flex-1">
-                    <!-- Team name -->
+                    <!--/* Team name */-->
                     <div class="flex items-center gap-1">
                       <span
                         x-show="isSelected(team.code)"
@@ -564,7 +564,7 @@
                       </div>
                     </div>
 
-                    <!-- Mobile: Fixtures AND/OR Standings AND/OR Points+GD -->
+                    <!--/* Mobile: Fixtures AND/OR Standings AND/OR Points+GD */-->
                     <div
                       x-show="showFixtures || showStandings || showPoints || showGD || showForm"
                       class="sm:hidden flex items-center gap-1.5 mt-1 flex-wrap"
@@ -609,14 +609,14 @@
                         </template>
                       </template>
 
-                      <!-- Bullet separator (fixtures/standings) — only when single fixture -->
+                      <!--/* Bullet separator (fixtures/standings) — only when single fixture */-->
                       <template
                         x-if="showFixtures && hasFixtures(team.code) && showStandings && getFixtures(team.code).length === 1"
                       >
                         <span class="text-gray-400">•</span>
                       </template>
 
-                      <!-- Actual position with delta — wraps to own line when multiple fixtures -->
+                      <!--/* Actual position with delta — wraps to own line when multiple fixtures */-->
                       <div
                         x-show="showStandings"
                         class="flex items-center gap-1 text-xs"
@@ -633,8 +633,8 @@
                           class="flex items-center gap-0.5 font-semibold"
                           :class="deltaTextClass(team.code)"
                         >
-                          <!-- Hidden rather than merely arrowless in 'off': both paths would go
-                               false on their own, but the box would still hold its 12px open. -->
+                          <!--/* Hidden rather than merely arrowless in 'off': both paths would go
+                               false on their own, but the box would still hold its 12px open. */-->
                           <svg
                             x-show="deltaMode !== 'off'"
                             class="h-3 w-3"
@@ -663,7 +663,7 @@
                         >
                       </div>
 
-                      <!-- Points + GD (mobile) — own line via basis-full -->
+                      <!--/* Points + GD (mobile) — own line via basis-full */-->
                       <div
                         x-show="showPoints || showGD"
                         class="flex basis-full items-center gap-1 text-xs"
@@ -696,7 +696,7 @@
                         </template>
                       </div>
 
-                      <!-- Form circles (mobile) — tap circles only to see match details -->
+                      <!--/* Form circles (mobile) — tap circles only to see match details */-->
                       <template
                         x-if="showForm && getForm(team.code).length > 0"
                       >
@@ -732,7 +732,7 @@
                       </template>
                     </div>
 
-                    <!-- Desktop: Just fixtures (standings/points in separate columns) -->
+                    <!--/* Desktop: Just fixtures (standings/points in separate columns) */-->
                     <div
                       x-show="showFixtures && hasFixtures(team.code)"
                       class="hidden sm:flex items-center gap-1.5 mt-1"
@@ -779,14 +779,14 @@
                 </div>
               </td>
 
-              <!-- Actual Position - hide on mobile. Shows the prediction in the standings view. -->
+              <!--/* Actual Position - hide on mobile. Shows the prediction in the standings view. */-->
               <td
                 x-show="showStandings"
                 class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm text-gray-400"
                 x-text="positionsReversed ? team.position : getActualPosition(team.code)"
               ></td>
 
-              <!-- Delta with Arrow -->
+              <!--/* Delta with Arrow */-->
               <td
                 x-show="showStandings"
                 class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right"
@@ -821,14 +821,14 @@
                 </div>
               </td>
 
-              <!-- Points - desktop -->
+              <!--/* Points - desktop */-->
               <td
                 x-show="showPoints"
                 class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-700"
                 x-text="getCurrentPoints(team.code)"
               ></td>
 
-              <!-- GD - desktop -->
+              <!--/* GD - desktop */-->
               <td
                 x-show="showGD"
                 class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm font-semibold"
@@ -840,7 +840,7 @@
                 x-text="getCurrentGD(team.code)"
               ></td>
 
-              <!-- Form circles - desktop -->
+              <!--/* Form circles - desktop */-->
               <td
                 x-show="showForm"
                 class="hidden sm:table-cell px-3 py-4 whitespace-nowrap"
@@ -892,7 +892,7 @@
       </table>
     </div>
 
-    <!-- Mobile form popup — teleported to body to avoid fixed-position containment issues -->
+    <!--/* Mobile form popup — teleported to body to avoid fixed-position containment issues */-->
     <template x-teleport="body">
       <div
         x-show="formPopup !== null || formPopupClosing"
@@ -909,7 +909,7 @@
           :class="formPopupClosing ? 'popup-card-leave' : 'popup-card-enter'"
           class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden"
         >
-          <!-- Header -->
+          <!--/* Header */-->
           <div
             class="flex items-center justify-between px-4 py-3 border-b border-gray-100"
           >
@@ -936,7 +936,7 @@
               </svg>
             </button>
           </div>
-          <!-- Entries -->
+          <!--/* Entries */-->
           <ul class="divide-y divide-gray-50" x-show="formPopup !== null">
             <template
               x-for="(entry, idx) in (formPopup ? formPopup.entries : [])"

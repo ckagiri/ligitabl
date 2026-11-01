@@ -2,11 +2,11 @@
 <html xmlns:th="http://www.thymeleaf.org">
   <body>
 
-    <!--
+    <!--/*
       Renewal confirmation modal body. The caller supplies contestId/contestName inside its own
       `x-data="contestRenewal(...)"` scope (detail.html: one, opened by window event;
       contest/index.html: one per row), which provides `open`/`selectedTo`/etc.
-    -->
+    */-->
     <div
       th:fragment="modal(contestId, contestName)"
       x-show="open"

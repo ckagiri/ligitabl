@@ -1,11 +1,11 @@
 <!doctype html>
 <html xmlns:th="http://www.thymeleaf.org">
   <body>
-    <!--
+    <!--/*
       Dismissable "verify your email" nudge for unverified logged-in users. Dismissal is
       client-side (a localStorage timestamp) and expires, so it never hides from users who still
       need it. The server gates it via emailUnverified (NavbarControllerAdvice).
-    -->
+    */-->
     <div
       th:fragment="banner"
       x-cloak
@@ -66,11 +66,11 @@
           </span>
         </div>
         <div class="flex items-center gap-3 flex-shrink-0">
-          <!--
+          <!--/*
             Resend is offered only when both gates agree: the server's quiet window has
             elapsed since the last verification email (verificationResendAvailable), and
             this browser has rendered the banner before (clientAllowsResend).
-          -->
+          */-->
           <form
             th:if="${verificationResendAvailable == true}"
             th:action="@{/profile/resend-verification}"

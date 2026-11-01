@@ -8,7 +8,7 @@
     <div layout:fragment="content">
       <div class="max-w-2xl mx-auto px-4 py-6" x-data="{ deleteConfirmName: '' }">
 
-        <!-- ── Back link ── -->
+        <!--/* ── Back link ── */-->
         <a th:href="@{/contests/{id}(id=${contest.id})}"
            class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6 transition">
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -21,7 +21,7 @@
           <span th:text="${contest.name}">Contest</span> — Settings
         </h1>
 
-        <!-- Rename success/error banners -->
+        <!--/* Rename success/error banners */-->
         <th:block th:if="${param.renamed != null}">
           <div class="flex items-start gap-3 bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
             <svg class="h-5 w-5 text-green-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -45,7 +45,7 @@
           </div>
         </th:block>
 
-        <!-- ── Rename ── -->
+        <!--/* ── Rename ── */-->
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-4 mb-4">
           <p class="text-sm font-medium text-gray-800 mb-1">Contest name</p>
           <p class="text-xs text-gray-500 mb-3">Must be unique among your contests this season. Please keep it appropriate and respectful.</p>
@@ -77,7 +77,7 @@
         </th:block>
 
         <th:block th:if="${isPastSeason == false}">
-          <!-- ── Allow new members ── -->
+          <!--/* ── Allow new members ── */-->
           <div class="bg-white rounded-xl border border-gray-200 shadow-sm divide-y divide-gray-100 mb-4">
             <div class="px-5 py-4">
               <div class="flex items-center justify-between gap-4">
@@ -98,7 +98,7 @@
               </div>
             </div>
 
-            <!-- ── Regenerate invite code ── -->
+            <!--/* ── Regenerate invite code ── */-->
             <div class="px-5 py-4">
               <div class="flex items-center justify-between gap-4">
                 <div>
@@ -116,7 +116,7 @@
             </div>
           </div>
 
-          <!-- ── Danger zone ── -->
+          <!--/* ── Danger zone ── */-->
           <div class="bg-white rounded-xl border border-red-100 shadow-sm px-5 py-4">
             <p class="text-sm font-semibold text-red-700 mb-1">Danger zone</p>
             <p class="text-xs text-gray-500 mb-4">

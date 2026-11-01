@@ -1,11 +1,11 @@
-<!--
+<!--/*
   Swap history: the swaps made in the round being viewed, oldest first, for the owner's table and
   the public view. The call site guards isGuest.
 
   Parameters:
     open:     'true' to start expanded, 'false' to start collapsed
     dateOnly: true to drop the clock time from each entry, as the public view does
--->
+*/-->
 <div
   th:fragment="history(open, dateOnly)"
   th:if="${swapHistory != null && !#lists.isEmpty(swapHistory)}"
@@ -51,7 +51,7 @@
         th:each="entry, iterStat : ${swapHistory}"
         class="px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1"
       >
-        <!-- One swap per line, so the A→B ↔ B→A symmetry survives; narrow screens shrink the type rather than scroll. -->
+        <!--/* One swap per line, so the A→B ↔ B→A symmetry survives; narrow screens shrink the type rather than scroll. */-->
         <span
           class="text-xs sm:text-sm font-mono text-gray-700 whitespace-nowrap max-w-full"
         >
@@ -82,8 +82,8 @@
           <span class="text-gray-400">#</span
           ><span th:text="${entry.teamBTo}">1</span>
         </span>
-        <!-- Empty on purpose: formatTimestamps() fills it on DOMContentLoaded / htmx:afterSettle,
-             and an ISO fallback would flash, at the wrong precision under dateOnly. -->
+        <!--/* Empty on purpose: formatTimestamps() fills it on DOMContentLoaded / htmx:afterSettle,
+             and an ISO fallback would flash, at the wrong precision under dateOnly. */-->
         <span
           class="text-xs text-gray-400 whitespace-nowrap"
           th:attr="data-timestamp=${entry.formattedTime},

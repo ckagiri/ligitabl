@@ -21,7 +21,7 @@
 
         <div x-data="adminMatchesPage" class="bg-white shadow rounded-lg">
 
-          <!-- Filter bar: 3-col grid on mobile, inline flex row on sm+ -->
+          <!--/* Filter bar: 3-col grid on mobile, inline flex row on sm+ */-->
           <div class="px-4 sm:px-6 py-4 border-b border-gray-200 grid grid-cols-3 gap-3 sm:flex sm:flex-wrap sm:items-end">
             <label class="flex flex-col gap-1 text-xs text-gray-500">
               Ground
@@ -86,8 +86,8 @@
                       class="w-full sm:w-auto border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="">--</option>
                 <template x-for="n in roundNumbers" :key="'gw' + n">
-                  <!-- :selected (not just the select's value) because these options render after
-                       the select's value binding is applied, which would leave "--" displayed -->
+                  <!--/* :selected (not just the select's value) because these options render after
+                       the select's value binding is applied, which would leave "--" displayed */-->
                   <option :value="n" :selected="String(n) === filters.round" x-text="'GW ' + n"></option>
                 </template>
               </select>
@@ -99,14 +99,14 @@
             </button>
           </div>
 
-          <!-- Transient notice (e.g. a mutated row dropped out of the active filters) -->
+          <!--/* Transient notice (e.g. a mutated row dropped out of the active filters) */-->
           <div x-show="notice" x-cloak x-transition
                class="px-4 sm:px-6 py-2 bg-blue-50 border-b border-blue-200 text-sm text-blue-800 flex items-center justify-between gap-3">
             <span x-text="notice"></span>
             <button @click="notice = ''" class="text-blue-400 hover:text-blue-600" title="Dismiss">✕</button>
           </div>
 
-          <!-- Pagination bar -->
+          <!--/* Pagination bar */-->
           <div class="px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 text-sm text-gray-500">
             <span>
               Showing <span x-text="showingFrom">0</span>–<span x-text="showingTo">0</span>
@@ -136,7 +136,7 @@
             </div>
           </div>
 
-          <!-- Table -->
+          <!--/* Table */-->
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
@@ -234,7 +234,7 @@
                       <span class="hidden sm:inline" x-text="formatKickoff(m.kickOff)"></span>
                     </td>
                     <td class="px-2 sm:px-4 py-3">
-                      <!-- Pill classes mirror templates/matches.html's status badges -->
+                      <!--/* Pill classes mirror templates/matches.html's status badges */-->
                       <span :class="statusPill[m.status]?.cls">
                         <span x-show="m.status === 'LIVE'"
                               class="live-indicator inline-block w-1.5 h-1.5 bg-red-500 rounded-full"></span>
@@ -260,7 +260,7 @@
         </div>
       </section>
 
-      <!-- Required by fragments/match-admin-modal: forms and close handlers target this id -->
+      <!--/* Required by fragments/match-admin-modal: forms and close handlers target this id */-->
       <div id="match-admin-modal"></div>
 
       <script th:inline="javascript">

@@ -1,9 +1,9 @@
-<!-- What-If Swap Log: formatted like the "Swap History" section on predictions.html, but filled
+<!--/* What-If Swap Log: formatted like the "Swap History" section on predictions.html, but filled
      live from the sandbox. Reads displayedSwapLog(), not the raw swapLog, which keeps every tap;
      the derived list matches getSwapCount().
 
      Titled "Sandbox swaps", not "Swap history": that is the permanent record on My Table, where
-     swaps cost allowance; these cost nothing. -->
+     swaps cost allowance; these cost nothing. */-->
 <div
   th:fragment="swap-log"
   x-show="hasComputed && displayedSwapLog().length > 0"
@@ -33,7 +33,7 @@
     </svg>
   </button>
   <div x-show="open" x-transition class="border-t border-gray-100">
-    <!-- Positions recomputed against a table that moved underneath (a submitted swap). Said beside the numbers, not in the submit notice. -->
+    <!--/* Positions recomputed against a table that moved underneath (a submitted swap). Said beside the numbers, not in the submit notice. */-->
     <p
       x-show="swapsRebased"
       x-cloak
@@ -42,7 +42,7 @@
       Positions updated for your new table.
     </p>
     <ul class="divide-y divide-gray-100">
-      <!-- One swap per line, so the A→B ↔ B→A symmetry survives; narrow screens shrink the type rather than scroll. -->
+      <!--/* One swap per line, so the A→B ↔ B→A symmetry survives; narrow screens shrink the type rather than scroll. */-->
       <template x-for="(entry, index) in displayedSwapLog()" :key="index">
         <li class="px-6 py-3 text-xs sm:text-sm font-mono text-gray-700 whitespace-nowrap">
           <span class="text-gray-300 mr-1 select-none" x-text="(index + 1) + '.'"></span>
