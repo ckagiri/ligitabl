@@ -120,18 +120,9 @@ public class Season extends AbstractModel<UUID> {
     }
 
     /**
-     * The zone the {@code startDate}/{@code endDate} comparisons in {@link #getSeasonState(Instant)}
-     * are evaluated in.
-     *
-     * <p>These are {@link LocalDate} fields, so an {@link Instant} alone cannot be compared against
-     * them — a calendar date has to be derived first, and that needs a zone. UTC is chosen to match
-     * the application's {@code Clock} bean ({@code Clock.systemUTC()}), so a caller passing
-     * {@code clock.instant()} gets the date the rest of the system agrees on.
-     *
-     * <p>This is a deliberate change from the wall-clock versions these methods replaced, which used
-     * {@code LocalDate.now()} and therefore the JVM's default zone. On a UTC JVM the two are
-     * identical; elsewhere they disagree for the part of the day where the local date and the UTC
-     * date differ.
+     * The zone {@link #getSeasonState(Instant)} derives a calendar date in, to compare an instant
+     * against the {@link LocalDate} fields. UTC matches the {@code Clock} bean, so
+     * {@code clock.instant()} yields the date the rest of the system agrees on.
      */
     private static final ZoneOffset SEASON_DATE_ZONE = ZoneOffset.UTC;
 

@@ -28,19 +28,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Round Advancement Service
- *
- * Handles automatic round advancement with a configurable delay window.
- *
- * Flow:
- * 1. Round finalized → scheduleAdvancement() called by MatchSyncScheduler
- * 2. advanceAt persisted to DB (survives restarts)
- * 3. One-time scheduled task fires after delay
- * 4. attemptAutoAdvancement() advances the round (or skips if cancelled/overridden)
- *
- * Admin overrides:
- * - advance-now: calls advanceManually(), bypasses the delay
- * - cancel-advancement: clears advanceAt, scheduled task is a no-op when it fires
+ * Automatic round advancement after a configurable delay. A finalized round gets
+ * {@code scheduleAdvancement()}; {@code advanceAt} is persisted so the advance survives restarts,
+ * and a one-time task runs {@code attemptAutoAdvancement()}. Admins can advance now
+ * ({@code advanceManually()}) or cancel, which clears {@code advanceAt} so the task no-ops.
  *
  * Admin notifications: pre-advancement warning (the cancel window), post-advancement
  * confirmation, and a failure alert — via {@link AdminAlerts}.
@@ -62,11 +53,9 @@ public class RoundAdvancementService {
     private int delayMinutes;
 
     /**
-     * Schedule automatic round advancement after the configured delay.
-     * Persists advanceAt to DB so RoundAdvancementRecovery can re-trigger on restart.
+     * Persists advanceAt so RoundAdvancementRecovery can re-trigger on restart.
      *
-     * @param finalizedRoundId round that was just finalized (must equal season.currentRoundId)
-     * @param seasonId         season containing the round
+     * @param finalizedRoundId must equal season.currentRoundId
      */
     public void scheduleAdvancement(UUID finalizedRoundId, UUID seasonId) {
         var season = seasonRepo
@@ -102,13 +91,7 @@ public class RoundAdvancementService {
         adminAlerts.notifyAdvancementScheduled(finalizedRoundId, round.getPosition(), advanceAt, delayMinutes);
     }
 
-    /**
-     * Attempt automatic advancement. Idempotent — safe to call from both the
-     * scheduled task and RoundAdvancementRecovery.
-     *
-     * @param roundId  round to advance
-     * @param seasonId season containing the round
-     */
+    /** Idempotent, so both the scheduled task and RoundAdvancementRecovery may call it. */
     @Transactional
     public void attemptAutoAdvancement(UUID roundId, UUID seasonId) {
         try {
@@ -148,13 +131,7 @@ public class RoundAdvancementService {
         }
     }
 
-    /**
-     * Manually advance the round immediately, bypassing the delay window.
-     * Called by the admin advance-now endpoint.
-     *
-     * @param roundId round to advance
-     * @return true if advanced, false if already advanced
-     */
+    /** For the admin advance-now endpoint. Returns false if already advanced. */
     public boolean advanceManually(UUID roundId) {
         var round = roundRepo
                 .findById(roundId)
@@ -181,13 +158,7 @@ public class RoundAdvancementService {
         return true;
     }
 
-    /**
-     * Cancel the scheduled auto-advancement by clearing advanceAt.
-     * The scheduled task will be a no-op when it fires.
-     * The round remains FINALIZED; admin must use advanceManually() when ready.
-     *
-     * @param roundId round whose advancement to cancel
-     */
+    /** Clears advanceAt so the scheduled task no-ops. The round stays FINALIZED until advanced manually. */
     public void cancelScheduledAdvancement(UUID roundId) {
         var round = roundRepo
                 .findById(roundId)
@@ -240,9 +211,8 @@ public class RoundAdvancementService {
     }
 
     /**
-     * Records the round-advanced fact in the outbox (same transaction as the
-     * advancement, so it commits atomically). The relay expands this into per-user
-     * ROUND_RESULTS events post-commit; any failure here logs loudly but never blocks advancement.
+     * Records the round-advanced fact in the outbox, in the advancement's transaction. The relay
+     * expands it into per-user ROUND_RESULTS events; a failure here logs but never blocks advancing.
      */
     private void enqueueRoundResultsEmail(Season season, int roundPosition, int currentRoundPosition) {
         try {

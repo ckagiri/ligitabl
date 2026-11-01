@@ -77,16 +77,7 @@ public class UserPredictionsController {
     private final SwapHistoryFormatter swapHistoryFormatter;
     private final Clock clock;
 
-    /**
-     * GET /predictions/user/me - View current user's prediction.
-     *
-     * <p>Resolves user from Principal:
-     * <ul>
-     *   <li>Not logged in → Redirects to /prediction/user/guest</li>
-     *   <li>Logged in + has prediction → Returns user's prediction (EDITABLE or READONLY)</li>
-     *   <li>Logged in + no prediction → Returns fallback as CAN_CREATE_ENTRY</li>
-     * </ul>
-     */
+    /** Guests redirect to /predictions/user/guest. */
     @GetMapping("/me")
     public String myPredictions(
             @RequestParam(required = false) Integer round,
@@ -123,9 +114,8 @@ public class UserPredictionsController {
 
         GetUserPredictionQuery query = buildQueryForMe(resolvedUserId, round, season);
 
-        // Canonicalise: a ?round= that resolves to the current round renders exactly what the bare
-        // URL does, so send it there rather than serving the same page under two URLs. Also covers
-        // out-of-range values, which resolveRound clamps to current.
+        // Canonicalise: a ?round= resolving to the current round (or clamped there) redirects to
+        // the bare URL rather than serving one page under two URLs.
         if (round != null && resolvesToCurrentRound(season, query)) {
             return "redirect:/my-table";
         }
@@ -155,11 +145,8 @@ public class UserPredictionsController {
             return handleNoActiveSeason(model, response, hxRequest);
         }
 
-        // Guests get no round navigation (see predictions.html — the nav is th:if="${!isGuest}"),
-        // so any ?round= here is a hand-typed or stale URL with no way to have been reached from
-        // the UI. Send every one of them to the canonical guest URL rather than serving a past
-        // round nothing links to. The authenticated /me path keeps its nav, so it only
-        // canonicalises the current round.
+        // Guests have no round navigation, so any ?round= here is hand-typed or stale: send it to
+        // the canonical guest URL.
         if (round != null) {
             return "redirect:/my-table/guest";
         }
@@ -175,10 +162,8 @@ public class UserPredictionsController {
     }
 
     /**
-     * Whether an explicit {@code ?round=} lands on the current round once
-     * {@link GetUserPredictionQuery#resolveRound} has had its say — reusing that method rather than
-     * re-deriving the rule, so the redirect can't disagree with what would have been rendered. Also
-     * catches out-of-range values, which resolveRound clamps to current.
+     * Reuses {@link GetUserPredictionQuery#resolveRound}, so the redirect can't disagree with what
+     * would have been rendered, including clamped out-of-range values.
      */
     private boolean resolvesToCurrentRound(Season season, GetUserPredictionQuery query) {
         Integer currentRound = roundRepo
@@ -319,9 +304,6 @@ public class UserPredictionsController {
         return "error";
     }
 
-    /**
-     * Handle use case error.
-     */
     private String handleError(UseCaseError error, Model model, HttpServletResponse response, String hxRequest) {
         response.setStatus(mapErrorToStatus(error));
         model.addAttribute("error", error.getMessage());
@@ -384,7 +366,6 @@ public class UserPredictionsController {
         model.addAttribute("isHistoricalView", isHistoricalView);
         model.addAttribute("isRoundLockedOrBeyond", isRoundLockedOrBeyond);
 
-        // Access mode attributes
         model.addAttribute("accessMode", data.accessMode().name());
         model.addAttribute("canSwap", data.canSwap());
         model.addAttribute("canCreateEntry", data.canCreateEntry());
@@ -417,12 +398,10 @@ public class UserPredictionsController {
         boolean canInteractWithTable = data.canSwap()
                 || (data.swapCooldown() != null && data.swapCooldown().initialPredictionMade());
 
-        // Swap history (own predictions only)
         if (data.roundSwapHistory() != null && !data.roundSwapHistory().isEmpty()) {
             model.addAttribute("swapHistory", swapHistoryFormatter.format(data.roundSwapHistory()));
         }
 
-        // Round result for historical views
         if (data.hasRoundResult()) {
             var result = data.roundResult();
             model.addAttribute("roundResult", result);
@@ -460,9 +439,8 @@ public class UserPredictionsController {
         model.addAttribute("canInteractEffective", canInteractEffective);
         model.addAttribute("canSwapEditable", canSwapEditable);
         model.addAttribute("isInitialPredictionEditable", isInitialPredictionEditable);
-        // Still-unmerged pre-season "easter egg" registration (atRoundNumber == 0) — treated like an
-        // initial prediction (5-swap allowance, no cooldown) everywhere isInitialPrediction is checked,
-        // without changing accessMode itself.
+        // An unmerged pre-season registration (atRoundNumber == 0) counts as an initial prediction
+        // (5-swap allowance, no cooldown) wherever isInitialPrediction is checked; accessMode is unchanged.
         model.addAttribute("isPreSeasonRegistration", data.hasPreSeasonRegistration());
         if (phase.daysToPreSeason() != null) {
             model.addAttribute("daysToPreSeason", phase.daysToPreSeason());
@@ -480,7 +458,6 @@ public class UserPredictionsController {
             model.addAttribute("predictionsOpenAt", phase.predictionsOpenAt());
         }
 
-        // Source information
         model.addAttribute("source", data.source().name());
         model.addAttribute("sourceLabel", getSourceLabel(data));
 
@@ -566,9 +543,6 @@ public class UserPredictionsController {
         };
     }
 
-    /**
-     * Get source label for UI display.
-     */
     private String getSourceLabel(UserPredictionViewData data) {
         return switch (data.source()) {
             case USER_PREDICTION -> "Your Table";
@@ -578,16 +552,10 @@ public class UserPredictionsController {
         };
     }
 
-    /**
-     * Map use case error to HTTP status code.
-     */
     private int mapErrorToStatus(UseCaseError error) {
         return ErrorMapper.toHttpStatus(error);
     }
 
-    /**
-     * DTO for swap status information displayed in templates.
-     */
     public record SwapStatusDTO(
             boolean canSwap,
             String message,
@@ -596,12 +564,7 @@ public class UserPredictionsController {
             boolean firstSwapBonus,
             boolean openingRoundAvailable) {
 
-        /**
-         * Null object for views with no swap cooldown (guest, no-prediction-fallback, historical
-         * views) — lets templates read {@code swapStatus.firstSwapBonus}/{@code
-         * .openingRoundAvailable} directly instead of guarding every read with {@code swapStatus !=
-         * null}.
-         */
+        /** Null object for views with no cooldown, so templates read its fields without null guards. */
         public static SwapStatusDTO none() {
             return new SwapStatusDTO(false, "", "Never", false, false, false);
         }

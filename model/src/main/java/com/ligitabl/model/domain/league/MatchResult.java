@@ -2,13 +2,6 @@ package com.ligitabl.model.domain.league;
 
 import com.ligitabl.model.domain.league.standings.Constants;
 
-/**
- * Represents the result of a football match with goals scored by each team.
- * Immutable and validated.
- *
- * @param homeGoals Goals scored by the home team
- * @param awayGoals Goals scored by the away team
- */
 public record MatchResult(int homeGoals, int awayGoals) {
     public MatchResult {
         if (homeGoals < 0) {

@@ -16,11 +16,8 @@ import lombok.RequiredArgsConstructor;
 public class JoinLandingController {
 
     /**
-     * Public landing page for contest invite links.
-     *
-     * - Authenticated users are sent straight to /contests/join (existing flow).
-     * - Guests see a code-entry form. Submitting the form redirects to /i/{code}
-     *   which triggers authentication and then drops the user onto the join-preview page.
+     * Public landing page for contest invite links. Signed-in users go straight to /contests/join;
+     * guests get a code form that redirects to /i/{code}, which signs them in first.
      */
     @GetMapping("/join")
     public String joinLanding(@RequestParam(required = false) String code, Principal principal) {

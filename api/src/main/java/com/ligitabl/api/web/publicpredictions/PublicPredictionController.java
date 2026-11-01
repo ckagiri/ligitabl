@@ -80,14 +80,8 @@ public class PublicPredictionController {
     }
 
     /**
-     * GET /u/{publicId}/{season} and /u/{publicId}/{season}/gw — same landing behaviour as
-     * {@code /u/{publicId}/gw}, but for an explicitly named season rather than the active one:
-     * resolve that season's current round and redirect to the canonical URL, so a link without a
-     * round still opens on something.
-     *
-     * <p>{@code /u/{publicId}/gw} is a more specific pattern than {@code /u/{publicId}/{season}},
-     * so Spring keeps routing it to the active-season handler above rather than treating "gw" as a
-     * season slug.
+     * Like {@code /u/{publicId}/gw} but for a named season: redirects to that season's current round.
+     * {@code /u/{publicId}/gw} is the more specific pattern, so "gw" never reads as a season slug.
      */
     @GetMapping({"/u/{publicId}/{season}", "/u/{publicId}/{season}/gw"})
     public String redirectToSeasonCurrentRound(
@@ -194,9 +188,7 @@ public class PublicPredictionController {
             String from,
             Model model,
             String hxRequest) {
-        // The use case clamps out-of-range requests to the target user's valid bounds — redirect
-        // to the canonical URL for the clamped round rather than silently rendering a different
-        // round at the requested URL.
+        // The use case clamps out-of-range requests, so redirect to the clamped round's URL.
         if (data.viewingRound() != requestedPosition) {
             return "redirect:" + canonicalUrl(publicId, season.getSlug(), data.viewingRound(), from);
         }
@@ -240,11 +232,7 @@ public class PublicPredictionController {
         return "public-predictions";
     }
 
-    /**
-     * JSON blobs + toggle state for the current-round comparison-options view (points/GD/
-     * fixtures/form) — mirrors {@code UserPredictionsController}'s JSON serialization for the
-     * owner's own current-round table.
-     */
+    /** JSON and toggle state for the points/GD/fixtures/form view, as {@code UserPredictionsController} does. */
     private void populateComparisonOptionsModel(Season season, PublicPredictionViewData data, Model model) {
         var formMap = formService.buildFormMap(season.getId(), data.viewingRound());
         model.addAttribute("hasFormData", !formMap.isEmpty());

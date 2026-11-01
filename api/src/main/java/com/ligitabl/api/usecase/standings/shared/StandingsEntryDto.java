@@ -19,7 +19,6 @@ import lombok.Value;
 public class StandingsEntryDto {
     int position;
 
-    // Team information
     UUID teamId;
     String teamName;
     String teamShortName;

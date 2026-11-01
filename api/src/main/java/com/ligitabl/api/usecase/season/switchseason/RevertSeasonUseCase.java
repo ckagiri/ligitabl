@@ -12,9 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Quick undo for ActivateSeasonUseCase: restores formerSeasonId back to activeSeasonId,
- * demoting the current active season to upcomingSeasonId. No date/eligibility checks
- * beyond "a former season exists" — this is a quick undo, not a guarded transition.
+ * Quick undo for ActivateSeasonUseCase: restores formerSeasonId to activeSeasonId and demotes the
+ * active season to upcomingSeasonId. Checks only that a former season exists.
  */
 @Component
 @RequiredArgsConstructor

@@ -31,11 +31,8 @@ import org.springframework.security.web.authentication.rememberme.PersistentToke
 import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationException;
 
 /**
- * Unit tests for {@link RaceTolerantPersistentTokenRememberMeServices}.
- *
- * <p>The behaviour that matters most: a token mismatch caused by two of the same
- * browser's requests racing must NOT wipe the user's remember-me tokens, while a
- * genuinely stale mismatch still must.
+ * A mismatch from two of the same browser's requests racing must not wipe the user's remember-me
+ * tokens; a genuinely stale mismatch still must.
  */
 class RaceTolerantPersistentTokenRememberMeServicesTest {
 
@@ -74,9 +71,8 @@ class RaceTolerantPersistentTokenRememberMeServicesTest {
     }
 
     /**
-     * Decodes the series/token pair Spring writes into the remember-me cookie. Spring
-     * URL-encodes each component (generated tokens are base64 and contain '/' and '='), joins
-     * them with ':', and base64-encodes the result — so unwind it in that order.
+     * Decodes the series/token pair from the remember-me cookie: Spring URL-encodes each part, joins
+     * them with ':' and base64-encodes the result, so unwind in that order.
      */
     private String[] cookieTokens() {
         var cookie = response.getCookie("remember-me");

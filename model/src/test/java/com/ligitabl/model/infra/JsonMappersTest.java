@@ -12,9 +12,8 @@ import com.ligitabl.model.domain.prediction.RoundSwap;
 import com.ligitabl.model.domain.prediction.SwapChange;
 
 /**
- * Guards the jsonb Instant encoding. Without {@link JsonMappers} these cases fail on the model test
- * classpath — jackson-datatype-jsr310 is not a dependency of this module, so
- * {@code findAndRegisterModules()} finds no Instant handling and every SwapChange throws.
+ * Guards the jsonb Instant encoding. This module does not depend on jackson-datatype-jsr310, so
+ * without {@link JsonMappers} every SwapChange fails to serialise here.
  */
 class JsonMappersTest {
 
@@ -33,9 +32,7 @@ class JsonMappersTest {
 
     @Test
     void encodesInstantAsDecimalEpochSecondsMatchingJsr310() throws Exception {
-        // Pins the wire format: existing t_season_prediction.c_swaps rows were written through the
-        // api module with jsr310 active, which emits decimal epoch seconds. Changing this would
-        // orphan already-stored data.
+        // Pins the wire format: stored t_season_prediction.c_swaps rows hold decimal epoch seconds.
         String json = mapper.writeValueAsString(WITH_NANOS);
 
         assertThat(json).isEqualTo("1785578400.123456789");

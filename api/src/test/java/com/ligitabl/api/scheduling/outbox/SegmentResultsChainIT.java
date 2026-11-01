@@ -48,10 +48,8 @@ import com.ligitabl.model.repo.SeasonPredictionRepo;
  * SEGMENT_RESULTS   →  render + send                                           [tx 2..]
  * </pre>
  *
- * <p>Its own fixture rather than {@link com.ligitabl.api.testsupport.InPlaySeasonFixture}: that one
- * writes {@code c_phases = '[]'} and a single round, and every question here is about phase
- * boundaries and scored leaderboards. The season is deliberately tiny — 9 rounds, two sprints, one
- * quarter — so the two boundary shapes sit at rounds 4 and 9:
+ * <p>Its own fixture, because {@link com.ligitabl.api.testsupport.InPlaySeasonFixture} has no
+ * phases. A tiny season (two sprints, one quarter) puts the two boundary shapes at rounds 4 and 9:
  *
  * <table>
  *   <tr><th>round</th><th>closes</th></tr>
@@ -60,10 +58,8 @@ import com.ligitabl.model.repo.SeasonPredictionRepo;
  *   <tr><td>9</td><td>S2 <em>and</em> Q1</td></tr>
  * </table>
  *
- * <p>What only a real database can show: that the leaderboard actually resolves over each
- * segment's own window, that the delayed events sit unclaimed in PENDING, and that the round-38
- * scope-key collision is genuinely avoided at the unique index rather than merely in the string
- * we build.
+ * <p>Only a real database shows that each leaderboard resolves over its segment's own window, that
+ * delayed events sit unclaimed in PENDING, and that the unique index accepts both round-9 scope keys.
  */
 @SpringBootTest
 @DisplayName("Segment-results chain (real Postgres)")
@@ -122,9 +118,7 @@ class SegmentResultsChainIT extends AbstractPostgresIT {
         carol = insertUser("carol@x.com", "Carol");
         dave = insertUser("dave@x.com", "Dave");
 
-        // The scores are chosen so the two podiums at round 9 are in genuinely different orders,
-        // and each shape is represented. Sprint 1 dwarfs sprint 2 so the quarter aggregate is
-        // dominated by round 1:
+        // Scores give the two round-9 podiums different orders, with each shape represented:
         //
         //   sprint 1 (1–4)   alice 1000 · bob 900 · carol 800 · dave 0
         //   sprint 2 (5–9)   dave  100 · carol 50 · bob   10 · alice 5
@@ -134,9 +128,8 @@ class SegmentResultsChainIT extends AbstractPostgresIT {
         //   S2 podium        dave(1), carol(2), bob(3)  (alice off)
         //   Q1 podium        alice(1), bob(2), carol(3) (dave off)
         //
-        // So at round 9: dave is sprint-only, alice is quarter-only, bob and carol take both. A
-        // board read over the wrong window would rank people visibly wrongly rather than landing
-        // on coincidentally identical answers.
+        // At round 9 dave is sprint-only, alice quarter-only, bob and carol both, so a board read
+        // over the wrong window ranks visibly wrongly.
         score(alice, 1, 1000);
         score(bob, 1, 900);
         score(carol, 1, 800);
@@ -361,11 +354,7 @@ class SegmentResultsChainIT extends AbstractPostgresIT {
             assertThat(countSegmentEvents()).isZero();
         }
 
-        /**
-         * The reason the fixture gives sprint 2 and the quarter different orderings: reading either
-         * board over the other's window would produce visibly wrong ranks here, not coincidentally
-         * identical ones.
-         */
+        /** Reading either board over the other's window would give visibly wrong ranks here. */
         @Test
         @DisplayName("a sprint+quarter boundary resolves each over its own window")
         void combinedBoundaryUsesPerSegmentWindows() throws Exception {
@@ -470,10 +459,8 @@ class SegmentResultsChainIT extends AbstractPostgresIT {
     class SeasonCompletion {
 
         /**
-         * The collision the scope key exists for. Both fan-outs cover round 9 and the same people;
-         * a key without the scope would be rejected by the unique index and the champion would
-         * never be told. This is the one assertion that has to run against a real index rather
-         * than against the string we build.
+         * Both fan-outs cover round 9 and the same people; without the scope in the key the unique
+         * index would reject one and the champion would never be told.
          */
         @Test
         @DisplayName("the season podium survives alongside the round-9 boundary email")

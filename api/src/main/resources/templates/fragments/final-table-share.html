@@ -1,19 +1,12 @@
 <!doctype html>
 <html xmlns:th="http://www.thymeleaf.org">
   <body>
-    <!--
-      Share controls, mounted separately from finalTablePage so the read-only public view can carry
-      them without the editing component.
-
-      Same shape as fragments/share-prediction.html on the main prediction page: the share text is
-      visible and copyable rather than hidden behind a native share sheet that not every browser
-      offers. Copy icons over labelled buttons, for the same reason — it is the pattern the app
-      already uses.
-
-      Two deliberate departures from that fragment, both because the card is this game's point
-      rather than an afterthought: it opens expanded, and the image leads. Text and link follow as
-      the fallbacks for the places an image won't go.
-    -->
+    <!--/*
+      Share controls, separate from finalTablePage so the read-only public view can carry them.
+      Shaped like fragments/share-prediction.html: visible, copyable text rather than a native share
+      sheet some browsers lack. Unlike it, this opens expanded and the image leads, since the card
+      is this game's point.
+    */-->
     <div
       th:fragment="card"
       th:if="${shareUrl != null}"
@@ -32,10 +25,10 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
           </svg>
-          <!--
+          <!--/*
             "Share your table" on the owner's page; the public view passes its own wording, since a
             visitor is looking at someone else's table and the possessive would be wrong.
-          -->
+          */-->
           <span th:text="${shareCardHeading != null ? shareCardHeading : 'Share your table'}"
             >Share your table</span
           >
@@ -64,8 +57,8 @@
           </span>
         </div>
 
-        <!-- Image first: the card is the thing people actually share, and the text and link below
-             are the fallbacks for where an image won't go. -->
+        <!--/* Image first: the card is the thing people actually share, and the text and link below
+             are the fallbacks for where an image won't go. */-->
         <div>
           <p class="mb-1.5 text-xs font-medium text-gray-500">Image</p>
           <div class="flex flex-wrap gap-2">
@@ -80,7 +73,7 @@
               </svg>
               <span x-text="rendering ? 'Rendering…' : 'Download image'">Download image</span>
             </button>
-            <!-- Native share sheet, only where the browser actually supports sharing files. -->
+            <!--/* Native share sheet, only where the browser actually supports sharing files. */-->
             <button
               type="button"
               x-show="canShareFiles"

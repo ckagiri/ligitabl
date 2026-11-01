@@ -60,12 +60,6 @@ public class MakeSwapController {
                 });
     }
 
-    /**
-     * Map error type to HTTP status code.
-     *
-     * @param error the use case error
-     * @return HTTP status code (400, 404, 409, 500)
-     */
     public int toHttpStatus(SwapError error) {
         return switch (error) {
             case SwapError.NoPredictionFound __ -> 404;

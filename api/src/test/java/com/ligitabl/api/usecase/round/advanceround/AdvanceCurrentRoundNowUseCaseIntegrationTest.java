@@ -101,9 +101,8 @@ class AdvanceCurrentRoundNowUseCaseIntegrationTest extends AbstractPostgresIT {
         var result = useCase.execute();
         assertThat(result.isRight()).isTrue();
 
-        // Written inside the advancement transaction — not by FinalizeRoundUseCase — because
-        // leaderboard queries only count rounds with c_advanced = true, so this round's own
-        // results wouldn't yet count toward its placements if enqueued at finalize time instead.
+        // Written in the advancement transaction, not at finalize: leaderboards count only rounds
+        // with c_advanced = true, so this round's own results would be missing from its placements.
         var event = outboxRepo.findByIdempotencyKey("round-advanced:%s:1".formatted(seasonId));
         assertThat(event).isPresent();
         assertThat(event.get().getEventType()).isEqualTo("ROUND_ADVANCED");

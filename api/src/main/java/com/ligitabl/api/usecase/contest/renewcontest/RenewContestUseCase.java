@@ -24,13 +24,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Renews a private contest. If the contest belongs to the competition's current active season, it
- * renews into the sprint immediately following its own window in that same season. If the contest
- * belongs to a past season, it renews into the start of the new active season instead (fixed at
- * S1, defaulting to end of Q1, or fixed at the last sprint if the original was a full season). The
- * renewed contest keeps the original's name unchanged — names are unique per owner per season per
- * round window, and a renewal's window never overlaps the original's, so no collision is possible
- * unless the owner already has another contest occupying that exact window under that name.
+ * Renews a private contest. A current-season contest renews into the sprint right after its own
+ * window; a past-season one renews into the new active season's start (S1 to end of Q1, or to the
+ * last sprint if the original was a full season). The renewal keeps the original's name: names
+ * are unique per owner, season and round window, and the windows never overlap.
  */
 @Service
 @RequiredArgsConstructor

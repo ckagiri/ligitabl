@@ -42,12 +42,8 @@ public class PreviewRankingsSupport {
     }
 
     /**
-     * Get previous round standings as fallback for users without a prediction.
-     *
-     * Always uses currentRound - 2, giving users contrast to help decide where to move teams.
-     * Falls back to season baseline when currentRound < 3 (GW1/GW2) or standings unavailable.
-     *
-     * GW5 → GW3, GW3 → GW1, GW2/GW1 → season baseline.
+     * Fallback for users without a prediction: standings from currentRound - 2, for contrast when
+     * deciding moves. GW5 → GW3, GW3 → GW1, GW2/GW1 (or no standings) → season baseline.
      */
     public RankingsWithSource getPreviousRoundRankings(UUID seasonId, int currentRound) {
         if (currentRound < 3) {

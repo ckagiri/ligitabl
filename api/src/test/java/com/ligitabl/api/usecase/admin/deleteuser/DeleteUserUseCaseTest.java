@@ -105,11 +105,7 @@ class DeleteUserUseCaseTest {
         when(contestRepo.existsByOwnerId(userId)).thenReturn(false);
     }
 
-    /**
-     * Nine tables carry an FK to t_user and only t_user_role cascades, so every other one must be
-     * cleared here. Missing t_email_verification_token is what broke admin deletion in production
-     * (2026-09-04); t_final_table_prediction was the same bug not yet triggered.
-     */
+    /** Only t_user_role cascades from t_user, so every other child table with an FK must be cleared here. */
     @Test
     void deletesEveryChildTableBeforeTheUser() {
         Object result = useCase.execute(userId, seasonId);

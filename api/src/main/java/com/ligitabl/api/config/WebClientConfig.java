@@ -23,13 +23,8 @@ import reactor.netty.http.client.HttpClient;
 import reactor.util.retry.Retry;
 
 /**
- * WebClient Configuration for Football Data API
- *
- * Features:
- * - Automatic retry with exponential backoff (3 attempts)
- * - Connection and read timeouts
- * - Request/response logging
- * - Error handling
+ * WebClient for the football-data API: timeouts, request logging, and exponential-backoff retry
+ * on 5xx and timeouts ({@code football-data.api.retry-attempts}). 4xx is not retried.
  */
 @Configuration
 public class WebClientConfig {
@@ -55,7 +50,6 @@ public class WebClientConfig {
     @Bean
     @Primary
     public WebClient footballDataWebClient() {
-        // Configure HTTP client with timeouts
         HttpClient httpClient = HttpClient.create()
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeoutSeconds * 1000)
                 .doOnConnected(conn -> conn.addHandlerLast(new ReadTimeoutHandler(timeoutSeconds, TimeUnit.SECONDS))
@@ -80,15 +74,6 @@ public class WebClientConfig {
                 .build();
     }
 
-    /**
-     * Retry filter with exponential backoff.
-     * Retries on:
-     * - Server errors (5xx)
-     * - Timeout errors
-     *
-     * Does NOT retry on:
-     * - Client errors (4xx)
-     */
     private @NonNull ExchangeFilterFunction retryFilter() {
         return (request, next) -> next.exchange(request)
                 .flatMap(response -> {

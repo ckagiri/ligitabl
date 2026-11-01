@@ -29,9 +29,7 @@ public interface UserRepo {
 
     boolean existsByUsername(String username);
 
-    /**
-     * Set or clear (null) a user's username.
-     */
+    /** Null clears it. */
     void updateUsername(UUID userId, String username);
 
     User create(User model);

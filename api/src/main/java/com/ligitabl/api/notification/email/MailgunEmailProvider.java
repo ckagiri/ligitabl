@@ -79,9 +79,7 @@ public class MailgunEmailProvider implements EmailProvider {
             formData.add("subject", content.subject());
             formData.add("html", content.htmlBody());
 
-            // Sending both parts makes the message multipart/alternative. HTML-only mail is a
-            // negative deliverability signal and leaves text-only and accessibility clients with
-            // whatever they can salvage from the markup.
+            // multipart/alternative: HTML-only mail hurts deliverability and text-only clients.
             if (content.textBody() != null && !content.textBody().isBlank()) {
                 formData.add("text", content.textBody());
             }
@@ -111,9 +109,8 @@ public class MailgunEmailProvider implements EmailProvider {
             }
 
         } catch (HttpStatusCodeException e) {
-            // 420 is Mailgun's account-limit refusal (recipient/message quota for the plan and
-            // domain-verification state). The body carries the reset time; surfacing it as
-            // RateLimited lets the caller wait out a window far longer than any retry backoff.
+            // 420 is Mailgun's account-limit refusal. Its body carries the reset time, which can be
+            // far longer than any retry backoff, so it surfaces as RateLimited.
             if (e.getStatusCode().value() == MAILGUN_RATE_LIMIT_STATUS) {
                 String body = e.getResponseBodyAsString();
                 Instant retryAfter = parseRetryAfter(body);
@@ -133,10 +130,9 @@ public class MailgunEmailProvider implements EmailProvider {
     }
 
     /**
-     * Pulls the reset instant out of a 420 body, whose message ends with
-     * {@code try again after Mon, 24 Aug 2026 21:00:19 UTC}. Returns null when the phrase is
-     * absent or unparseable — the wording is Mailgun's prose, not a documented contract, so the
-     * caller must treat a missing time as "unknown" and fall back to its own backoff.
+     * Pulls the reset instant out of a 420 body ending {@code try again after Mon, 24 Aug 2026 21:00:19 UTC}.
+     * That wording is Mailgun's prose, not a contract, so null means "unknown" and the caller falls
+     * back to its own backoff.
      */
     private static Instant parseRetryAfter(String body) {
         if (body == null) {

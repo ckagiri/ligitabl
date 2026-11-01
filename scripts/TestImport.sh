@@ -2,19 +2,17 @@
 
 set -euo pipefail
 
-#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
 # Ligitabl Import Smoke Test Script
 #
-# This is a DB-level smoke test that:
+# A DB-level smoke test that:
 # - resets the local dev DB (DESTRUCTIVE)
 # - runs Liquibase migrations
 # - seeds reference data (assumed stable)
 # - runs importer workflow for Premier League via `make import-pl`
 # - asserts imported matches exist and are wired to a round+season and have a slug
 #
-# Notes:
-# - Uses Football-Data live API via API_FOOTBALL_DATA_KEY (preferred) / FOOTBALL_DATA_API_TOKEN.
-# - Uses the competition matches endpoint, so it should be stable (not tied to a narrow date window).
+# Uses the Football-Data live API via API_FOOTBALL_DATA_KEY (preferred) or
+# FOOTBALL_DATA_API_TOKEN, on the competition matches endpoint, so no narrow date window.
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"

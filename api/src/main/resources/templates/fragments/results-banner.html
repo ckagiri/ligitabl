@@ -1,12 +1,12 @@
-<!-- Results Banner Fragment -->
-<!-- Fragment for /my-table (formerly /predictions/user/me) -->
+<!--/* Results Banner Fragment */-->
+<!--/* Fragment for /my-table */-->
 <div th:fragment="results-banner-user(result)" th:if="${result != null}">
   <div
     th:replace="~{fragments/results-banner :: results-banner-base(result=${result}, baseUrl=${predictionsNavLink} ?: '/my-table')}"
   ></div>
 </div>
 
-<!-- Base fragment with configurable URL -->
+<!--/* Base fragment with configurable URL */-->
 <div
   th:fragment="results-banner-base(result, baseUrl)"
   th:if="${result != null}"
@@ -15,7 +15,7 @@
     class="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg p-5 shadow-sm mb-6"
     th:attr="data-result-round=${result.round}"
   >
-    <!-- Header -->
+    <!--/* Header */-->
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center">
         <span class="text-2xl mr-2">🎉</span>
@@ -32,7 +32,7 @@
       </button>
     </div>
 
-    <!-- Score & Position -->
+    <!--/* Score & Position */-->
     <div class="mb-4">
       <p class="text-base text-gray-700">
         You scored
@@ -69,9 +69,9 @@
       </th:block>
     </div>
 
-    <!-- Distribution (2x2) -->
+    <!--/* Distribution (2x2) */-->
     <div class="grid grid-cols-2 gap-2 mb-4">
-      <!-- Perfect — no change needed -->
+      <!--/* Perfect — no change needed */-->
       <div class="flex items-center gap-1.5 text-sm text-gray-700">
         <span class="text-2xl">🎯</span>
         <span
@@ -82,7 +82,7 @@
         <span class="font-semibold">perfect!</span>
       </div>
 
-      <!-- Close calls -->
+      <!--/* Close calls */-->
       <div class="flex items-center gap-1.5 text-sm text-gray-700">
         <span class="text-lg">🤏</span>
         <span
@@ -99,7 +99,7 @@
         </span>
       </div>
 
-      <!-- Near misses -->
+      <!--/* Near misses */-->
       <div class="flex items-center gap-1.5 text-sm text-gray-700">
         <span class="text-lg">🤷</span>
         <span
@@ -116,7 +116,7 @@
         </span>
       </div>
 
-      <!-- Big misses -->
+      <!--/* Big misses */-->
       <div class="flex items-center gap-1.5 text-sm text-gray-700">
         <span class="text-lg">😅</span>
         <span
@@ -134,7 +134,7 @@
       </div>
     </div>
 
-    <!-- Action Button (not shown once the season's last round is current — nothing further to view) -->
+    <!--/* Action Button (not shown once the season's last round is current — nothing further to view) */-->
     <div th:if="${result.currentRound != result.lastRound}" class="flex justify-center">
       <a
         th:href="@{${baseUrl}(round=${result.round})}"

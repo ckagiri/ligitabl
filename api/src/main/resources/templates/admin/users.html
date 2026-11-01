@@ -6,7 +6,7 @@
 >
   <body>
     <div layout:fragment="content">
-      <!-- min-w-0: outermost link in the chain the table was widening (see .au-card below). -->
+      <!--/* min-w-0: outermost link in the chain the table was widening (see .au-card below). */-->
       <section class="max-w-6xl min-w-0 mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="mb-8">
           <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Users</h1>
@@ -14,7 +14,7 @@
         </div>
 
         <div id="admin-users-content" th:fragment="usersContent" class="au-card bg-white shadow rounded-lg">
-          <!-- Batch-delete form: empty shell, referenced remotely by each eligible row's checkbox via form="batch-delete-form" -->
+          <!--/* Batch-delete form: empty shell, referenced remotely by each eligible row's checkbox via form="batch-delete-form" */-->
           <form id="batch-delete-form" method="post" th:action="@{/admin/users/batch-delete}"
                 onsubmit="return confirmBatchDelete()">
             <input type="hidden" name="page" th:value="${currentPage}" />
@@ -55,16 +55,12 @@
             </button>
           </div>
 
-          <!--
-            No pinned columns: the table simply scrolls sideways, and alternating row bands are
-            what keep your eye on the right row once the email has scrolled out of view.
-
-            Scoped CSS rather than Tailwind utilities because dist/css/main.css is a BUILT
-            artifact — Tailwind only emits a class that already appears in a scanned template, so
-            a newly introduced utility is silently inert until someone runs `npm run build`.
-            `overscroll-x-contain` is absent from the current build; leaderboard.html ships its
-            table CSS the same way.
-          -->
+          <!--/*
+            No pinned columns: the table scrolls sideways, and alternating row bands keep your eye
+            on the row once the email has scrolled out of view. Scoped CSS, not Tailwind utilities:
+            dist/css/main.css only has classes a scanned template already used, so a new utility is
+            inert until `npm run build`.
+          */-->
           <style>
             /* A checkbox needs no more, and a narrow first column shortens the scroll. */
             .au-check-col { min-width: 56px !important; max-width: 56px !important; }
@@ -102,11 +98,7 @@
 
           <div class="overflow-x-auto au-table-scroll">
             <table class="min-w-full divide-y divide-gray-200">
-              <!--
-                All nine columns stay at every width; the table scrolls horizontally on narrow
-                screens. Padding is tight below sm so the scroll distance is as short as it can be
-                without dropping anything.
-              -->
+              <!--/* Every column stays at every width; tight padding below sm keeps the scroll short. */-->
               <thead>
                 <tr class="bg-gray-50">
                   <th class="au-check-col px-2 sm:px-4 py-3 text-left">
@@ -138,7 +130,7 @@
                     <input th:if="${eng.eligibleForDelete()}" type="checkbox" name="ids" th:value="${u.id}"
                            form="batch-delete-form" class="row-checkbox" />
                   </td>
-                  <!-- au-email-col holds the column open (see the min-width note above). -->
+                  <!--/* au-email-col holds the column open (see the min-width note above). */-->
                   <td class="au-email-col px-2 sm:px-6 py-3 text-sm text-gray-900" th:text="${u.email.value()}"></td>
                   <td class="px-2 sm:px-6 py-3 text-sm text-gray-700" x-data="{ editing: false }">
                     <div x-show="!editing">
@@ -239,15 +231,15 @@
                   </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(users)}">
-                  <!-- Spans the widest configuration; a colspan larger than the rendered column
-                       count is harmless, and hard-coding 4 would break the row at lg. -->
+                  <!--/* Spans the widest configuration; a colspan larger than the rendered column
+                       count is harmless, and hard-coding 4 would break the row at lg. */-->
                   <td colspan="9" class="px-6 py-8 text-center text-sm text-gray-500">No users found.</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <!-- Pagination -->
+          <!--/* Pagination */-->
           <div class="px-3 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200">
             <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500">
               <span>

@@ -24,13 +24,9 @@ import lombok.RequiredArgsConstructor;
  * Resolves the request's {@link ImpersonationContext} from the security principal plus any
  * {@link ImpersonationSession} in the HTTP session.
  *
- * <p>Order note: unlike {@code RequestLoggingFilter}/{@code RateLimitFilter} (which run before
- * Spring Security), this must run AFTER the security filter chain (registered at
- * {@code SecurityProperties.DEFAULT_FILTER_ORDER} = -100) so the authenticated principal is
- * available — hence {@code @Order(0)}.
- *
- * <p>Registered via {@code ImpersonationConfig} (not {@code @Component}) so MVC slice tests,
- * which instantiate component-scanned filters but have no {@code UserRepo} bean, never load it.
+ * <p>{@code @Order(0)}: unlike {@code RequestLoggingFilter} and {@code RateLimitFilter}, this must
+ * run after the security chain ({@code SecurityProperties.DEFAULT_FILTER_ORDER}) so the principal
+ * is available. Registered by {@code ImpersonationConfig}, not {@code @Component}; see there.
  */
 @Order(0)
 @RequiredArgsConstructor

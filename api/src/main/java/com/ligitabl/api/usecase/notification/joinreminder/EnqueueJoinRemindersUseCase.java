@@ -24,17 +24,11 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * <p>Each user gets at most one email per run, at the <em>latest</em> stage their time since last
- * seen.
+ * seen has reached.
  *
- * <p>Gated by two daily throttles, both evaluated against UTC-midnight "today":
- * <ul>
- *   <li>if a ROUND_RESULTS batch already went out today, this run is skipped entirely, to keep
- *       combined daily send volume under the free-tier cap;
- *   <li>if a JOIN_REMINDER batch has already been enqueued today, this run is skipped — this is
- *       what makes it safe to also invoke this method from a startup recovery hook (see
- *       {@code JoinReminderStartupRecovery}) without risking a duplicate same-day run alongside
- *       the 9am cron.
- * </ul>
+ * <p>Skipped for the day, by UTC-midnight "today", if a ROUND_RESULTS batch already went out (to
+ * keep combined send volume under the free-tier cap) or a JOIN_REMINDER batch was already enqueued.
+ * The second is what lets {@code JoinReminderStartupRecovery} call this alongside the cron.
  */
 @Component
 @RequiredArgsConstructor
@@ -133,9 +127,8 @@ public class EnqueueJoinRemindersUseCase {
     }
 
     /**
-     * True in the window immediately before predictions open. Only ever suppresses runs
-     * <em>before</em> the transition: once predictions are open the window is behind us, and
-     * reminders resume for whoever is still legitimately unjoined (mid-season signups).
+     * True in the window just before predictions open. Once they open, reminders resume for anyone
+     * still unjoined (mid-season signups).
      */
     private boolean inQuietPeriodBeforePredictionsOpen(Season season, OffsetDateTime now) {
         OffsetDateTime predictionsOpenAt = season.getPredictionsOpenAt();

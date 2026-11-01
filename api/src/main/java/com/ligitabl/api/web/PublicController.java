@@ -24,9 +24,6 @@ import com.ligitabl.model.repo.TeamRepo;
 
 import lombok.RequiredArgsConstructor;
 
-/**
- * Public controller for home page.
- */
 @Controller
 @RequiredArgsConstructor
 public class PublicController {
@@ -69,12 +66,7 @@ public class PublicController {
         return "faq";
     }
 
-    /**
-     * The Final Table section of the FAQ, on its own. Linked from the Final Table pages, which
-     * previously pointed at /faq and left the reader to find the section themselves.
-     *
-     * <p>Shares one fragment with {@link #faq}, so the two cannot drift apart.
-     */
+    /** The Final Table section of the FAQ on its own. Shares one fragment with {@link #faq}. */
     @GetMapping("/faq/final-table")
     public String faqFinalTable(Model model) {
         model.addAttribute("pageTitle", "Final Table FAQ");

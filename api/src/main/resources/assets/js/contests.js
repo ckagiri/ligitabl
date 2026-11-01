@@ -64,9 +64,8 @@ window.contestCreator = function () {
       if (d.toSprintCode)   this.selectedTo   = this.sprints.find(s => s.code === d.toSprintCode)   || null;
     },
 
-    // Desktop dropdown height is capped at max-h-80 (20rem = 320px); flip it above the
-    // trigger when there isn't enough room below but there is above, so it doesn't spill
-    // past the fold and overlap the submit buttons/footer.
+    // The desktop dropdown is capped at max-h-80; flip it above the trigger when it won't fit
+    // below but will above, so it doesn't overlap the submit buttons and footer.
     shouldDropUp(triggerEl) {
       const rect = triggerEl.getBoundingClientRect();
       const dropdownHeight = 320;

@@ -22,10 +22,8 @@ import com.ligitabl.model.outbox.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 
 /**
- * End-to-end outbox processing against the real database, template engine and
- * (logging) email provider: claim → dispatch → render → send → terminal state.
- * The scheduled relay itself is disabled in tests (ligitabl.scheduling.enabled
- * = false); this drives the same claim/process path the relay runs.
+ * End-to-end outbox processing against the real database, template engine and logging email
+ * provider: claim → dispatch → render → send → terminal state, on the relay's own path.
  */
 @SpringBootTest
 @DisplayName("Outbox processing integration")

@@ -14,14 +14,10 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 /**
  * Hardens LogtailAppender (0.3.1) against unserializable log events.
  *
- * <p>The vanilla appender JSON-serializes each event's raw argument array with its own
- * ObjectMapper, and on a JsonProcessingException its {@code flush()} never clears the batch. One
- * bad argument therefore poisons shipping until restart: every later flush re-fails on the same
- * event, logs a stack trace, and the batch grows without bound (seen in prod 2026-10-25).
- *
- * <p>Arguments are stringified (the formatted message already carries them), and a batch that
- * still fails is re-serialized event by event so only the offender is dropped. JavaTimeModule
- * stays for the remaining typed fields.
+ * <p>The vanilla appender serializes each event's raw arguments, and on a JsonProcessingException
+ * its {@code flush()} never clears the batch, so one bad argument stops shipping until restart.
+ * Here arguments are stringified (the formatted message already carries them), and a batch that
+ * still fails is re-serialized event by event so only the offender is dropped.
  */
 public class Jsr310LogtailAppender extends LogtailAppender {
 

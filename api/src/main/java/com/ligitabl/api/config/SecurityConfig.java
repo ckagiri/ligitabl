@@ -116,10 +116,8 @@ public class SecurityConfig {
     }
 
     /**
-     * Server-side store for remember-me tokens ({@code persistent_logins} table).
-     * Tokens don't involve the user's password, are individually revocable, and
-     * stolen-cookie reuse is detected — which also makes them safe for
-     * password-less Google-only accounts.
+     * Server-side store for remember-me tokens ({@code persistent_logins}). Tokens don't involve the
+     * password and are individually revocable, so they suit password-less Google-only accounts.
      */
     @Bean
     public PersistentTokenRepository persistentTokenRepository(javax.sql.DataSource dataSource) {
@@ -129,12 +127,10 @@ public class SecurityConfig {
     }
 
     /**
-     * Remember-me for form login and registration: opt-in via the {@code rememberMe}
-     * checkbox bound on {@code LoginForm}/{@code RegisterForm}. Wrapped in
-     * {@link QuietRememberMeServices} — this is the instance wired into
-     * {@code RememberMeAuthenticationFilter} below, i.e. the one whose
-     * {@code autoLogin} runs on every request, so it's the one that needs
-     * protection against a stale cookie surfacing as an uncaught exception.
+     * Remember-me for form login and registration, opt-in via the {@code rememberMe} checkbox on
+     * {@code LoginForm}/{@code RegisterForm}. This is the instance wired into
+     * {@code RememberMeAuthenticationFilter}, whose {@code autoLogin} runs on every request, so it is
+     * the one wrapped in {@link QuietRememberMeServices}.
      */
     @Bean
     public RememberMeServices rememberMeServices(
@@ -148,9 +144,8 @@ public class SecurityConfig {
     }
 
     /**
-     * Remember-me for OAuth2 logins: always-on, because the redirect flow has no
-     * checkbox to carry the user's choice. Shares the key and token store with
-     * {@link #rememberMeServices}, so the same filter validates both cookies.
+     * Remember-me for OAuth2 logins: always on, because the redirect flow has no checkbox. Shares
+     * the key and token store with {@link #rememberMeServices}, so one filter validates both cookies.
      * Injected by bean name into {@code OAuth2AuthenticationSuccessHandler}.
      */
     @Bean
@@ -245,12 +240,9 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2.loginPage("/auth/login")
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oauth2AuthenticationSuccessHandler))
-                // .key(...) is REQUIRED here, not optional. RememberMeConfigurer can only infer
-                // the key when the services bean is an AbstractRememberMeServices; ours is wrapped
-                // in QuietRememberMeServices, so it would silently fall back to a random
-                // UUID-per-startup key for the RememberMeAuthenticationProvider. Auto-login would
-                // then always fail the provider's key-hash check and the filter would cancel the
-                // cookie via loginFail() — remember-me never working, on any device.
+                // .key(...) is required: RememberMeConfigurer only infers the key from an
+                // AbstractRememberMeServices, and ours is wrapped. Without it the provider gets a
+                // random per-startup key and every auto-login fails its key-hash check.
                 .rememberMe(remember -> remember.key(rememberMeKey).rememberMeServices(rememberMeServices))
                 .logout(logout -> logout.logoutUrl("/auth/logout")
                         .addLogoutHandler(clearImpersonationLogoutHandler)
@@ -263,13 +255,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /**
-     * Authentication provider for form login
-     * Connects UserDetailsService with PasswordEncoder
-     *
-     * Note: Using static factory method instead of deprecated constructors.
-     * The PasswordEncoder is automatically injected by Spring.
-     */
     @Bean
     public DaoAuthenticationProvider authenticationProvider(
             @Qualifier("webUserDetailsService") UserDetailsService userDetailsService,

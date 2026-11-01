@@ -46,16 +46,11 @@ public class ImportMatchesRunner implements ApplicationRunner {
 
         CompetitionCode code = codeResult.get();
 
-        // Execute the use case
         var result = useCase.execute(code);
 
-        // Handle the result using fold (functional error handling)
         result.fold(error -> handleError(error), summary -> handleSuccess(summary));
     }
 
-    /**
-     * Handle import error - called when result.isLeft()
-     */
     private Void handleError(ImportError error) {
         log.error("╔══════════════════════════════════════════════════════════╗");
         log.error("║  Import FAILED                                           ║");
@@ -81,9 +76,6 @@ public class ImportMatchesRunner implements ApplicationRunner {
         return null;
     }
 
-    /**
-     * Handle import success - called when result.isRight()
-     */
     private Void handleSuccess(ImportSummary summary) {
         log.info("╔══════════════════════════════════════════════════════════╗");
         log.info("║  Import Summary                                          ║");
@@ -121,7 +113,6 @@ public class ImportMatchesRunner implements ApplicationRunner {
         log.info("║  {}", String.format("%-56s", summary.getSummaryMessage()) + "║");
         log.info("╚══════════════════════════════════════════════════════════╝");
 
-        // Log errors if any
         if (!summary.getErrors().isEmpty()) {
             log.warn("Import completed with {} error(s):", summary.getErrors().size());
             for (int i = 0; i < Math.min(5, summary.getErrors().size()); i++) {

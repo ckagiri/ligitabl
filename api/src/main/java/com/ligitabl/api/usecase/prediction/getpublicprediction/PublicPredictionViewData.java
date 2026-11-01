@@ -11,20 +11,15 @@ import com.ligitabl.model.domain.prediction.SwapChange;
 import lombok.Builder;
 
 /**
- * Complete view data for the public, read-only prediction page — no access-mode/cooldown
- * concepts, since nobody can edit this view; just enough to render the table, round nav bounds,
- * and the "who am I looking at" banners.
+ * View data for the public, read-only prediction page: the table, round nav bounds and the "who am
+ * I looking at" banners.
  *
- * <p>{@code matches}/{@code standingsMap}/{@code pointsMap}/{@code goalDifferenceMap} are only
- * populated for the current/live round (never for a historical/scored round, where
- * fixtures-in-progress and "current" points/GD aren't meaningful) — they back the richer comparison-options view (points/GD/fixtures/
- * form toggles) on the public page.</p>
+ * <p>{@code matches}, {@code standingsMap}, {@code pointsMap} and {@code goalDifferenceMap} are
+ * populated only for the current round, where they back the points/GD/fixtures/form toggles.
  *
- * <p>{@code standingsMap} is the authoritative code&rarr;actual-position lookup from the standings
- * (or the season baseline). It must be carried here rather than rebuilt from {@code rows}: a row's
- * {@code actualPosition} falls back to the viewed user's <em>predicted</em> position when a team is
- * missing from standings, so round-tripping rows back into a standings map would feed the client
- * the prediction in place of the actual table.</p>
+ * <p>{@code standingsMap} is the authoritative code&rarr;actual-position lookup and must not be
+ * rebuilt from {@code rows}: a row's {@code actualPosition} falls back to the <em>predicted</em>
+ * position when a team is missing from standings.
  */
 @Builder
 public record PublicPredictionViewData(

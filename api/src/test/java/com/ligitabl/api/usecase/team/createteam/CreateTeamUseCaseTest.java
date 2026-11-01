@@ -74,7 +74,6 @@ class CreateTeamUseCaseTest {
         assertThat(dto.getId()).isEqualTo(persisted.getId());
         assertThat(dto.getSlug()).isEqualTo("arsenal");
 
-        // verify pipeline
         verify(validator).validate(cmd);
         verify(mapper).toEntity(cmd);
         verify(creationGuard).validate(candidate);

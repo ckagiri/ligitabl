@@ -1,19 +1,19 @@
-<!-- Historical Rounds View Fragment -->
-<!-- Parameters:
+<!--/* Historical Rounds View Fragment */-->
+<!--/* Parameters:
      hasRoundResult: Boolean - whether the round has been scored
      roundResultRankings: List of RoundResultRanking objects (for scored rounds)
      predictions: List of Prediction objects (fallback for unscored rounds)
      totalHits: Integer - total position errors
      totalScore: Integer - final score
      zeroesCount: Integer - number of perfect predictions
--->
+*/-->
 <div th:fragment="historical-view(hasRoundResult, roundResultRankings, predictions, totalHits, totalScore, zeroesCount, seasonBestScore, sprintBestScore, sprintLabel)">
-  <!-- Historical Rounds: Static Table -->
+  <!--/* Historical Rounds: Static Table */-->
   <div class="px-6 py-4">
     <div class="overflow-x-auto sm:overflow-hidden">
       <table class="min-w-full table-fixed">
         <thead class="bg-gray-50">
-          <!-- Header for historical round with scored results -->
+          <!--/* Header for historical round with scored results */-->
           <tr th:if="${hasRoundResult}">
             <th
               scope="col"
@@ -40,7 +40,7 @@
               Hit
             </th>
           </tr>
-          <!-- Header for historical round without results (fallback) -->
+          <!--/* Header for historical round without results (fallback) */-->
           <tr th:if="${!hasRoundResult}">
             <th
               scope="col"
@@ -57,7 +57,7 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <!-- Static rows for historical view with RoundResult data -->
+          <!--/* Static rows for historical view with RoundResult data */-->
           <tr
             th:if="${hasRoundResult}"
             th:each="rank : ${roundResultRankings}"
@@ -105,7 +105,7 @@
             </td>
           </tr>
 
-          <!-- Fallback static rows for historical/readonly without RoundResult -->
+          <!--/* Fallback static rows for historical/readonly without RoundResult */-->
           <tr
             th:if="${!hasRoundResult}"
             th:each="pred : ${predictions}"
@@ -138,7 +138,7 @@
     </div>
   </div>
 
-  <!-- Score Summary for Historical Rounds -->
+  <!--/* Score Summary for Historical Rounds */-->
   <div
     th:if="${hasRoundResult}"
     class="mt-4 text-center pb-4"

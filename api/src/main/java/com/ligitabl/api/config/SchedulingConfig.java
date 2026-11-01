@@ -32,8 +32,7 @@ public class SchedulingConfig {
         scheduler.setWaitForTasksToCompleteOnShutdown(false);
         scheduler.setAwaitTerminationSeconds(5);
         scheduler.setErrorHandler(t -> {
-            // Was System.err/printStackTrace, which reached neither Logtail nor Sentry — the blind
-            // spot behind the five-day stall in .art/task_89.md.
+            // Log rather than System.err, or a failing scheduled task reaches neither Logtail nor Sentry.
             try {
                 log.error("[SCHEDULED_TASK_UNCAUGHT] Unhandled error escaped a scheduled task", t);
                 Sentry.captureException(t);

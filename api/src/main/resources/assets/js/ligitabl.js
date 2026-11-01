@@ -34,10 +34,9 @@ window.Ligitabl._parseJSON = function (raw, fallback) {
 /**
  * The team-lines block of the Final Table share text, from the rows given.
  *
- * ⚠️ Mirrors SharePredictionTextBuilder.appendTeamLines — HEAD_COUNT 5, TAIL_COUNT 3, an ellipsis
- * line between them, and the whole list when it would not save anything. Duplicated because a save
- * changes the order with no re-render, so the server's text has to be re-listed client-side; if
- * the server's truncation changes, this has to change with it.
+ * ⚠️ Mirrors SharePredictionTextBuilder.appendTeamLines (HEAD_COUNT, TAIL_COUNT, the ellipsis line,
+ * and the whole list when truncating saves nothing). A save reorders with no re-render, so the
+ * lines are rebuilt client-side; change both together.
  */
 window.Ligitabl._shareTeamLines = function (teams) {
     const HEAD = 5;
@@ -76,25 +75,21 @@ window.Ligitabl._newNonce = function () {
 
 // --- What-if swap reconciliation ---
 //
-// Shared by both sides of the handshake: my-table reconciles the stored session the moment a
-// submission succeeds (so its own read-only list is never stale), and the what-if page re-runs
-// the same logic against its live component state on the next load. One implementation, so the
-// two can't drift.
+// Shared by both sides: my-table reconciles the stored session when a submission succeeds, and
+// the what-if page re-runs it against live state on its next load.
 
 // The minimal set of swaps that turns `baseline` into `target`, as position-annotated entries
 // in the shape the swap-history fragments render.
 //
-// Built from the net permutation, not the tap history: decomposing into disjoint cycles emits
-// (cycleLength - 1) swaps per cycle, the same quantity getSwapCount() sums, so a list built
-// from this always matches the Swaps badge. Cancelling redundant taps pairwise cannot achieve
-// that — a 3-cycle is 2 swaps but contains no pair of taps that cancel.
+// Built from the net permutation, not the tap history: each cycle gives (cycleLength - 1) swaps,
+// what getSwapCount() sums, so the list always matches the Swaps badge. Pairwise cancelling of
+// taps can't: a 3-cycle is 2 swaps with no cancelling pair.
 window.Ligitabl._minimalSwapEntries = function (baseline, target) {
     const work = (baseline || []).map((t) => ({...t}));
     const targetPosition = Object.fromEntries((target || []).map((t) => [t.code, t.position]));
     const log = [];
-    // Team-major traversal, not position-major. Both are minimal and reach the same table, but
-    // they emit different pairs, and these pairs are what submitChanges() sends and the server
-    // persists as swap history — so which pairs come out is load-bearing, not incidental.
+    // Team-major traversal, not position-major. Both are minimal, but they emit different pairs,
+    // and these pairs are what submitChanges() sends and the server stores as swap history.
     for (const t of work) {
         const tgt = targetPosition[t.code];
         if (t.position === tgt) continue;
@@ -136,12 +131,10 @@ window.Ligitabl._isSamePair = function (a1, b1, a2, b2) {
     return (a1 === a2 && b1 === b2) || (a1 === b2 && b1 === a2);
 };
 
-// Removes the log entries a submission has now made real, matching on the unordered team-code
-// pair — the only part of an entry that survives a rebase, since the stored positions are
-// absolute and go stale the moment anything above them moves.
-//
-// Matching is one-to-one against a multiset of the submitted pairs, so submitting A<->B once
-// can't silently swallow two identical sandbox entries.
+// Removes the log entries a submission has made real, matching on the unordered team-code pair:
+// the only part that survives a rebase, since stored positions go stale when anything above moves.
+// One-to-one against a multiset of the submitted pairs, so submitting A<->B once can't swallow two
+// identical sandbox entries.
 window.Ligitabl._consumeSwapPairs = function (log, pairs) {
     const key = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
     const remaining = new Map();
@@ -168,15 +161,11 @@ window.Ligitabl._consumeSwapPairs = function (log, pairs) {
 };
 
 // Replays surviving swaps onto a new baseline, recomputing each entry's positions as it goes.
+// Entries carry absolute positions (teamAFrom/teamATo) that the swap-log fragments render, true
+// only against the table they were made on; only the team-code pair survives a rebase.
 //
-// This is what keeps the log honest. Entries carry absolute positions (teamAFrom/teamATo) that
-// the swap-log fragments render verbatim, and those are only ever true against the arrangement
-// in force when the swap was made — so they're recomputed here from live positions rather than
-// carried over. Only the team-code pair survives a rebase; every other field is derived.
-//
-// Pure: takes and returns plain data, so it can run against a stored session (my-table, at
-// submit) or live component state (what-if, at restore). Returns the replayed team order too,
-// since the what-if page needs it as its table.
+// Pure, so it runs on a stored session (my-table, at submit) or live state (what-if, at restore).
+// Returns the replayed team order too, which the what-if page uses as its table.
 window.Ligitabl._replaySwaps = function (baseline, entries) {
     const teams = JSON.parse(JSON.stringify(baseline || []));
     const rebuilt = [];
@@ -265,18 +254,16 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         selectedTeam: null,
         swapStack: [],
         undoing: false,
-        // Which list the Changes Made card is showing: 'teams' or 'swaps'. Teams is the default —
-        // the per-team diff answers "what did I move", which is the question the card has always
-        // answered; the swap view is the follow-up for how those moves were made.
+        // Which list the Changes Made card shows: 'teams' (the default, "what did I move") or
+        // 'swaps' (how those moves were made).
         changesView: 'teams',
         // Lives here rather than in the comparison-options fragment's own x-data so the table
         // toolbar can read it too.
         compareOptionsOpen: window.matchMedia('(min-width: 640px)').matches,
         positionsReversed: savedPrefs ? (savedPrefs.positionsReversed ?? false) : false,
-        // How the delta column *reads*. 'normal' — arrows say "move this row to match reality";
-        // 'inverted' — the same gap read as the team climbing or dropping toward the pick, for
-        // people who think of it as "how far reality is from my pick"; 'off' — no arrows at all,
-        // just the accuracy colour scale the read-only views use.
+        // How the delta column reads: 'normal', arrows say "move this row to match reality";
+        // 'inverted', the team climbing or dropping toward the pick; 'off', only the accuracy
+        // colour scale the read-only views use.
         deltaMode: Ligitabl._readDeltaMode(savedPrefs),
         alwaysHoverable: false,
         isInitialPrediction: false,
@@ -383,14 +370,9 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             return this.selectedTeam === teamCode;
         },
 
-        // Code -> position lookups replacing the linear .find() scans these helpers used to do.
-        // The row template calls them once per team per render, so on a 20-team table a single tap
-        // meant thousands of proxied array reads — that was the lag on slower phones.
-        //
-        // Cache validity is checked against the array identity *and* a stamp bumped by every
-        // in-place position edit. Identity alone would miss a mutation that keeps the same array,
-        // so callers that reorder in place bump _positionEpoch rather than having to remember to
-        // rebuild the map themselves.
+        // Code -> position lookups: the row template calls them once per team per render, so linear
+        // scans made each tap lag on slower phones. Valid while both the array identity and
+        // _positionEpoch match; callers that reorder in place bump the epoch.
         _positionByCode: null,
         _positionSrc: null,
         _positionEpoch: 0,
@@ -593,12 +575,9 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         },
 
         // Acknowledge the touch on pointerdown: the browser holds `click` back while it decides
-        // whether the gesture is a scroll, and that gap is the delay the user actually feels.
-        //
-        // Only the swap tap — the one made while a team is already selected. The first tap gets its
-        // own feedback a moment later (tint + bullet), so dimming first just flickers; and pressing
-        // the selected row again only clears it. This is the tap where the rows are about to move
-        // and nothing else marks the press.
+        // whether the gesture is a scroll, and that gap is the delay the user feels. Only for the
+        // swap tap (a team already selected), the one where rows move and nothing else marks the
+        // press; dimming the first tap would just flicker before its own feedback.
         _pressRow(el, teamCode) {
             if (!el || !this.canPressRow()) return;
             if (this.selectedTeam === null || this.isSelected(teamCode)) return;
@@ -866,14 +845,10 @@ window.Ligitabl.predictionPage = function (el) {
 
     const base = Ligitabl._predictionBase(parsed, userId, roundId);
 
-    // The swaps the user tried out in the what-if sandbox for this same round, shown here as a
-    // read-only reminder of what they were planning. Same storage key whatIfPage writes
-    // (ligitabl.whatif.<userId>.<roundId>), so it's scoped to this user and round already and
-    // goes quiet on every other round.
-    //
-    // Read-only apart from reconcileWhatIfSwaps() below, which drops the ones a submission has
-    // just made real and re-seats the rest. Entries are already in the {teamACode, teamAFrom,
-    // teamATo, teamBCode, ...} shape the swap-history fragment renders.
+    // The swaps tried in the what-if sandbox for this round, shown as a read-only reminder. Same
+    // key whatIfPage writes (ligitabl.whatif.<userId>.<roundId>), so it is scoped to this user and
+    // round. Only reconcileWhatIfSwaps() below writes it. Entries are already in the shape the
+    // swap-history fragment renders.
     const WHAT_IF_STORAGE_KEY = `ligitabl.whatif.${userId}.${roundId}`;
 
     // Rebased onto this page's server table, so it reads the same as the what-if page's list.
@@ -891,17 +866,10 @@ window.Ligitabl.predictionPage = function (el) {
         }
     }
 
-    // Once a submission lands, the swaps it carried have stopped being a plan and become the
-    // table. Rather than wiping the sandbox — which also threw away swaps the user never
-    // submitted — drop just the entries that went in and replay the rest onto the table the
-    // submission produced.
-    //
-    // Reconciles immediately rather than leaving the work for the what-if page: `newBaseline` is
-    // the arrangement this page just submitted, which *is* the new real table, so the positions
-    // can be recomputed here and now. That keeps this page's own read-only list correct the
-    // moment it reloads, instead of showing pre-submit positions until what-if is next opened.
-    //
-    // consumedCount rides along so what-if can explain what happened when the user next opens it.
+    // Once a submission lands, its swaps are the table. Drop just the entries that went in and
+    // replay the rest onto the submitted table, rather than wiping the sandbox. Done here, not on
+    // the what-if page, because `newBaseline` is the new real table, so this page's own list is
+    // right the moment it reloads. consumedCount lets what-if explain it on its next load.
     function reconcileWhatIfSwaps(pairs, newBaseline) {
         try {
             const cleaned = (Array.isArray(pairs) ? pairs : [])
@@ -935,8 +903,8 @@ window.Ligitabl.predictionPage = function (el) {
                 consumedCount,
                 rebased: replayed.moved,
             };
-            // Legacy marker from the wipe-everything era; a session written by an older build
-            // could still carry it, and it would announce a reset that no longer happens.
+            // Older sessions can still carry this marker, which would announce a sandbox reset
+            // that no longer happens.
             delete saved.swapsClearedBySubmit;
             localStorage.setItem(WHAT_IF_STORAGE_KEY, JSON.stringify(saved));
         } catch (e) {
@@ -961,10 +929,8 @@ window.Ligitabl.predictionPage = function (el) {
         init() {
             this._installSaveFlush();
             if (isInitialPrediction || isOpeningRound || isPreSeasonRegistration) {
-                // 1. Auth localStorage takes priority — user has already made swaps after signing up.
-                // Pre-season registration included.
-                // _validateSaved already drops anything stale (different round, or a team set that
-                // no longer matches the server's).
+                // 1. Auth localStorage first, pre-season registration included: the user has swapped
+                // since signing up. _validateSaved already drops stale rounds and team sets.
                 const authPrediction = loadAuthPrediction();
                 if (authPrediction) {
                     this.teams = _extractTeams(authPrediction).map((t, idx) => ({...t, position: idx + 1}));
@@ -1005,16 +971,13 @@ window.Ligitabl.predictionPage = function (el) {
                 this.teams = Ligitabl._mapServerPredictions(predictions);
             }
 
-            // This is the authenticated prediction page — guest storage is never the source
-            // of truth here past the one-time import above, so it's always stale from this
-            // point on regardless of which branch populated this.teams.
+            // Past the one-time import above, guest storage is never the source of truth here, so
+            // it is stale whichever branch populated this.teams.
             const hadGuestStorage = localStorage.getItem(GUEST_STORAGE_KEY) !== null;
             this._clearStorage(GUEST_STORAGE_KEY);
             if (hadGuestStorage && !this.importedFromGuest) {
-                // Banners set `imported` from localStorage in their own x-init, which can run
-                // before this.
-                // The importedFromGuest case is genuine and keeps its banner; reset()/submit
-                // clear it later.
+                // Banners set `imported` in their own x-init, which can run before this. The
+                // importedFromGuest case keeps its banner; reset()/submit clear it later.
                 window.dispatchEvent(new CustomEvent('guest-storage-cleared'));
             }
 
@@ -1116,18 +1079,13 @@ window.Ligitabl.predictionPage = function (el) {
 
             let url, body;
 
-            // What reconcileWhatIfSwaps matches the sandbox against: the swaps the user actually
-            // tapped, in the same {teamACode, teamBCode} shape the sandbox log records.
+            // What reconcileWhatIfSwaps matches the sandbox against: the swaps actually tapped, in
+            // the {teamACode, teamBCode} shape the sandbox log records.
             //
-            // Deliberately NOT _derivedSwaps. That's a minimal reconstruction of the net
-            // permutation — the pairs it invents reproduce the same final table but are not the
-            // ones the user tapped, so matching against it both misses real swaps and looks for
-            // pairs that were never in the sandbox. Whenever a team moves twice (any cycle
-            // longer than a straight swap) the two lists diverge, and swaps the user did submit
-            // would survive as "not submitted".
-            //
-            // Sliced to match what each branch actually sends: the batch endpoints take the whole
-            // stack, while a standard swap only ever submits swapStack[0].
+            // Not _derivedSwaps: that minimal reconstruction reaches the same table with pairs the
+            // user never tapped, so once a team moves twice submitted swaps would survive as "not
+            // submitted". Sliced to what each branch sends: the batch endpoints take the whole
+            // stack, a standard swap only swapStack[0].
             const _submittedStack =
                 this.isInitialPrediction || this.isPreSeasonRegistration || this.isOpeningRound
                     ? this.swapStack
@@ -1237,13 +1195,10 @@ document.body.addEventListener('htmx:afterSwap', function(e) {
 });
 
 /**
- * Named toLocaleString option bags for [data-timestamp] elements.
+ * Named toLocaleString option bags for [data-timestamp] elements. A closed set rather than JSON in
+ * the attribute, so a template can't invent a new shape by accident.
  *
- * A closed set rather than JSON in the attribute: there are two shapes in play, and a template
- * that can request any format is a template that can invent a third by accident.
- *
- * `default` is what every consumer got before presets existed — do not change it without checking
- * fragments/swap-history.html and matches.html.
+ * Changing `default` affects fragments/swap-history.html and matches.html.
  */
 window.Ligitabl.TIMESTAMP_FORMATS = {
     default: { dateStyle: "medium", timeStyle: "short" },
@@ -1447,9 +1402,8 @@ window.Ligitabl.publicPredictionPage = function (el) {
 
 // --- Final Table Predictor ---------------------------------------------------
 //
-// The select-and-swap behaviour only, extracted so finalTablePage can reuse it without
-// inheriting predictionPage's cooldown state, round navigation, what-if, results banners and
-// access modes — nine months of main-game concerns it would then have to suppress.
+// The select-and-swap behaviour only, so finalTablePage can reuse it without inheriting
+// predictionPage's cooldown, round navigation, what-if, results banners and access modes.
 window.Ligitabl._selectAndSwap = function () {
     return {
         teams: [],
@@ -1583,9 +1537,8 @@ window.Ligitabl.finalTablePage = function (el) {
 
         // --- live progress (locked, not yet scored) ------------------------------
         //
-        // Deliberately no score, no total and no exact-hit count: those are the reveal, and the
-        // rule for this view is that the app does not do that arithmetic for the player. Movement
-        // reuses getPositionChange's vocabulary so a row reads the same in both states.
+        // No score, total or exact-hit count: those are the reveal, and this view does no arithmetic
+        // for the player. Movement reuses getPositionChange's vocabulary.
 
         /** Where the team actually sits now, or null if standings do not list it. */
         livePosition(teamCode) {
@@ -1620,9 +1573,8 @@ window.Ligitabl.finalTablePage = function (el) {
 
         // --- qualification zones -------------------------------------------------
         //
-        // Read from data-zones so the bands follow the competition rather than hardcoding the
-        // Premier League's shape. Shape: {"CL":[1,5],"UEL":[6,7],"UECL":[8,8],"REL":[18,20]} —
-        // inclusive position ranges, any subset, empty object for a league with no zones.
+        // From data-zones, so the bands follow the competition. Shape:
+        // {"CL":[1,5],"UEL":[6,7],"UECL":[8,8],"REL":[18,20]}, inclusive ranges, any subset, {} for none.
         zoneOf(position) {
             const zones = this._zones || {};
             for (const [code, range] of Object.entries(zones)) {
@@ -1671,9 +1623,8 @@ window.Ligitabl.finalTablePage = function (el) {
         },
 
         /**
-         * A faint zone wash on the row itself, as in the reference. Deliberately at the -50 step so
-         * it stays below the selected (blue-50) and dirty (amber-50) tints, which must remain the
-         * loudest thing on a row — those are the states the player is acting on.
+         * A faint zone wash at the -50 step, so it stays below the selected (blue-50) and dirty
+         * (amber-50) tints, the states the player is acting on.
          */
         zoneRowClass(position) {
             switch (this.zoneOf(position)) {
@@ -1698,24 +1649,15 @@ window.Ligitabl.finalTablePage = function (el) {
         // sending inverse swaps, so an undone edit never reaches the server and can never move
         // settledAt — the tiebreak only ever advances on swaps the player actually kept.
         /**
-         * Back to the page as freshly rendered — table, tints, arrows and hints all cleared.
+         * Back to the page as freshly rendered: table, tints, arrows and hints all cleared.
          *
-         * <p>Deliberately restores from {@code originalTeams} rather than re-running init(): init()
-         * rebuilds from the {@code data-rows} attribute, which is the order the page was *first*
-         * served with. After a save that is stale, so resetting would revert past the player's saved
-         * table to whatever they had on page load. {@code originalTeams} is re-baselined on every
-         * successful save, so it is the only correct source.
+         * <p>Restores from {@code originalTeams}, re-baselined on every save, not by re-running
+         * init(): {@code data-rows} is the order first served, stale after a save. Clearing
+         * message/messageKind drops the "N moved since last save" hint.
          *
-         * <p>Clearing message/messageKind is what stops the "N moved since last save" hint outliving
-         * the reset that made it untrue.
-         *
-         * <p>Restores by reordering the existing team objects rather than assigning a deep copy.
-         * `x-for` is keyed by team code, so Alpine reuses each row's DOM node either way — but the
-         * `:class` binding's reactive dependency is registered against the *object* that was in
-         * `teams` when it last ran. Replacing the array with fresh copies leaves those effects
-         * watching orphaned objects that nothing writes to again, so `zoneRowClass(team.position)`
-         * never re-evaluates and every row keeps the zone wash of the position it held before the
-         * reset. Mutating the tracked objects in place is what actually notifies the bindings.
+         * <p>⚠️ Reorders the existing team objects instead of assigning copies: each row's
+         * {@code :class} effect tracks the object it last read, so fresh copies leave
+         * {@code zoneRowClass(team.position)} watching orphans and the old zone wash stays.
          */
         reset() {
             if (this.inFlight) return;
@@ -1757,10 +1699,9 @@ window.Ligitabl.finalTablePage = function (el) {
             if (!this.entryOpen || this.inFlight) return false;
             // No row yet: the first save may be empty — that is how a player accepts the baseline.
             if (!this.hasEntry) return true;
-            // Otherwise gate on the table actually differing from the last saved order, not on the
-            // pending list being non-empty. Swapping A↔B and back leaves two pending entries but a
-            // table identical to the saved one; posting that would advance settledAt — the tiebreak
-            // — for a change the player did not make.
+            // Otherwise gate on the table differing from the saved order, not on pending entries:
+            // A↔B and back leaves two entries but the same table, and posting it would advance
+            // settledAt (the tiebreak) for nothing.
             return this.getDirtyCount() > 0;
         },
 
@@ -1901,11 +1842,9 @@ window.Ligitabl.finalTablePage = function (el) {
     });
 };
 
-// Share card: draws the table to an offscreen canvas and offers it as a PNG.
-//
-// Separate from finalTablePage so the public read-only view can mount it without the editing
-// component. Text and colour blocks only — remote crest images would taint the canvas and make
-// toBlob() throw SecurityError.
+// Share card: draws the table to an offscreen canvas and offers it as an image. Separate from
+// finalTablePage so the public read-only view can mount it. Text and colour blocks only: remote
+// crest images would taint the canvas and make toBlob() throw SecurityError.
 window.Ligitabl.finalTableShareCard = function (el) {
     const dataset = el?.dataset || {};
 
@@ -1960,16 +1899,10 @@ window.Ligitabl.finalTableShareCard = function (el) {
         },
 
         /**
-         * The rows to draw, in the order the card should show.
-         *
-         * `data-rows` is rendered once at page load, so it goes stale the moment a swap is saved
-         * without a reload — the card would draw the order the page arrived with while the table
-         * above it shows the new one. That was invisible while the card only existed for players
-         * who already had a saved table (load order *was* saved order); it shows as soon as the
-         * card can appear before the first save.
-         *
-         * Ordering comes from _resolvedOrder(); `actual`/`hit` always come from the attribute —
-         * those are scored figures the client never recomputes — merged back on by code.
+         * The rows to draw, in the order the card should show. {@code data-rows} is rendered at
+         * page load, so a save without reload leaves it stale; ordering comes from
+         * _resolvedOrder(), and `actual`/`hit` (scored figures the client never recomputes) from
+         * the attribute, merged back on by code.
          */
         rows() {
             const seeded = Ligitabl._parseJSON(dataset.rows, []);
@@ -1989,18 +1922,10 @@ window.Ligitabl.finalTableShareCard = function (el) {
         /**
          * The teams in the saved order, or null to use `data-rows` as seeded.
          *
-         * ⚠️ Saved state only — deliberately blind to unsaved moves on screen.
-         *
-         * So the ordering is whichever of these the server last told us:
-         *
-         *  1. savedOrder — the server's own replay of the swaps from the most recent save, pushed
-         *     in by finalTablePage via applySaved() (or seeded from `data-order` at init).
-         *  2. Neither — first paint, and the standalone public view, where `data-rows` is already
-         *     the saved order because the server just rendered it.
-         *
-         * savedOrder is codes only, so display fields are looked up in `data-rows`; a code with
-         * no seeded row is dropped rather than drawn blank. If that leaves the wrong number of
-         * teams the order disagrees with the seed, so the seeded order is used instead.
+         * ⚠️ Saved state only, blind to unsaved moves on screen: savedOrder (the server's replay
+         * from the latest save, via applySaved() or `data-order`) when set; otherwise `data-rows`
+         * is already the saved order. A code with no seeded row is dropped, and if that leaves the
+         * wrong team count the seeded order wins.
          */
         _resolvedOrder(seeded) {
             const codes = this.savedOrder;
@@ -2023,20 +1948,11 @@ window.Ligitabl.finalTableShareCard = function (el) {
         },
 
         /**
-         * The share text, with the team lines re-listed in the order currently on screen.
-         *
-         * Same staleness as rows(): `data-share-text` is built server-side at page load, so after a
-         * save-without-reload it still lists the order the page arrived with. Only the team block
-         * is rebuilt — the header and the footer (URL, "shared before kickoff") are the server's
-         * wording and are reused verbatim, so this cannot drift from SharePredictionTextBuilder's
-         * phrasing, only from its ordering, which is the point.
-         *
-         * Ordering comes from the same _resolvedOrder() as rows() — saved state, never the live
-         * drag — so the text someone copies, the image they download, and the public page behind
-         * the link all list the clubs the same way.
-         *
-         * Falls back to the server string whenever the shape is not what is expected, or when
-         * there is no better ordering than the one already baked into it.
+         * The share text, with the team lines re-listed in the saved order. `data-share-text` is
+         * built at page load, so after a save it lists the old order. Only the team block is
+         * rebuilt; the server's header and footer are reused verbatim, so the wording can't drift
+         * from SharePredictionTextBuilder. The same _resolvedOrder() as rows() keeps the text,
+         * image and public page in one order. Falls back to the server string on an unexpected shape.
          */
         shareText() {
             const seeded = dataset.shareText || '';
@@ -2063,30 +1979,17 @@ window.Ligitabl.finalTableShareCard = function (el) {
         },
 
         /**
-         * Where a viewer goes to make their own — always the production address.
-         *
-         * Deliberately a constant, not derived from the share URL's host: this is a call to action
-         * printed into an image, and an image drawn on localhost or staging is still shared with
-         * people who need somewhere real to go. "localhost:8090/final-table" on a downloaded card
-         * would be useless to every one of them.
+         * Where a viewer goes to make their own: always the production address, not the share URL's
+         * host, since a card drawn on localhost or staging is still shared with real people.
          */
         buildYoursUrl() {
             return 'LigiPredictor.com/final-table';
         },
 
         /**
-         * "settled 12 Aug 2026, 14:32", in the viewer's own locale and timezone.
-         *
-         * Formatted client-side from the ISO instant rather than server-side: the server has no
-         * idea where the viewer is, and a UTC timestamp on a card someone shares locally reads as
-         * wrong by however many hours they are offset. Date *and* time, not date alone, because
-         * settledAt is the leaderboard tiebreak — two players who settled the same day are still
-         * separable, and the card should be able to show that.
-         *
-         * Shares the 'settled' preset with final-table-public.html's settled line, which sits on
-         * the same page as this card and would look like a bug if the two disagreed.
-         *
-         * Returns '' when absent or unparseable, and the footer simply omits the line.
+         * "settled 12 Aug 2026, 14:32", in the viewer's own locale and timezone, so formatted
+         * client-side. Date and time because settledAt is the tiebreak. Shares the 'settled' preset
+         * with final-table-public.html's line on the same page. '' when absent or unparseable.
          */
         settledAtLabel() {
             const formatted = Ligitabl.formatTimestamp(this.settledAt, 'settled');
@@ -2098,9 +2001,8 @@ window.Ligitabl.finalTableShareCard = function (el) {
             // badly in a timeline. Square is the social format.
             const rows = this.rows();
             const zones = Ligitabl._parseJSON(dataset.zones, {});
-            // 1080 at 1x is already above every social service's display size, and dropping the 2x
-            // supersample is most of the size win (5.76M pixels -> 1.17M). Text is drawn at final
-            // size, not scaled, so it stays sharp.
+            // 1080 at 1x already exceeds every social service's display size; text is drawn at
+            // final size, not scaled, so it stays sharp.
             const W = 1080;
             const H = 1080;
 
@@ -2165,9 +2067,8 @@ window.Ligitabl.finalTableShareCard = function (el) {
             ctx.font = '600 15px ' + FONT;
             ctx.fillText((dataset.kicker || 'FINAL TABLE PREDICTION').toUpperCase(), 60, 190);
 
-            // The callout box starts at CALLOUT_X, so the title has to fit in what is left of the
-            // width — at 62px "Premier League 26/27" ran straight under it. Shrink to fit rather
-            // than truncate: the competition name is the whole point of the card.
+            // The callout box starts at CALLOUT_X, so the title shrinks to fit the remaining width
+            // rather than truncating: the competition name is the point of the card.
             const CALLOUT_W = 320;
             const CALLOUT_X = W - 60 - CALLOUT_W;
             const titleMaxWidth = CALLOUT_X - 60 - 32;
@@ -2316,10 +2217,9 @@ window.Ligitabl.finalTableShareCard = function (el) {
             ctx.fillStyle = 'rgba(0,0,0,0.35)';
             ctx.fillRect(0, footerY, W, 76);
 
-            // URL plus the moment the table was settled. Together they make the image checkable:
-            // the link resolves to the server-rendered table and the timestamp is server-clock
-            // truth, so a doctored screenshot is contradicted by something anyone can click. That
-            // is a better answer to misleading shares than capping how often people can save.
+            // URL plus settled time make the image checkable: the link resolves to the server's
+            // table and the timestamp is server-clock truth, so a doctored screenshot is contradicted
+            // by something anyone can click.
             const settled = this.settledAtLabel();
             ctx.fillStyle = 'rgba(255,255,255,0.6)';
             ctx.font = '600 15px ' + FONT;
@@ -2330,10 +2230,8 @@ window.Ligitabl.finalTableShareCard = function (el) {
                 ctx.fillText(settled, 60, footerY + 58);
             }
 
-            // Two URLs share this footer: the personal table on the left, the way in on the right.
-            // "Play at" rather than a bare address is what tells them apart — otherwise a reader
-            // sees two near-identical links and has to work out why. "Play" over "Build yours"
-            // because it also covers the people who will just watch the leaderboard.
+            // Two URLs share this footer: the personal table left, the way in right. "Play at" tells
+            // them apart, and covers people who will only watch the leaderboard.
             ctx.fillStyle = ACCENT;
             ctx.font = '600 15px ' + FONT;
             ctx.textAlign = 'right';
@@ -2343,18 +2241,14 @@ window.Ligitabl.finalTableShareCard = function (el) {
             return canvas;
         },
 
-        // JPEG, not PNG. Two things drove the ~2.6MB PNG: a 2x supersampled 1200x1200 canvas
-        // (5.76M pixels) and PNG's lossless encoding of a full-bleed gradient, close to its worst
-        // case. Now 1080x1080 at 1x (1.17M pixels, ~5x fewer) encoded as JPEG q0.9 — flat colour
-        // and text are what JPEG handles well, so the visible result is unchanged.
+        // JPEG q0.9, not PNG: lossless encoding of a full-bleed gradient is close to PNG's worst
+        // case, and JPEG handles flat colour and text well.
         _toBlob(callback) {
             this._drawCard().toBlob(callback, 'image/jpeg', 0.9);
         },
 
-        // final_table_YYYYMMDDHHmm.jpg. A fixed name makes every re-download after a swap land as
-        // "final-table (1).jpg", which sorts by nothing useful; the stamp keeps them in order and
-        // says when the table looked like that. Local time, not UTC — it is read by the person who
-        // pressed the button.
+        // final_table_YYYYMMDDHHmm.jpg: a fixed name makes re-downloads land as "(1)", "(2)"; the
+        // stamp orders them and says when. Local time, since the person who pressed it reads it.
         _cardFilename() {
             const d = new Date();
             const pad = (n) => String(n).padStart(2, '0');
@@ -2433,18 +2327,16 @@ window.Ligitabl.finalTableShareCard = function (el) {
     };
 };
 
-// Three plausible scores per outcome, doubling as both the quick-pick chip strip and the
-// random pool for the reroll dice. Matches the design in .art/gameweek-v5.html.
+// Three plausible scores per outcome, for both the quick-pick chip strip and the reroll dice.
 const WHAT_IF_CHIPS = {
     H: [[1, 0], [2, 0], [2, 1]],
     D: [[1, 1], [0, 0], [2, 2]],
     A: [[0, 1], [1, 2], [0, 2]]
 };
 
-// Matches that have been called off carry no hypothesis — the same exclusion
-// ComputeWhatIfUseCase.isScoreable applies, kept in step with it. Everything else is scoreable,
-// including matches already kicked off or finished: on a locked round the page replays the guess
-// the user saved while it was open, never the real result.
+// ⚠️ Mirrors ComputeWhatIfUseCase.isScoreable; change both together. Called-off matches carry no
+// hypothesis. Matches already kicked off or finished stay scoreable: on a locked round the page
+// replays the saved guess, never the real result.
 const WHAT_IF_UNSCOREABLE_STATUSES = ["POSTPONED", "CANCELLED", "SUSPENDED"];
 const isWhatIfScoreable = (match) => !WHAT_IF_UNSCOREABLE_STATUSES.includes(match.status);
 
@@ -2525,10 +2417,8 @@ window.Ligitabl.whatIfPage = function (el) {
         // Transient "Already up to date" / "Updated from your last apply" note next to Refresh.
         refreshMessage: null,
         errorMessage: null,
-        // Snapshot of `scores` as of the last successful apply() — compared against the live
-        // `scores` to tell whether the computed result is stale (scoresDirty()), so the Apply
-        // button can flag it ('*Apply') instead of silently showing a result that no longer
-        // matches what's entered.
+        // `scores` as of the last successful apply(); scoresDirty() compares against it so the
+        // Apply button can show '*Apply' rather than a stale result.
         appliedScores: null,
         // Score-picker state
         openId: null,
@@ -2540,18 +2430,14 @@ window.Ligitabl.whatIfPage = function (el) {
         // explain why the table (and the score with it) came back different. Not persisted: the
         // session is re-saved without those swaps, so the next load has nothing to explain.
         swapsClearedByFixtureChange: false,
-        // Set when a submission on my-table consumed swaps out of this sandbox (see
-        // predictionPage.reconcileWhatIfSwaps, which does the consuming and leaves the outcome
-        // behind for us to explain). Only when something actually matched — a rebase that
-        // consumed nothing is bookkeeping, not news.
+        // Set when a my-table submission consumed swaps from this sandbox (see
+        // predictionPage.reconcileWhatIfSwaps) and something actually matched.
         swapsClearedBySubmit: false,
         // How many sandbox swaps that submission consumed, so the notice can name the count
         // instead of implying the whole sandbox went.
         swapsConsumedCount: 0,
-        // Set when surviving swaps were replayed onto a table that had moved under them, so their
-        // positions came back different from the ones the user last saw. The numbers are correct,
-        // but they changed without the user touching anything — this drives a quiet line next to
-        // the list rather than lengthening the notice, since it explains the list, not the submit.
+        // Set when surviving swaps were replayed onto a table that moved under them, so their
+        // positions changed untouched. Drives a quiet line next to the list, not the notice.
         swapsRebased: false,
         // Nonce of the last submission whose outcome has been announced. Persisted, because
         // init() can run twice in one page load (htmx:afterSwap re-inits Alpine over this
@@ -2607,10 +2493,8 @@ window.Ligitabl.whatIfPage = function (el) {
             });
             return Object.keys(serverScores).length > 0 ? serverScores : null;
         },
-        // The server wins on scores: they're populated from it (not blanked) and the standings go
-        // back to the real ones. Swaps are left alone — they're an arrangement of the user's own
-        // table, and which scores are loaded doesn't make them wrong. Callers follow with
-        // _applyIfComplete() to project the adopted scores against that same arrangement.
+        // The server wins on scores, and the standings go back to the real ones. Swaps stay: they
+        // arrange the user's own table. Callers follow with _applyIfComplete().
         _adoptServerScores(serverScores) {
             Object.keys(this.scores).forEach((matchId) => {
                 this.scores[matchId] = serverScores[matchId] || { home: null, away: null };
@@ -2715,10 +2599,8 @@ window.Ligitabl.whatIfPage = function (el) {
                     currentGoalDifference: this.currentGoalDifference,
                     appliedScores: this.appliedScores,
                     matchStatuses: this._matchStatuses(),
-                    // Nonce of the last submission whose outcome has already been announced.
-                    // Persisted so a reload doesn't show the same notice twice; the
-                    // submitOutcome record that carried it is deliberately absent from this
-                    // fixed field list, so writing the session is also what retires it.
+                    // Persisted so a reload doesn't repeat the notice. submitOutcome is left out
+                    // of this fixed field list, so writing the session retires it.
                     lastSubmitNonce: this.lastSubmitNonce,
                 }));
             } catch (e) {
@@ -2754,12 +2636,9 @@ window.Ligitabl.whatIfPage = function (el) {
             this.appliedScores = saved.appliedScores || null;
             this.lastSubmitNonce = saved.lastSubmitNonce || null;
 
-            // A submission on my-table since this session was saved. It already did the work —
-            // consumed the entries it made real and replayed the rest onto the table it produced,
-            // so the swapLog/teams restored above are current. All that's left is to explain it.
-            //
-            // The nonce is compared against the last one already announced, so a reload (or htmx
-            // re-initing this component in the same page load) doesn't replay the notice.
+            // A my-table submission since this session was saved already consumed its entries and
+            // replayed the rest, so swapLog/teams are current; only the explanation is left. The
+            // nonce check stops a reload or htmx re-init replaying the notice.
             const outcome = saved.submitOutcome;
             if (outcome && outcome.nonce && outcome.nonce !== this.lastSubmitNonce) {
                 // Only announce a consumption that actually happened — a rebase with nothing
@@ -2800,10 +2679,9 @@ window.Ligitabl.whatIfPage = function (el) {
             this.currentGoalDifference = parsed.currentGoalDifference;
             this.activeTab = "standings";
         },
-        // Resyncs the round itself — the fixtures and whether it's still open — from the payload
-        // Refresh already fetches. Returns whether the change was one that invalidates the sandbox
-        // (same rule as a restored session: a tracked match off SCHEDULED, or gone), in which case
-        // the swaps and the projection built on the old fixtures go with it.
+        // Resyncs the fixtures and open state from Refresh's payload. Returns whether the change
+        // invalidates the sandbox (a tracked match off SCHEDULED, or gone), taking the swaps and
+        // projection with it.
         _adoptServerFixtures(serverMatches, serverRoundOpen) {
             if (!Array.isArray(serverMatches) || serverMatches.length === 0) return false;
 
@@ -2837,11 +2715,9 @@ window.Ligitabl.whatIfPage = function (el) {
             });
             return statuses;
         },
-        // Swaps are the user's own exploration of their table and survive both a Reset and a
-        // Refresh — pulling different scores doesn't make an arrangement of teams wrong. What does
-        // is the fixtures moving underneath it: a match that has left SCHEDULED (the round locked,
-        // or it kicked off) or dropped out of the round entirely means the table is now being scored
-        // against a different set of games than the one it was arranged for.
+        // Swaps survive Reset and Refresh: different scores don't make an arrangement wrong. A
+        // match leaving SCHEDULED or dropping out of the round does, because the table is then
+        // scored against different games.
         _fixturesChangedSince(saved) {
             const current = this._matchStatuses();
             const savedStatuses = saved.matchStatuses || null;
@@ -3093,10 +2969,9 @@ window.Ligitabl.whatIfPage = function (el) {
             }
             this._saveWhatIfSession();
         },
-        // _predictionBase provides canUndo()/swapStack/_swapTeamsDirect/undoing, but
-        // undoLastSwap() itself is only defined on predictionPage/guestPredictionPage (like
-        // teamClick was) — ported here with our own storage persistence instead of theirs, and
-        // popping our own swapLog in step so the log doesn't show a swap that's just been undone.
+        // _predictionBase has canUndo()/swapStack/_swapTeamsDirect/undoing, but undoLastSwap()
+        // lives on predictionPage/guestPredictionPage. Ported with this page's storage, popping
+        // swapLog in step so the log never shows an undone swap.
         undoLastSwap() {
             if (!this.canUndo() || this.undoing) return;
             this.undoing = true;
@@ -3440,10 +3315,8 @@ window.Ligitabl.whatIfRecapCard = function (el) {
         const targetId = e.detail?.target?.id;
         if (NAV_TARGETS.includes(targetId) || PAGINATION_TARGETS.includes(targetId)) {
             finish();
-            // Both are whole-page swaps, so land at the top rather than wherever the previous
-            // page happened to be scrolled to. 'auto', not 'smooth': this
-            // stands in for a page navigation, and smooth-scrolling the full height of a long
-            // table reads as drift rather than as arriving somewhere new.
+            // Whole-page swaps, so land at the top with 'auto': smooth-scrolling a long table reads
+            // as drift, not arriving somewhere new.
             window.scrollTo({ top: 0, behavior: 'auto' });
         }
     });

@@ -17,7 +17,7 @@ class MatchUpdateHelperTest {
 
     private final MatchUpdateHelper helper = new MatchUpdateHelper();
 
-    /** The 2026-10-24 incident: football-data reported FINISHED, then reverted to TIMED with null scores. */
+    /** football-data reporting FINISHED, then TIMED with null scores, must not undo the result. */
     @Test
     void ignoresApiRegressionFromFinishedToTimed() {
         var match = finishedMatch(2, 1);

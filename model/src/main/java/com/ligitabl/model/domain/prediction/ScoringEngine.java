@@ -38,7 +38,6 @@ public class ScoringEngine {
             detailedRankings.add(new ResultTeamRank(prediction, actualPosition, hit));
         }
 
-        // Validate total hit points
         if (totalHitPoints > maxHitPoints) {
             throw new IllegalStateException(String.format(
                     "Total hit points (%d) exceeds max_hit_points (%d). "

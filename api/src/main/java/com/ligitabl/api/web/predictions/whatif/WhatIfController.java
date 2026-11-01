@@ -57,9 +57,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * What-if score simulator: enter hypothetical scores for the current round's matches, apply, and
- * explore a sandbox team order against the resulting projected standings. Nothing here writes to
- * the real {@code SeasonPrediction} — see {@link ComputeWhatIfUseCase} for the read-only simulation.
+ * What-if simulator: hypothetical scores for the current round's matches, and a sandbox team order
+ * against the projected standings. Never writes the real {@code SeasonPrediction}.
  */
 @Controller
 @Slf4j
@@ -279,10 +278,9 @@ public class WhatIfController {
     }
 
     /**
-     * Best-effort side-effect: the standings the user is about to see don't depend on the save, so a
-     * persistence failure is logged and swallowed rather than failing the compute response. Only
-     * called while the round is open — a closed round's saved scores are what the projection is
-     * replaying, and must not be overwritten by it.
+     * Best-effort: the response doesn't depend on the save, so a failure is logged and swallowed.
+     * Only called while the round is open; a closed round replays its saved scores, which must not
+     * be overwritten.
      */
     private void persistScores(UUID userId, UUID roundId, List<WhatIfScore> scores) {
         try {

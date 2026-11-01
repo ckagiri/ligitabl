@@ -11,7 +11,7 @@
         th:fragment="publicPredictionPage"
         class="max-w-4xl mx-auto"
       >
-        <!-- Back link: only when we arrived from a leaderboard/contest player modal -->
+        <!--/* Back link: only when we arrived from a leaderboard/contest player modal */-->
         <div th:if="${backHref != null}" class="mb-4">
           <a
             th:href="${backHref}"
@@ -24,10 +24,10 @@
           </a>
         </div>
 
-        <!-- Page Header -->
+        <!--/* Page Header */-->
         <div class="bg-white rounded-lg shadow-sm mb-6">
           <div class="px-6 py-4 border-b border-gray-200">
-            <!-- nowrap keeps "Premier League Gameweek N" on one line; the name may still wrap. -->
+            <!--/* nowrap keeps "Premier League Gameweek N" on one line; the name may still wrap. */-->
             <div class="mb-4 sm:mb-6">
               <h1 class="text-xl sm:text-2xl text-gray-900">
                 <span
@@ -45,7 +45,7 @@
               </h1>
             </div>
 
-            <!-- User Not Found Banner -->
+            <!--/* User Not Found Banner */-->
             <div
               th:if="${!userFound}"
               class="rounded-lg bg-gray-50 border border-gray-200 text-gray-700 text-sm px-4 py-3 mb-4"
@@ -53,7 +53,7 @@
               This link doesn't match a LigiPredictor user — here's the current standings instead.
             </div>
 
-            <!-- Round Navigation -->
+            <!--/* Round Navigation */-->
             <div class="mt-4">
               <div
                 th:replace="~{fragments/round-navigation :: round-nav(
@@ -65,7 +65,7 @@
           </div>
         </div>
 
-        <!-- Historical/scored round: plain static table, only the standings-compare toggle -->
+        <!--/* Historical/scored round: plain static table, only the standings-compare toggle */-->
         <div th:if="${hasRoundResult}" class="bg-white rounded-lg shadow-sm mb-6" x-data="{ compareStandings: true }">
           <div class="px-6 pt-4 flex items-center justify-end">
             <label class="inline-flex items-center gap-2 text-sm text-gray-600 cursor-not-allowed select-none">
@@ -82,11 +82,11 @@
             th:replace="~{fragments/prediction-public-view :: public-view(
               ${rows}, ${hasRoundResult}, ${totalScore}, ${totalHits}, ${zeroesCount})}"
           ></div>
-          <!-- Collapsed: on someone else's table the swaps are context, not the point. -->
+          <!--/* Collapsed: on someone else's table the swaps are context, not the point. */-->
           <div th:replace="~{fragments/swap-history :: history(false, true)}"></div>
         </div>
 
-        <!-- Current/live round: comparison-options (standings/points/GD/fixtures/form) + rich table -->
+        <!--/* Current/live round: comparison-options (standings/points/GD/fixtures/form) + rich table */-->
         <div
           th:unless="${hasRoundResult}"
           class="bg-white rounded-lg shadow-sm mb-6"

@@ -22,9 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Client for Cloudflare Turnstile's siteverify endpoint.
  *
- * Deliberately has no retry: this runs in the critical path of an interactive registration
- * request, so any failure (network error, timeout, or a success:false response) is surfaced as a
- * single Either.left immediately, leaving the fail-closed decision to the caller.
+ * No retry: this sits in an interactive registration request, so any failure (network error,
+ * timeout, or success:false) is one immediate Either.left, and the caller decides fail-closed.
  */
 @Service
 @Slf4j
@@ -47,19 +46,17 @@ public class TurnstileClient {
     }
 
     /**
-     * Operational kill-switch (ligitabl.turnstile.enabled) so a prolonged Cloudflare outage can be
-     * worked around via one env var, without a deploy. Callers should skip both the token-presence
-     * check and {@link #verify} entirely when this is false, not just tolerate a bypassed verify.
+     * Kill-switch ({@code ligitabl.turnstile.enabled}) for riding out a Cloudflare outage without a
+     * deploy. When false, callers skip both the token-presence check and {@link #verify}.
      */
     public boolean isEnabled() {
         return enabled;
     }
 
     /**
-     * Public site key, safe to render into HTML for the widget's data-sitekey attribute. Exposed
-     * here (not a raw @Value field on the calling controller) because AuthController uses
-     * @RequiredArgsConstructor, and this codebase's convention is that @Value injection always
-     * goes through an explicit constructor — same reasoning as {@link #isEnabled()}.
+     * Public site key for the widget's data-sitekey attribute. Here rather than a {@code @Value} field
+     * on AuthController, which uses {@code @RequiredArgsConstructor}: {@code @Value} goes through an
+     * explicit constructor in this codebase.
      */
     public String getSiteKey() {
         return siteKey;

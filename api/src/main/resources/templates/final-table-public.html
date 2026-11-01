@@ -5,7 +5,7 @@
   layout:decorate="~{layout/base}"
 >
   <head>
-    <!-- Unfurl tags: the payoff of this game is showing people what you called in August. -->
+    <!--/* Unfurl tags: the payoff of this game is showing people what you called in August. */-->
     <meta property="og:type" content="website" />
     <meta property="og:title" th:content="${ogTitle}" />
     <meta property="og:description" th:content="${ogDescription}" />
@@ -15,14 +15,10 @@
     <meta name="twitter:description" th:content="${ogDescription}" />
   </head>
   <body>
-    <!-- No px/py here: layout/base.html's <main> already supplies them. -->
+    <!--/* No px/py here: layout/base.html's <main> already supplies them. */-->
     <div layout:fragment="content" class="mx-auto max-w-5xl">
       <header class="mb-6">
-        <!--
-          Only when we were sent here from somewhere inside the app (a `from` marker the controller
-          recognised). A visitor arriving from a shared link has nowhere here to go back to, so
-          they get no dead offer.
-        -->
+        <!--/* Only when a recognised `from` marker sent us here; a shared link has nothing to go back to. */-->
         <a
           th:if="${backHref != null}"
           th:href="${backHref}"
@@ -45,11 +41,7 @@
         <h1 class="text-2xl font-semibold text-gray-900">
           <span th:text="${ownerPossessive}">Player's</span> Final Table
         </h1>
-        <!--
-          A visitor here usually arrives from a shared image or link with no idea what they are
-          looking at. The season alone did not say — this states the game in one line, and whether
-          the numbers below are final or still pending.
-        -->
+        <!--/* States the game in one line, and whether the numbers are final, for visitors from a shared link. */-->
         <p class="mt-1 text-sm text-gray-500">
           <span th:text="${seasonName}">Season</span> · how they called the whole
           table before a ball was kicked
@@ -59,7 +51,7 @@
         </p>
       </header>
 
-      <!-- Captions mirror the owner's page: bare numbers do not say how they relate. -->
+      <!--/* Captions mirror the owner's page: bare numbers do not say how they relate. */-->
       <th:block th:if="${revealed == true}">
         <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
           <div class="rounded-lg border border-gray-200 bg-white p-3">
@@ -142,26 +134,17 @@
         </div>
       </th:block>
 
-      <!--
-        Two unrevealed states, not one. "Locked in before a ball was kicked" is a claim about the
-        past, and while entry is still open it is not true of anyone — the table can still change,
-        so saying it is locked would be wrong on every shared link opened before kickoff. Before
-        kickoff the honest thing is when they settled; after it, the original wording holds.
-
-        Same shape as the navbar rule: entry-open and already-locked are different situations and
-        get different copy.
-      -->
+      <!--/*
+        Two unrevealed states. While entry is open the table can still change, so "locked in
+        before a ball was kicked" would be false; say when they settled instead.
+      */-->
       <th:block th:if="${revealed == false and finalTableEntryOpen == true}">
         <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
-          <!--
-            The raw ISO instant, formatted into the viewer's zone by Ligitabl.formatTimestamps.
-
-            Not #temporals.format over systemDefault(): that is the *server's* zone, so every
-            viewer outside it was shown a time wrong by their offset. The share card below already
-            formats this same field client-side for exactly that reason — 'settled' is its preset.
-
-            th:text keeps the ISO string in place as the no-JS fallback.
-          -->
+          <!--/*
+            The raw ISO instant, formatted into the viewer's zone by Ligitabl.formatTimestamps
+            ('settled' preset, as on the share card). th:text keeps the ISO string as the no-JS
+            fallback.
+          */-->
           <p class="text-sm text-gray-700">
             <th:block th:if="${settledAt != null}">
               Settled
@@ -185,16 +168,16 @@
         </div>
       </th:block>
 
-      <!--
+      <!--/*
         The same component, mounted read-only: entryOpen is false here so canEdit() never allows a
         tap. Reusing it keeps one renderer for the table rather than a near-duplicate fragment.
-      -->
+      */-->
       <div
         x-data="Ligitabl.finalTablePage($el)"
         th:attr="data-rows=${rowsJson},data-zones=${zonesJson},data-entry-open=false,data-has-entry=true"
         class="rounded-lg bg-white p-4 shadow-sm sm:p-6"
       >
-        <!-- The result table scrolls sideways if it must; the grid table reflows instead. -->
+        <!--/* The result table scrolls sideways if it must; the grid table reflows instead. */-->
         <th:block th:if="${revealed == true}">
           <div class="overflow-x-auto">
             <div th:replace="~{fragments/final-table-rows :: result}"></div>
@@ -205,15 +188,10 @@
         </th:block>
       </div>
 
-      <!--
-        The offer, above the share controls rather than below them. A visitor arrives from a link
-        with no account and no table; making one is the thing to put in front of them, and sharing
-        someone else's page is the lesser action.
-
-        Gated on entry still being open, matching the navbar rule: inviting someone into a game that
-        closed at kickoff is a promise the app cannot keep. Once closed the CTA is dropped rather
-        than reworded — there is nothing to offer until next season.
-      -->
+      <!--/*
+        The offer, above the share controls: a visitor from a link has no table, and making one
+        matters more than sharing someone else's. Only while entry is open, as in the navbar.
+      */-->
       <th:block th:if="${finalTableEntryOpen == true}">
         <div
           class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-5 py-4"
@@ -230,15 +208,15 @@
         </div>
       </th:block>
 
-      <!-- Wrapper for the spacing: th:replace discards the host element, class and all. -->
+      <!--/* Wrapper for the spacing: th:replace discards the host element, class and all. */-->
       <div class="mt-6">
         <div th:replace="~{fragments/final-table-share :: card}"></div>
       </div>
 
-      <!--
+      <!--/*
         Ungated, unlike the CTA above: a visitor looking at a locked table still has every reason
         to ask what the numbers on it mean, and this page is most people's first sight of the game.
-      -->
+      */-->
       <div class="mt-6 text-sm">
         <a
           th:href="@{/faq/final-table}"

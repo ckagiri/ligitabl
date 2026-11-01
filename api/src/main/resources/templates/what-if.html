@@ -11,7 +11,7 @@
         th:fragment="whatIfPage"
         class="max-w-4xl mx-auto"
       >
-        <!-- Page Header -->
+        <!--/* Page Header */-->
         <div class="bg-white rounded-lg shadow-sm mb-6">
           <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-2">
             <div>
@@ -21,8 +21,8 @@
               >
                 What-If
               </h1>
-            <!-- Once the round closes the page stops being a sandbox and starts being a
-                   scoreboard for the guess already saved — say so. -->
+            <!--/* Once the round closes the page stops being a sandbox and starts being a
+                   scoreboard for the guess already saved — say so. */-->
               <p class="text-sm text-gray-600 mt-1" th:if="${roundOpen}">
                 Gameweek <span th:text="${currentRound}">19</span> — explore hypothetical results
               </p>
@@ -30,9 +30,9 @@
                 Gameweek <span th:text="${currentRound}">19</span> — how your guesses are landing
               </p>
             </div>
-            <!--
+            <!--/*
               hx-push-url so the address bar actually lands on /my-table.
-            -->
+            */-->
             <button
               th:attr="hx-get=@{/my-table}"
               hx-target="#prediction-page"
@@ -59,7 +59,7 @@
           </div>
         </div>
 
-        <!-- What-If Panel -->
+        <!--/* What-If Panel */-->
         <div
           id="what-if-content"
           x-data="Ligitabl.whatIfPage($el)"
@@ -75,11 +75,11 @@
                   data-current-round=${currentRound},
                   data-saved-what-if-scores=${savedWhatIfScoresJson}"
         >
-          <!-- Main card: score entry, tables, swap history. The scope div above
+          <!--/* Main card: score entry, tables, swap history. The scope div above
                carries no chrome so the share card below can be its own card while
-               still sitting inside whatIfPage's Alpine scope. -->
+               still sitting inside whatIfPage's Alpine scope. */-->
           <div class="bg-white rounded-lg shadow-sm mb-6">
-            <!-- Match score input section (design: .art/gameweek-v5.html) -->
+            <!--/* Match score input section */-->
             <div class="px-6 py-4">
               <p
                 x-show="roundOpen && !hasEdited"
@@ -93,8 +93,8 @@
                 </svg>
                 Tap a score or 1/X/2 to change a pick.
               </p>
-              <!-- Nothing entered before the round closed: the fixtures below are read-only, so say
-                   why rather than leave a grid of dashes that won't respond to taps. -->
+              <!--/* Nothing entered before the round closed: the fixtures below are read-only, so say
+                   why rather than leave a grid of dashes that won't respond to taps. */-->
               <p x-show="!roundOpen && !hasEdited" x-cloak class="text-[11px] text-gray-400 mb-1 px-1">
                 This round is locked — what-if scores can only be entered while it's open.
               </p>
@@ -144,8 +144,8 @@
                   ></span>
                 </div>
               </div>
-              <!-- Skeleton: the fixture rows are Alpine-rendered from data attributes, so this area
-                   is empty until Alpine boots. Removed by the x-init on the real container below. -->
+              <!--/* Skeleton: the fixture rows are Alpine-rendered from data attributes, so this area
+                   is empty until Alpine boots. Removed by the x-init on the real container below. */-->
               <div
                 x-skeleton
                 class="bg-white border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100"
@@ -164,21 +164,18 @@
                 <template x-for="match in visibleMatches()" :key="match.matchId">
                   <div :class="isScorePickerOpen(match.matchId) ? 'bg-gray-50' : ''">
                     <div class="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 sm:py-2.5">
-                      <!-- A grid, not a right-pinned flex row. Three fixed tracks — home label,
-                           score boxes, away label — mean the score column lands on the same x in
-                           every row regardless of how long the team names are, and the group is
-                           centered in the row so the slack splits evenly instead of piling up on
-                           the left as dead space. -->
+                      <!--/* A three-track grid (home label, score boxes, away label), so the score column
+                           lands on the same x in every row whatever the name lengths. */-->
                       <div class="flex-1 min-w-0 max-[340px]:basis-full grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 sm:gap-2">
-                        <!-- Mobile shows the 3-letter TLA, sm+ the short name; both truncate inside
-                             their track rather than pushing the score column off its x. -->
+                        <!--/* Mobile shows the 3-letter TLA, sm+ the short name; both truncate inside
+                             their track rather than pushing the score column off its x. */-->
                         <span
                           class="min-w-0 justify-self-end text-right text-[11px] sm:text-[13px] truncate"
                           :class="!roundOpen ? 'text-gray-400' : (scoreAnswered(match.matchId) ? 'text-gray-900' : 'text-gray-700')"
                         ><span class="sm:hidden" x-text="match.homeTeamCode"></span><span class="hidden sm:inline" x-text="match.homeTeamShortName"></span></span>
 
-                        <!-- One grid child, so the score boxes occupy the single centre track
-                             instead of splitting into columns of their own. -->
+                        <!--/* One grid child, so the score boxes occupy the single centre track
+                             instead of splitting into columns of their own. */-->
                         <div class="flex items-center gap-1.5 justify-self-center">
                         <template x-if="acceptsScore(match)">
                           <template x-for="side in ['home', 'away']" :key="side">
@@ -213,17 +210,17 @@
                         <div class="flex items-center gap-1.5 shrink-0 max-[340px]:pt-0.5">
                           <span class="relative font-mono text-[13px] font-semibold text-gray-900 whitespace-nowrap">
                             <span x-text="actualScoreLabel(match)"></span>
-                            <!-- Same live dot as the fixture chips elsewhere: the inline animation
-                                 with !important is load-bearing, Tailwind's animate-pulse otherwise
-                                 wins. Keyframes are global in layout/base.html. -->
+                            <!--/* Same live dot as the fixture chips: the inline animation needs
+                                 !important to beat Tailwind's animate-pulse. Keyframes are global in
+                                 layout/base.html. */-->
                             <span
                               x-show="matchIsLive(match)"
                               class="absolute -top-0.5 -right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full ring-1 ring-white"
                               style="animation: liveFade 1.2s ease-in-out infinite !important"
                             ></span>
                           </span>
-                          <!-- Rendered even when there is no mark (live, or no guess to grade) so the
-                               row keeps its width and does not jitter as matches finish. -->
+                          <!--/* Rendered even when there is no mark (live, or no guess to grade) so the
+                               row keeps its width and does not jitter as matches finish. */-->
                           <span
                             class="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold leading-none"
                             :class="matchGrade(match) ? gradeMarkClass(match) : ''"
@@ -233,10 +230,8 @@
                         </div>
                       </template>
 
-                      <!-- Fixed width, never stretching — what you want from something tapped
-                           repeatedly. Below 340px the fixture group takes the full first line and
-                           this drops onto its own line beneath the team/score box, rather than
-                           squeezing the team names down to nothing on the narrowest phones. -->
+                      <!--/* Fixed width, never stretching. Below 340px the fixture group takes the
+                           first line and this drops below, rather than crushing the team names. */-->
                       <template x-if="acceptsScore(match) && !showsActuals(match)">
                         <div
                           class="flex rounded-lg border overflow-hidden shrink-0"
@@ -332,9 +327,9 @@
                 </template>
               </div>
 
-              <!-- Once the round closes the scores are frozen, so there is nothing left to apply,
+              <!--/* Once the round closes the scores are frozen, so there is nothing left to apply,
                    revert or reset: the projection is computed for the user on load instead (see
-                   _applyIfComplete) and these controls come off the page entirely. -->
+                   _applyIfComplete) and these controls come off the page entirely. */-->
               <div class="flex items-center gap-3 mt-4" x-show="roundOpen">
                 <button
                   type="button"
@@ -383,8 +378,8 @@
                   ></span>
                 </button>
               </div>
-              <!-- Outside the controls row above: a closed round hides that row but can still fail
-                   an auto-apply or a refresh, and the message has to land somewhere. -->
+              <!--/* Outside the controls row above: a closed round hides that row but can still fail
+                   an auto-apply or a refresh, and the message has to land somewhere. */-->
               <p
                 x-show="errorMessage"
                 x-cloak
@@ -393,12 +388,8 @@
               ></p>
           </div>
 
-          <!-- Tables section: tabs on mobile, two cards side by side on desktop. Swapping
-               (previously its own "Round Prediction" card) now lives inside Round Result. Score
-               banner + swap hint live here (once, above both cards) rather than inside Round
-               Result, so each card's table starts at the same height and rows line up.
-               Its own section (border-t) so the standings/result pair reads as a separate step
-               from entering the scores above it. -->
+          <!--/* Tables section: tabs on mobile, two cards side by side on desktop. The score banner
+               and swap hint sit above both cards so their tables start at the same height. */-->
           <div class="px-6 pt-4 pb-6 border-t border-gray-100">
             <div class="md:hidden flex gap-2 mb-3">
               <button
@@ -420,10 +411,8 @@
             </div>
 
             <div x-show="hasComputed" x-cloak class="mb-3">
-              <!-- The score is the number the whole page exists to move, so it carries the
-                   emphasis: a tinted panel rather than white-on-white, and a number sized well
-                   clear of the text around it. tabular-nums keeps it from reflowing as the digit
-                   count changes (60 -> 100) while you swap. -->
+              <!--/* The score is what the page moves, so it gets a tinted panel and a large number;
+                   tabular-nums stops it reflowing as the digit count changes. */-->
               <div
                 class="flex items-baseline flex-wrap gap-x-2 px-3 py-2.5 bg-gray-50 rounded-md border border-gray-200 mb-1.5"
               >
@@ -434,26 +423,24 @@
                   class="text-2xl font-bold tabular-nums leading-none text-gray-900"
                   x-text="totalScore()"
                 ></span>
-                <!-- The max/lost breakdown is the working behind the score, so it stays quiet. -->
+                <!--/* The max/lost breakdown is the working behind the score, so it stays quiet. */-->
                 <span class="text-xs font-normal tabular-nums text-gray-500">
                   (Max: <span x-text="maxHitPoints"></span> Lost:
                   <span x-text="totalHit()"></span>)
                 </span>
               </div>
-              <!-- Swapping is off once the round locks (see teamClick), so the hint and the
-                   undo/reset controls that go with it come off with it. -->
+              <!--/* Swapping is off once the round locks (see teamClick), so the hint and the
+                   undo/reset controls that go with it come off with it. */-->
               <div
                 x-show="roundOpen"
                 :class="activeTab === 'standings' ? 'hidden md:flex' : 'flex'"
                 class="items-center justify-between gap-2 md:justify-end md:gap-3"
               >
-                <!-- min-w-0 + truncate: the buttons to the right are fixed-width and must stay
+                <!--/* min-w-0 + truncate: the buttons to the right are fixed-width and must stay
                      whole, so on a narrow phone the hint is the part that gives, ellipsizing
-                     instead of pushing Undo/Reset off the card. -->
-                <!-- Indigo in both states: this is the page's primary instruction sitting beside
-                     two colored buttons, so gray-on-gray left the least important thing in the row
-                     looking the most important. Matches the "Tap a score" hint above. The selected
-                     state goes solid to stay distinguishable now that both are indigo. -->
+                     instead of pushing Undo/Reset off the card. */-->
+                <!--/* Indigo in both states: grey made the primary instruction look least important
+                     beside two coloured buttons. The selected state goes solid to stay distinct. */-->
                 <p
                   class="inline-flex items-center gap-1.5 min-w-0 text-xs font-semibold rounded-full border px-2.5 py-1 whitespace-nowrap"
                   :class="selectedTeam
@@ -469,13 +456,9 @@
                   </svg>
                   <span class="truncate" x-text="swapHint()"></span>
                 </p>
-                <!-- Undoing flash — same treatment as the prediction page's swap controls
-                     (fragments/prediction-actions.html), since undoLastSwap() animates over ~400ms
-                     and the table would otherwise appear to change on its own. Wears the hint
-                     pill's shape because it stands in that same slot: matching it means the row
-                     keeps its silhouette for the ~400ms rather than visibly changing shape.
-                     Amber, matching the Undo button it reports on, so the state still reads as
-                     distinct from the resting hint. -->
+                <!--/* Undoing flash, as on the prediction page: undoLastSwap() animates, and the table
+                     would seem to change on its own. Wears the hint pill's shape, since it fills that
+                     slot; amber, like the Undo button. */-->
                 <p
                   x-show="undoing"
                   x-cloak
@@ -488,10 +471,8 @@
                   <span class="truncate">Undoing…</span>
                 </p>
                 <div class="flex shrink-0 items-center gap-2" x-show="getSwapCount() > 0 && !undoing" x-cloak>
-                  <!-- canUndo() is false while a team is selected (you can't undo mid-swap). On
-                       mobile that hides Undo to save the row's width; on desktop there's room, so it
-                       stays put and greys out instead of the row reflowing on every tap. Driven by
-                       :class, not x-show — x-show's inline display:none would beat the md: class. -->
+                  <!--/* canUndo() is false mid-swap. Mobile hides Undo to save width; desktop greys it
+                       out instead of reflowing. :class, not x-show, so md: can win. */-->
                   <button
                     type="button"
                     @click="undoLastSwap()"
@@ -511,8 +492,8 @@
                 </div>
               </div>
 
-              <!-- Hit legend, always on rather than behind a hover tooltip on the column header:
-                   it's a two-symbol key, and hover discovery doesn't exist on touch anyway. -->
+              <!--/* Hit legend, always on rather than behind a hover tooltip on the column header:
+                   it's a two-symbol key, and hover discovery doesn't exist on touch anyway. */-->
               <p
                 :class="activeTab === 'standings' ? 'hidden md:block' : 'block'"
                 class="text-[11px] text-gray-400 mt-1 md:text-right"
@@ -523,12 +504,8 @@
               </p>
             </div>
 
-            <!-- The score below will have moved since this user last had the page open, because
-                 the swaps it was built on went with the fixture change. Say so rather than let it
-                 look like a miscalculation. Both notices below explain something that already
-                 happened — a full reset here, a partial consumption in the green one — so
-                 dismissing is purely "I've read it": the flag is display state, and neither is
-                 persisted past this page view anyway. -->
+            <!--/* The score moved because its swaps went with the fixture change; say so rather than
+                 let it look like a miscalculation. Dismissal is display state only. */-->
             <div
               x-show="swapsClearedByFixtureChange"
               x-cloak
@@ -552,18 +529,15 @@
               </button>
             </div>
 
-            <!-- Same idea for the other way sandbox swaps leave: the user took them to their real
-                 table and submitted. Green rather than amber — nothing went wrong here, the plan
-                 landed. Only the submitted swaps go; any others are replayed onto the updated
-                 table and stay in the list below, so the copy names the count rather than
-                 implying the whole sandbox was reset. -->
+            <!--/* The other way sandbox swaps leave: submitted to the real table. Green, since the plan
+                 landed. Only submitted swaps go, so the copy names the count. */-->
             <div
               x-show="swapsClearedBySubmit"
               x-cloak
               class="mb-3 px-3 py-2 rounded-md border border-green-200 bg-green-50 text-xs text-green-800 flex items-center justify-between gap-3"
             >
-              <!-- Keyed to the visible list: this picks between "everything landed" and "N
-                   landed, the rest are still listed below". -->
+              <!--/* Keyed to the visible list: this picks between "everything landed" and "N
+                   landed, the rest are still listed below". */-->
               <span x-show="displayedSwapLog().length === 0"
                 ><span
                   x-text="swapsConsumedCount === 1 ? 'Your swap is' : 'Your ' + swapsConsumedCount + ' swaps are'"

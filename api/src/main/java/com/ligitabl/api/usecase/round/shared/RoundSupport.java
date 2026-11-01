@@ -22,10 +22,8 @@ public class RoundSupport {
     private final CompetitionDefaults competitionDefaults;
 
     /**
-     * The round's live status (OPEN/LOCKED/COMPLETED/FINALIZED/ADVANCED), computed from its own
-     * lifecycle flags and its current matches. RoundStatus.UNKNOWN if round is null. A round with
-     * no matches loaded yet (not synced) reads as OPEN rather than {@link Round#computeStatus}'s
-     * own empty-round default of COMPLETED — matches aren't in place to judge by yet.
+     * The round's live status from its lifecycle flags and current matches; UNKNOWN for null. A
+     * round with no matches loaded yet reads as OPEN, not {@link Round#computeStatus}'s COMPLETED.
      */
     public RoundStatus resolveStatus(Round round) {
         if (round == null) {
@@ -36,16 +34,9 @@ public class RoundSupport {
     }
 
     /**
-     * Like {@link #resolveStatus} but with the round's own lifecycle flag taking precedence over
-     * the no-matches default.
-     *
-     * <p>Needed because {@code resolveStatus} short-circuits to OPEN when a round has no matches
-     * loaded, <em>before</em> {@link Round#computeStatus} gets a chance to report FINALIZED — so a
-     * finalized round with no matches otherwise reads as open, and a join would be accepted into a
-     * round that has already been scored.
-     *
-     * <p>Use this wherever the question is "may someone still join at this round?".
-     * {@code resolveStatus} remains correct for display and for match-driven questions.
+     * Like {@link #resolveStatus}, but the round's lifecycle flag beats the no-matches default.
+     * {@code resolveStatus} returns OPEN for a round with no matches before checking FINALIZED, so a
+     * scored round could accept a join. Use this for "may someone still join at this round?".
      */
     public RoundStatus resolveJoinEligibilityStatus(Round round) {
         if (round == null) {

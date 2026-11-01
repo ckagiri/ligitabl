@@ -168,7 +168,7 @@
               th:text="${error}"
             ></div>
             <div class="rounded-md shadow-sm space-y-4">
-              <!-- Email -->
+              <!--/* Email */-->
               <div>
                 <label
                   for="email"
@@ -205,7 +205,7 @@
                 </div>
               </div>
 
-              <!-- Display Name -->
+              <!--/* Display Name */-->
               <div>
                 <label
                   for="displayName"
@@ -253,7 +253,7 @@
                 </div>
               </div>
 
-              <!-- Password -->
+              <!--/* Password */-->
               <div>
                 <label
                   for="password"
@@ -338,7 +338,7 @@
                 </div>
               </div>
 
-              <!-- Confirm Password -->
+              <!--/* Confirm Password */-->
               <div>
                 <label
                   for="confirmPassword"
@@ -454,15 +454,14 @@
                 data-error-callback="onTurnstileError"
                 data-expired-callback="onTurnstileExpired"
               ></div>
-              <!-- NOT named cf-turnstile-response: the widget injects its own input under that
-                   name in the div above, and @RequestParam bound that one (first in document
-                   order) — empty, since we use an explicit data-callback. Reached siteverify as
-                   invalid-input-response with hostname=null. -->
+              <!--/* NOT cf-turnstile-response: the widget injects its own input under that name
+                   above, and @RequestParam would bind that empty one, since we use an explicit
+                   data-callback. */-->
               <input type="hidden" name="turnstileToken" :value="turnstileToken" />
               <p x-cloak x-show="turnstileError" class="mt-1 text-sm text-red-600" role="alert">
                 Verification failed to load. Please refresh the page and try again.
               </p>
-              <!-- Explains the blocked submit when onSubmit() rejects an aged-out token. -->
+              <!--/* Explains the blocked submit when onSubmit() rejects an aged-out token. */-->
               <p x-cloak x-show="turnstileRefreshed" class="mt-1 text-sm text-amber-700" role="alert">
                 Your verification expired. It's being renewed — please submit again.
               </p>

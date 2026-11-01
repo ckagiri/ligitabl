@@ -6,10 +6,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 
-/**
- * A clock the test moves by hand. {@code TestClock.FIXED} cannot express "30 hours later", which is
- * the whole subject of the heartbeat and watchdog tests.
- */
+/** A clock the test moves by hand, for "hours later" cases {@code TestClock.FIXED} cannot express. */
 final class MutableClock extends Clock {
 
     private Instant now;

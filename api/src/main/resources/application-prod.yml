@@ -10,9 +10,9 @@ spring:
     resources:
       cache:
         cachecontrol:
-          # Overrides the no-cache in application.properties, which otherwise makes every page load
-          # revalidate ~120KB of CSS+JS. Deliberately short: dist/ filenames are unhashed, so a long
-          # max-age would serve stale JS after a deploy.
+          # Overrides the no-cache in application.properties, which makes every page load revalidate
+          # the CSS and JS. Short because dist/ filenames are unhashed: a long max-age would serve
+          # stale JS after a deploy.
           no-cache: false
           max-age: 60s
           must-revalidate: true

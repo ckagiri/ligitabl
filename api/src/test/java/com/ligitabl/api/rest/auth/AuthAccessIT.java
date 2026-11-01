@@ -128,11 +128,7 @@ class AuthAccessIT extends AbstractPostgresIT {
     }
 
     private String findFirstEmailContaining(String contains) {
-        // This is a tiny convenience so we don't thread emails through from setUp.
-        // It relies on the deterministic prefixes we used when creating users.
-        // Query via /api is overkill; just compute by scanning known prefixes in-memory is not possible here.
-        // We'll derive by searching DB through the login endpoint by using the same prefixes.
-        // In practice, we only need "some" email; we can just build one again with a fresh user.
+        // Creates a fresh user with the prefix rather than threading the setUp users through.
 
         UUID id = UUID.randomUUID();
         String email = contains + id + "@example.com";

@@ -3,21 +3,18 @@ package com.ligitabl.model.query;
 import java.time.Instant;
 
 /**
- * Leaderboard entry for the Final Table Predictor side game.
+ * Leaderboard entry for the Final Table Predictor side game. Separate from
+ * {@link LeaderboardEntry}, which is shaped around contests, entries, phases and per-round
+ * submissions — none of which this game has.
  *
- * <p>Separate from {@link LeaderboardEntry}, which is shaped around contests, entries, phases and
- * per-round submissions — none of which this game has.
- *
- * @param position Position in the leaderboard (1 = first), distinct per row
- * @param publicId User's unique public identifier
- * @param displayName User's display name
- * @param totalScore base + bonus + champion bonus, max 425
- * @param baseScore ScoringEngine distance score, max 200
- * @param zeroesCount Exactly-right positions
- * @param bonusPoints zeroes * 10. The champion bonus is inside totalScore but not broken out
- *     here — the leaderboard ranks on the total and shows the parts only on a player's own page
- * @param swapCount Swaps made before the lock — displayed, but never ordered on
- * @param settledAt When the user settled on their table; the tiebreak after score and zeroes
+ * @param position position in the leaderboard (1 = first), distinct per row
+ * @param totalScore base + bonus + champion bonus
+ * @param baseScore ScoringEngine distance score
+ * @param zeroesCount exactly-right positions
+ * @param bonusPoints zeroes * FinalTableScorer.ZERO_BONUS. The champion bonus is inside totalScore
+ *     but shown only on a player's own page
+ * @param swapCount swaps made before the lock — displayed, but never ordered on
+ * @param settledAt when the user settled on their table; the tiebreak after score and zeroes
  */
 public record FinalTableLeaderboardEntry(
         int position,

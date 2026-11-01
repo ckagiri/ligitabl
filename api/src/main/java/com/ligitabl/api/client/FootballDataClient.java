@@ -33,17 +33,12 @@ public class FootballDataClient {
     private final WebClient webClient;
 
     /**
-     * The date-range window is a calendar date, so it needs a zone: {@code LocalDate.now(clock)}
-     * resolves it in UTC to match the application's {@code Clock.systemUTC()} bean and the
-     * timestamps this API returns. A bare {@code LocalDate.now()} used the JVM default zone, so on
-     * a machine west of UTC the "today+tomorrow" request could ask for a day the upstream calendar
-     * had already moved past.
+     * The date-range window is a calendar date, so it needs a zone: UTC, matching the {@code Clock}
+     * bean and the API's timestamps. In the JVM's default zone, a machine west of UTC could ask for
+     * a day the upstream calendar has already moved past.
      */
     private final Clock clock;
 
-    /**
-     * Get live matches for a competition
-     */
     public Either<FootballDataApiError, MatchesResponse> getLiveMatches(String competitionCode) {
         log.debug("Fetching live matches: competition={}", competitionCode);
 
@@ -72,16 +67,11 @@ public class FootballDataClient {
         }
     }
 
-    /**
-     * Get matches for a specific date
-     * Used when: Checking imminent/soon kickoffs (today only)
-     * Endpoint: GET /matches?competitions={code}&date={date}
-     */
+    /** For imminent and soon kickoffs: GET /matches?competitions={code}&date={date}. */
     public Either<FootballDataApiError, MatchesResponse> getMatchesForDate(String competitionCode, LocalDate date) {
         log.debug("Fetching matches for date: competition={}, date={}", competitionCode, date);
 
         try {
-            // Optimized endpoint: /matches?competitions=PL&date=2024-12-28
             var response = webClient
                     .get()
                     .uri(uriBuilder -> uriBuilder
@@ -109,7 +99,6 @@ public class FootballDataClient {
         log.info("Fetching matches for competition: {}", competitionCode);
 
         try {
-            // Optimized endpoint: /matches?competitions=PL&date=2024-12-28
             var response = webClient
                     .get()
                     .uri(uriBuilder -> uriBuilder
@@ -131,11 +120,7 @@ public class FootballDataClient {
         }
     }
 
-    /**
-     * Get matches within date range
-     * Used when: Looking ahead (today + tomorrow for default check)
-     * Endpoint: GET /matches?competitions={code}&dateFrom={from}&dateTo={to}
-     */
+    /** For the look-ahead check: GET /matches?competitions={code}&dateFrom={from}&dateTo={to}. */
     public Either<FootballDataApiError, MatchesResponse> getMatchesInDateRange(
             String competitionCode, LocalDate dateFrom, LocalDate dateTo) {
         log.debug("Fetching matches in range: competition={}, from={}, to={}", competitionCode, dateFrom, dateTo);

@@ -325,9 +325,8 @@ class GetPublicPredictionUseCaseTest {
     }
 
     /**
-     * The nav floor comes from the main-contest {@code Entry.joinedAtRound}, not from
-     * {@code SeasonPrediction.atRoundNumber} — the latter moves forward with every swap, which
-     * would clamp away the user's own earlier rounds.
+     * The nav floor comes from the main-contest {@code Entry.joinedAtRound}, not
+     * {@code SeasonPrediction.atRoundNumber}, which moves with every swap.
      */
     private void stubJoinedAtRound(int joinedAtRound) {
         when(entryRepo.findByUserAndContest(userId, mainContestId))

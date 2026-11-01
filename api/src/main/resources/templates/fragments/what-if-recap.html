@@ -1,4 +1,4 @@
-<!-- What-If recap (own predictions only, collapsible) -->
+<!--/* What-If recap (own predictions only, collapsible) */-->
 <div th:fragment="recap" th:if="${whatIfRecap != null}">
   <div
     x-cloak
@@ -71,8 +71,8 @@
         </button>
       </div>
 
-      <!-- The draw rule is the non-obvious one (it is the only guess that can half-count), so
-           it gets its own line rather than living only in a hover tooltip. -->
+      <!--/* The draw rule is the non-obvious one (it is the only guess that can half-count), so
+           it gets its own line rather than living only in a hover tooltip. */-->
       <div class="mt-3 text-[11px] text-gray-500 leading-relaxed">
         <p class="font-medium text-gray-600">How this is graded</p>
         <p class="mt-0.5">
@@ -89,7 +89,7 @@
       </div>
     </div>
 
-    <!-- Bucket detail — teleported to body to avoid fixed-position containment issues -->
+    <!--/* Bucket detail — teleported to body to avoid fixed-position containment issues */-->
     <template x-teleport="body">
       <div
         x-show="whatIfRecapPopup !== null || whatIfRecapPopupClosing"
@@ -121,11 +121,9 @@
             >
               <li class="flex items-center justify-between gap-3 px-4 py-2.5">
                 <span class="min-w-0 text-sm text-gray-700 font-mono truncate">
-                  <!-- The shareable full list uses codes throughout and is numbered to match the
-                       copied text. A single bucket has room for names and nothing to number
-                       against — except on mobile, where codes still fit better. Visibility is
-                       driven by :class, never x-show, so the sm: breakpoint can win (x-show's
-                       inline display:none would override it). -->
+                  <!--/* The full list uses codes, numbered to match the copied text; one bucket has
+                       room for names except on mobile. :class, not x-show, so the sm: breakpoint
+                       can win over an inline display:none. */-->
                   <span
                     x-show="whatIfRecapPopup && whatIfRecapPopup.bucket === 'all'"
                     class="text-gray-300 mr-1 select-none"
@@ -159,9 +157,9 @@
             </template>
           </ul>
 
-          <!-- Copy is offered from the Played modal only, and always emits the whole round: the
+          <!--/* Copy is offered from the Played modal only, and always emits the whole round: the
                "3W 1D 1L" header only reads correctly against every match, so a per-bucket share
-               would be misleading. -->
+               would be misleading. */-->
           <div class="px-4 py-3 border-t border-gray-100 flex items-center justify-between gap-3">
             <span class="flex items-center gap-2 text-[11px] text-gray-400">
               <span class="inline-flex items-center gap-1">

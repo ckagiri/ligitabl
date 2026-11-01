@@ -48,14 +48,11 @@ class Season_getSeasonStateTest {
                 Arguments.of(false, PAST, PAST, SeasonState.IN_PLAY),
                 Arguments.of(false, PAST, FUTURE, SeasonState.PRE_SEASON),
                 // completed + preSeasonOpen + predictionsOpen (NULL defaults open, or PAST): the
-                // explicit "completed && preSeasonOpen && predictionsOpen" branch claims these as
-                // INACTIVE — a completed season isn't genuinely "pre-season" once predictions have
-                // already opened too, regardless of how preSeasonOpensAt/predictionsOpenAt compare.
+                // "completed && preSeasonOpen && predictionsOpen" branch claims these as INACTIVE.
                 Arguments.of(true, PAST, NULL, SeasonState.INACTIVE),
                 Arguments.of(true, PAST, PAST, SeasonState.INACTIVE),
-                // completed + preSeasonOpen + predictions NOT yet open: PRE_SEASON only applies to
-                // an upcoming (not-yet-started) season (beforeActualStart), which a completed season
-                // can never be — falls through to INACTIVE instead.
+                // completed + preSeasonOpen + predictions NOT yet open: PRE_SEASON needs a season not
+                // yet started, which a completed season never is — falls through to INACTIVE.
                 Arguments.of(true, PAST, FUTURE, SeasonState.INACTIVE));
     }
 
@@ -72,12 +69,7 @@ class Season_getSeasonStateTest {
         assertThat(season.getSeasonState(NOW)).isEqualTo(SeasonState.INACTIVE);
     }
 
-    /**
-     * The windows are compared with {@code isAfter}, which is strict, so a season whose
-     * predictionsOpenAt is *exactly* the evaluation instant has not opened yet. Untestable before
-     * the predicates took an explicit instant — with a wall clock there was no way to name "now"
-     * and have the assertion still hold by the time it ran.
-     */
+    /** Strict {@code isAfter}: a predictionsOpenAt of exactly the evaluation instant has not opened yet. */
     @Test
     void getSeasonState_treatsAWindowOpeningAtThisExactInstantAsNotYetOpen() {
         Season atTheBoundary = SeasonTestFixtures.season(false, PAST.resolve(), EXACTLY_NOW.resolve());

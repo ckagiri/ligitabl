@@ -26,16 +26,8 @@ import com.ligitabl.model.infra.UserPersistenceAdapter;
 class EmailVerificationTokenRepoTest {
 
     /**
-     * The instant every token here is minted from and evaluated at.
-     *
-     * <p>Frozen for the run rather than read per call: this class exercises persistence, not expiry,
-     * so what matters is that one instant is used consistently — a token created from one
-     * {@code Instant.now()} and validated against a later one is a validity window nobody chose, and
-     * a `deleteExpired` fixture built the same way is the flaky kind.
-     *
-     * <p>Real time rather than a fixed date, because {@code deleteExpired} compares against the
-     * database's own {@code now()}. {@code api}'s {@code TestClock} makes the same trade for the same
-     * reason; this module cannot import it.
+     * One instant for minting and evaluating every token here. Real time rather than a fixed date,
+     * because {@code deleteExpired} compares against the database's {@code now()}.
      */
     private static final Instant NOW = Instant.now();
 

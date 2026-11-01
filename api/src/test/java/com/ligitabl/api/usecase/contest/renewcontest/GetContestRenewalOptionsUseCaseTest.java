@@ -80,7 +80,7 @@ class GetContestRenewalOptionsUseCaseTest {
                 .build();
     }
 
-    /** Stubs the current round position, used to satisfy the current-season renewal timing gate. */
+    /** Satisfies the current-season renewal timing gate. */
     private void stubCurrentRoundPosition(int position) {
         when(roundRepo.findPosition(currentRoundId)).thenReturn(position);
     }

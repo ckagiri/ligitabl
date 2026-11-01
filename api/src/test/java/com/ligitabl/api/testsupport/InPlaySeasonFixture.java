@@ -8,15 +8,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
  * The minimum database scaffold for an in-play season: competition, season, main contest and an
- * open round 1.
+ * open round 1, shared so the outbox ITs test the same world.
  *
- * <p>Extracted because the outbox ITs need identical scaffolding for opposite reasons — one
- * drives the happy path, one poisons it — and duplicating ~70 lines of INSERT between them made
- * it easy for the two to drift into testing subtly different worlds.
- *
- * <p>{@code preSeasonOpensAt} is set 30 days in the past on purpose: it is the anchor
- * {@code findUnjoinedUserIdsActiveSince} measures against, so a fixture without it would silently
- * select nobody.
+ * <p>{@code preSeasonOpensAt} is in the past on purpose: {@code findUnjoinedUserIdsActiveSince}
+ * measures from it, so without it the fixture selects nobody.
  */
 public final class InPlaySeasonFixture {
 

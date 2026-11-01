@@ -16,10 +16,8 @@ public class DefaultsSeeder {
     }
 
     /**
-     * Sets fk_active_season_id / fk_current_round_id only if they're currently null.
-     * Once a competition/season has these wired, further round progression and season
-     * activation are the application's job (match-day workflows, admin actions) — seeding
-     * must never clobber that live state on a re-run.
+     * Sets fk_active_season_id / fk_current_round_id only while null: after that, progression is the
+     * application's job, and a re-run must not clobber live state.
      */
     public DefaultsApplyResult applyDefaults(CurrentSeason currentSeason) {
         var competitionId = dsl.select(T_COMPETITION.PK_ID)

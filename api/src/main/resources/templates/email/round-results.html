@@ -16,7 +16,7 @@
 </head>
 <body style="margin:0; padding:0; background-color:#f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
 
-  <!-- Preheader (hidden preview text) -->
+  <!--/* Preheader (hidden preview text) */-->
   <div style="display:none; max-height:0; overflow:hidden;">
     You scored <span th:text="${score}">156</span> points in Gameweek <span th:text="${round}">18</span>! See how you did.
   </div>
@@ -26,34 +26,34 @@
       <td align="center">
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; background-color:#ffffff; border-radius:12px; overflow:hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
 
-          <!-- Header bar -->
+          <!--/* Header bar */-->
           <tr>
             <td style="background-color:#4f46e5; padding: 20px 32px;">
               <span style="color:#ffffff; font-size:20px; font-weight:700;">⚽ LigiPredictor</span>
             </td>
           </tr>
 
-          <!-- Results Card (mirrors the in-app banner) -->
+          <!--/* Results Card (mirrors the in-app banner) */-->
           <tr>
             <td style="padding: 32px;">
 
-              <!-- Gradient-style card using a solid fallback (email clients don't support gradients reliably) -->
+              <!--/* Gradient-style card using a solid fallback (email clients don't support gradients reliably) */-->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
                      style="background-color:#f0fdf4; border: 2px solid #bbf7d0; border-radius: 12px;">
                 <tr>
                   <td style="padding: 20px;">
 
-                    <!-- Title -->
+                    <!--/* Title */-->
                     <p style="margin:0 0 12px 0; font-size:18px; font-weight:700; color:#111827;">
                       🎉 Gameweek <span th:text="${round}">18</span> Results Available!
                     </p>
 
-                    <!-- Greeting -->
+                    <!--/* Greeting */-->
                     <p style="margin:0 0 8px 0; font-size:15px; color:#374151;">
                       Hi <span th:text="${userDisplayName}">there</span>,
                     </p>
 
-                    <!-- Score line, with tier emoji + letter (single source of truth: ScoreTier) -->
+                    <!--/* Score line, with tier emoji + letter (single source of truth: ScoreTier) */-->
                     <p style="margin:0 0 4px 0; font-size:16px; color:#374151;">
                       You scored
                       <span style="font-weight:700; color:#4f46e5; font-size:18px;" th:text="${score}">156</span>
@@ -66,7 +66,7 @@
                       </span>
                     </p>
 
-                    <!-- Hit Distribution: 2x2 grid using table for email compatibility -->
+                    <!--/* Hit Distribution: 2x2 grid using table for email compatibility */-->
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;">
                       <tr>
                         <td width="50%" style="padding: 6px 6px 6px 0; font-size:14px; color:#374151;">
@@ -97,7 +97,7 @@
                       </tr>
                     </table>
 
-                    <!-- Sprint best / new-best / movement -->
+                    <!--/* Sprint best / new-best / movement */-->
                     <th:block th:if="${sprint != null && sprint.sprintBest > 0}">
                       <p style="margin:16px 0 2px 0; font-size:11px; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:0.05em; border-top:1px solid #e5e7eb; padding-top:12px;">
                         🏃 Sprint &bull; <span th:text="${sprint.label.substring(1)}">8</span>
@@ -122,7 +122,7 @@
                       </p>
                     </th:block>
 
-                    <!-- Season best / new-best / movement -->
+                    <!--/* Season best / new-best / movement */-->
                     <th:block th:if="${season != null && season.seasonBest > 0}">
                       <p style="margin:16px 0 2px 0; font-size:11px; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:0.05em; border-top:1px solid #e5e7eb; padding-top:12px;">
                         🏆 Season
@@ -151,7 +151,7 @@
                 </tr>
               </table>
 
-              <!-- Standings: sprint, then quarter, then season -->
+              <!--/* Standings: sprint, then quarter, then season */-->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px; border-top:1px solid #e5e7eb;">
                 <tr>
                   <td colspan="2" style="padding:12px 0 6px 0; font-size:11px; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:0.05em;">
@@ -186,7 +186,7 @@
                 </tr>
               </table>
 
-              <!-- CTA Button -->
+              <!--/* CTA Button */-->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" th:if="${showDetailedResultsLink}">
                 <tr>
                   <td align="center" style="padding-top: 24px;">
@@ -201,7 +201,7 @@
             </td>
           </tr>
 
-          <!-- Footer -->
+          <!--/* Footer */-->
           <tr>
             <td style="padding: 20px 32px; background-color:#f9fafb; border-top:1px solid #e5e7eb;">
               <p style="margin:0; font-size:12px; color:#9ca3af; text-align:center;">

@@ -45,9 +45,8 @@ public class PublicRankDto {
     }
 
     /**
-     * From a predicted {@link TeamRank} plus a code→position lookup for "actual" (current
-     * standings, or the season baseline when nothing has been played yet) — delta computed the
-     * same way {@code ScoringEngine} computes {@code hit}.
+     * From a predicted {@link TeamRank} and a code→actual-position lookup (current standings, or the
+     * season baseline). Delta matches {@code ScoringEngine}'s {@code hit}.
      */
     public static PublicRankDto fromPrediction(
             TeamRank rank, Map<String, Integer> actualPositionByCode, Map<String, Team> teamsByCode) {

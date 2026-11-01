@@ -10,12 +10,9 @@ public sealed interface EmailError {
     record EmailProviderError(String providerMessage) implements EmailError {}
 
     /**
-     * The provider refused the send because an account-level sending limit is exhausted — not a
-     * fault in the message, and retrying before {@code retryAfter} can only fail again.
-     *
-     * <p>{@code retryAfter} is the provider's own reset time when it gave one, otherwise null;
-     * callers that can reschedule should park the work until then rather than spending retry
-     * attempts against a window that outlasts their backoff budget.
+     * An account-level sending limit is exhausted: not the message's fault, and retrying before
+     * {@code retryAfter} (the provider's reset time, or null) can only fail. Callers that can
+     * reschedule should park the work until then.
      */
     record RateLimited(String providerMessage, Instant retryAfter) implements EmailError {}
 }

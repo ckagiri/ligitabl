@@ -57,7 +57,6 @@ public class SeasonPrediction extends AbstractModel<UUID> {
      * Adds a swap to the history for a specific round.
      */
     public void addSwap(int roundNumber, SwapChange change) {
-        // Find or create RoundSwap for this round
         RoundSwap roundSwap = swaps.stream()
                 .filter(rs -> rs.getRound() == roundNumber)
                 .findFirst()
@@ -67,7 +66,6 @@ public class SeasonPrediction extends AbstractModel<UUID> {
                     return newRoundSwap;
                 });
 
-        // Add the change
         roundSwap.getChanges().add(change);
     }
 

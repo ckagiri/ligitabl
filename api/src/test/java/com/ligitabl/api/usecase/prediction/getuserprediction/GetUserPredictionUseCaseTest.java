@@ -110,11 +110,7 @@ class GetUserPredictionUseCaseTest {
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
     }
 
-    /**
-     * Stubs the by-id lookup used by the baseline-rankings fallback ({@code getPreviousRoundRankings}
-     * → {@code getSeasonBaselineRankings}) — only reached by the guest and no-prediction-yet view
-     * builders, not the has-a-prediction paths, so call this only where that path is exercised.
-     */
+    /** For the baseline-rankings fallback, reached only by the guest and no-prediction views. */
     private void stubSeasonBaseline(Season season) {
         when(seasonRepo.findById(season.getId())).thenReturn(Optional.of(season));
     }
@@ -154,7 +150,7 @@ class GetUserPredictionUseCaseTest {
         assertEquals(baselineRankings, data.rankings());
     }
 
-    // ── Matches fetched exactly once (E1) ──────────────────────────────────
+    // ── Matches fetched exactly once ───────────────────────────────────────
 
     @Test
     void authenticatedCurrentRound_fetchesMatchesExactlyOnce() {
@@ -304,7 +300,7 @@ class GetUserPredictionUseCaseTest {
         assertEquals(Map.of(), data.matches());
     }
 
-    // ── Last round advanced while still "current" (E3) ─────────────────────
+    // ── Last round advanced while still "current" ──────────────────────────
 
     @Test
     void authenticatedCurrentRound_lastRoundAdvanced_withRoundResult_rendersAsHistorical() {
@@ -381,7 +377,7 @@ class GetUserPredictionUseCaseTest {
         assertTrue(result.isLeft());
     }
 
-    // ── seasonCompleted derivation (F2): from round state, not Season.completed ────
+    // ── seasonCompleted derivation: from round state, not Season.completed ─────
 
     @Test
     void seasonCompleted_trueWhenLastRoundAdvanced_regardlessOfSeasonCompletedFlag() {
@@ -405,7 +401,7 @@ class GetUserPredictionUseCaseTest {
     @Test
     void seasonCompleted_falseWhenCurrentRoundNotAdvanced_evenIfSeasonCompletedFlagIsTrue() {
         Season season = createSeason(20);
-        // stale/admin-set flag — no longer authoritative
+        // Season.completed is admin-set and not authoritative.
         season = season.toBuilder().completed(true).build();
         Round round = createRound(5, false, false); // not the last round, not advanced
 

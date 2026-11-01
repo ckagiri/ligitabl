@@ -36,9 +36,8 @@ public class ContestSeasonSupport {
     }
 
     /**
-     * Combines {@link #isPastSeason} and {@link #isJoinWindowClosed}, resolving the season once
-     * instead of twice — use this instead of calling both separately when a caller needs both
-     * (the common case: gate an action on "not past season and window still open").
+     * {@link #isPastSeason} and {@link #isJoinWindowClosed} with the season resolved once. Use this
+     * rather than calling both when a caller needs both.
      */
     public SeasonGateStatus resolveSeasonGateStatus(Contest contest) {
         Season season = seasonRepo.findById(contest.getSeasonId()).orElse(null);

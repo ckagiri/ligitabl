@@ -36,10 +36,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Simulates the round's standings table (and, by extension, a user's score against it) from
- * hypothetical match scores, without persisting anything. Feeds the domain {@link StandingsCalculator}
- * a synthetic match list (real finished matches from earlier rounds, plus the current round's
- * matches carrying the submitted hypothetical scores) instead of a DB-fetched one.
+ * Simulates the round's standings (and a user's score against them) from hypothetical match
+ * scores, persisting nothing. Feeds the domain {@link StandingsCalculator} earlier rounds' finished
+ * matches plus the current round's matches carrying the submitted scores.
  */
 @Component
 @RequiredArgsConstructor
@@ -102,12 +101,9 @@ public class ComputeWhatIfUseCase {
     }
 
     /**
-     * A match is scoreable unless it's been called off — POSTPONED/CANCELLED/SUSPENDED matches
-     * contribute nothing to a real result either, so they're excluded from both the "every match
-     * needs a score" requirement and the synthetic match list built afterward. Matches that have
-     * since kicked off or finished stay scoreable: on a locked round the hypothesis is exactly that
-     * the real result went differently, so it's the user's saved guess that's replayed here, never
-     * the actual score.
+     * A called-off match (POSTPONED/CANCELLED/SUSPENDED) contributes nothing to a real result, so it
+     * is excluded. Kicked-off and finished matches stay scoreable: on a locked round the hypothesis
+     * is that the result went differently, so the saved guess is replayed, never the real score.
      */
     private static boolean isScoreable(Match match) {
         return match.getStatus() != MatchStatus.POSTPONED

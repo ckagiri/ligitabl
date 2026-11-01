@@ -22,12 +22,7 @@ public class PasswordResetToken {
     @With
     Instant usedAt;
 
-    /**
-     * The instant is an argument rather than a wall-clock read so the caller's {@code Clock} decides
-     * it — the same reason {@link com.ligitabl.model.domain.league.Season#getSeasonState(Instant)} takes one. A token minted from a
-     * different instant than {@link #isExpired(Instant)} later evaluates against describes a
-     * validity window nobody chose.
-     */
+    /** Takes {@code now} rather than reading the clock, so the caller's {@code Clock} sets the validity window. */
     public static PasswordResetToken create(UUID userId, int validityMinutes, Instant now) {
         return PasswordResetToken.builder()
                 .token(UUID.randomUUID().toString())

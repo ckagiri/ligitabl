@@ -58,9 +58,8 @@ public class ContestSupport {
     public record QuarterOption(String code, String name) {}
 
     /**
-     * A contest is actually open for new members only if its own {@code isOpen} toggle is on
-     * <em>and</em> its join window hasn't closed (past its end, or past the opening of its own
-     * last sprint). Mirrors the gate {@code JoinPrivateContestUseCase} enforces on an actual join.
+     * Open for new members only if the contest's {@code isOpen} toggle is on and its join window
+     * hasn't closed. The same gate {@code JoinPrivateContestUseCase} enforces on a join.
      */
     public boolean isOpenForJoining(Contest contest, Season season, Competition competition) {
         if (!contest.isOpen()) return false;
@@ -77,15 +76,11 @@ public class ContestSupport {
     }
 
     /**
-     * LIVE/FINISHED/NEXT/FUTURE for a contest's own (fromRoundPosition, toRoundPosition) window vs.
-     * the current round — same vocabulary as the segment navigator, but sprint-aware for NEXT (see
-     * {@link PhaseRules#deriveWindowStatus(int, int, int, List)}: NEXT holds for the current
-     * sprint's *entire* duration when the following sprint is this contest's first sprint, not just
-     * the single round right before it starts). FUTURE if there's no current round yet (nothing has
-     * started). List-view badge only; the detail page keeps its own precise
-     * {@link #isOpenForJoining(Contest, Season, Competition)} gate, which additionally accounts for
-     * the last-sprint opening-round lock and needs no round-status lookup at all here (no match
-     * fetch) since it's pure round-position math.
+     * LIVE/FINISHED/NEXT/FUTURE for the contest's own window, sprint-aware for NEXT (see
+     * {@link PhaseRules#deriveWindowStatus(int, int, int, List)}). FUTURE when there is no current
+     * round yet. List-view badge only; the detail page uses
+     * {@link #isOpenForJoining(Contest, Season, Competition)}, which also applies the last-sprint
+     * opening-round lock.
      */
     public String deriveContestStatus(
             int fromRoundPosition, int toRoundPosition, Round currentRound, List<RoundSpan> phases) {
@@ -156,9 +151,8 @@ public class ContestSupport {
                         status = "FUTURE";
                     } else if (currentRound != null) {
                         RoundStatus rs = roundSupport.resolveStatus(currentRound);
-                        // Only mark OPEN when we're exactly at the sprint's first round.
-                        // Mid-sprint (pos > sprint.from) means the join window is already closed
-                        // for any single-sprint contest starting here.
+                        // OPEN only at the sprint's first round; mid-sprint, a single-sprint
+                        // contest starting here is already closed to joins.
                         status = (rs == RoundStatus.OPEN && currentPos == sprint.getFrom()) ? "OPEN" : "LOCKED";
                     } else {
                         status = "OPEN";

@@ -14,7 +14,7 @@
         @htmx:response-error.window="if ($event.detail.target && $event.detail.target.id === 'leaderboard-content') loading = false"
       >
 
-        <!-- ── Top bar: back link + Actions button ── -->
+        <!--/* ── Top bar: back link + Actions button ── */-->
         <div class="flex items-center justify-between mb-4">
           <a th:href="${backHref}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition">
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -23,7 +23,7 @@
             Back
           </a>
 
-          <!-- Actions dropdown (owner only) -->
+          <!--/* Actions dropdown (owner only) */-->
           <th:block th:if="${isOwner == true}">
             <div
               class="relative"
@@ -80,7 +80,7 @@
           </th:block>
         </div>
 
-        <!-- Renewal success/error banners -->
+        <!--/* Renewal success/error banners */-->
         <th:block th:if="${param.renewed != null}">
           <div class="flex items-start gap-3 bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
             <svg class="h-5 w-5 text-green-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,7 +104,7 @@
           </div>
         </th:block>
 
-        <!-- ── Contest header ── -->
+        <!--/* ── Contest header ── */-->
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-4">
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
@@ -118,7 +118,7 @@
                   th:unless="${isOpenForJoining}"
                   class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
                 >Closed</span>
-                <!-- Raw admin toggle, distinct from the computed "Open"/"Closed" above (owner only) -->
+                <!--/* Raw admin toggle, distinct from the computed "Open"/"Closed" above (owner only) */-->
                 <th:block th:if="${isOwner == true}">
                   <span
                     th:if="${contest.isOpen}"
@@ -149,7 +149,7 @@
               </p>
             </div>
 
-            <!-- Invite code (owner only) -->
+            <!--/* Invite code (owner only) */-->
             <th:block th:if="${isOwner == true}">
               <div class="flex-shrink-0">
                 <p class="text-xs font-medium text-gray-500 mb-1">Invite code</p>
@@ -174,7 +174,7 @@
           </div>
         </div>
 
-        <!-- Share card (owner only) -->
+        <!--/* Share card (owner only) */-->
         <th:block th:if="${isOwner == true}">
           <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-4"
                x-data="{ open: false, copiedAll: false, copiedLink: false, inviteUrl: '', joinUrl: '', joinCode: '', contestName: '' }"
@@ -240,7 +240,6 @@
           </div>
         </th:block>
 
-        <!-- Delete error banner -->
         <th:block th:if="${param.deleteError != null}">
           <div class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
             <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -250,10 +249,10 @@
           </div>
         </th:block>
 
-        <!-- ── Segment filter + leaderboard ── -->
+        <!--/* ── Segment filter + leaderboard ── */-->
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-4">
 
-          <!-- Segment navigator -->
+          <!--/* Segment navigator */-->
           <div class="px-4 py-3 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center gap-2">
             <div class="relative">
               <button type="button"
@@ -267,7 +266,7 @@
                 </svg>
               </button>
 
-              <!-- Desktop: anchored dropdown -->
+              <!--/* Desktop: anchored dropdown */-->
               <div x-show="dropdownOpen"
                    x-cloak
                    @click.away="dropdownOpen = false"
@@ -304,7 +303,7 @@
             </th:block>
           </div>
 
-          <!-- Mobile bottom sheet -->
+          <!--/* Mobile bottom sheet */-->
           <div x-show="sheetOpen" x-cloak @click="sheetOpen = false"
                class="md:hidden fixed inset-0 z-50 flex items-end bg-black bg-opacity-40 px-2 pb-2">
             <div @click.stop class="w-full bg-white rounded-2xl shadow-xl max-h-[70vh] overflow-y-auto">
@@ -320,7 +319,7 @@
             </div>
           </div>
 
-          <!-- Loading spinner — shown while htmx.ajax is in flight -->
+          <!--/* Loading spinner — shown while htmx.ajax is in flight */-->
           <div
             x-show="loading"
             x-cloak
@@ -348,16 +347,12 @@
             Loading...
           </div>
 
-          <!--
-            Stable wrapper — stays in the DOM, never swapped.
-            x-show toggles visibility while loading.
-            #leaderboard-content inside is the HTMX swap target.
-          -->
+          <!--/* Stays in the DOM, never swapped; #leaderboard-content inside is the HTMX target. */-->
           <div x-show="!loading">
-          <!-- ── Leaderboard content (HTMX swap target) ── -->
+          <!--/* ── Leaderboard content (HTMX swap target) ── */-->
           <div id="leaderboard-content" th:fragment="leaderboard-content">
 
-            <!-- Hidden inputs for player modal -->
+            <!--/* Hidden inputs for player modal */-->
             <input
               th:if="${effectiveToRound != null}"
               type="hidden"
@@ -372,7 +367,7 @@
               th:value="${currentPhaseFrom}"
             />
 
-            <!-- Segment sub-header -->
+            <!--/* Segment sub-header */-->
             <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
               <div>
                 <p class="text-sm font-medium text-gray-700" th:text="${selectedSegment.name}">Sprint 1</p>
@@ -383,12 +378,10 @@
                  th:text="${leaderboard.totalParticipants} + (${leaderboard.totalParticipants} == 1 ? ' member' : ' members')">8 members</p>
             </div>
 
-            <!-- Empty state -->
             <th:block th:if="${leaderboard == null or #lists.isEmpty(leaderboard.entries)}">
               <div class="px-4 py-10 text-center text-sm text-gray-500">No scores yet for this segment.</div>
             </th:block>
 
-            <!-- Leaderboard table -->
             <th:block th:if="${leaderboard != null and not #lists.isEmpty(leaderboard.entries)}">
 
               <style>
@@ -436,10 +429,8 @@
                       th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'bg-indigo-50' : (entry.isFormerMember ? 'opacity-60 bg-gray-50' : '')}"
                       class="group hover:bg-gray-50 transition"
                     >
-                      <!-- Pos — the own-row marker is a left border on this sticky cell rather
-                           than an inline icon: an icon pushed the position number to the right,
-                           and a row-level border is never painted under border-collapse (and
-                           would be covered by this cell's opaque background regardless). -->
+                      <!--/* The own-row marker is a left border on this sticky cell: an icon pushed
+                           the number right, and a row border isn't painted under border-collapse. */-->
                       <td
                         class="cb-pos-col sticky left-0 z-10 pl-2 pr-3 py-4 whitespace-nowrap text-sm font-bold"
                         th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'bg-indigo-50 text-indigo-900 border-l-4 border-indigo-500' : 'bg-white group-hover:bg-gray-50 text-gray-900'}"
@@ -448,13 +439,13 @@
                         <span th:if="${!entry.scored}" class="text-gray-400">—</span>
                       </td>
 
-                      <!-- Player -->
+                      <!--/* Player */-->
                       <td
                         class="sticky left-[48px] z-10 px-3 max-sm:pr-0 py-4 whitespace-nowrap w-36 max-[340px]:w-32 sm:w-32 lg:w-44"
                         th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'bg-indigo-50' : 'bg-white group-hover:bg-gray-50'}"
                       >
                         <div class="flex flex-col">
-                          <!-- Late joiners stay clickable; the modal clamps to their joinedAtGw. -->
+                          <!--/* Late joiners stay clickable; the modal clamps to their joinedAtGw. */-->
                           <th:block th:if="${entry.isFormerMember == true}">
                             <span
                               class="block max-w-[8.5rem] max-[340px]:max-w-[7rem] sm:max-w-full min-w-0 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip sm:line-clamp-2 text-sm font-medium text-left"
@@ -463,7 +454,7 @@
                               th:text="${entry.displayName}"
                             >Alice</span>
                           </th:block>
-                          <!-- Clickable: opens player modal -->
+                          <!--/* Clickable: opens player modal */-->
                           <th:block th:unless="${entry.isFormerMember == true}">
                             <button
                               hx-post="/leaderboard/user/modal"
@@ -497,37 +488,37 @@
                         </div>
                       </td>
 
-                      <!-- Points -->
+                      <!--/* Points */-->
                       <td class="px-3 py-4 whitespace-nowrap text-right text-sm font-bold text-indigo-600">
                         <span th:if="${entry.scored}" th:text="${entry.totalScore}">42</span>
                         <span th:if="${!entry.scored}" class="text-gray-400 font-normal">—</span>
                       </td>
 
-                      <!-- GW -->
+                      <!--/* GW */-->
                       <td class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-600">
                         <span th:if="${entry.scored}" th:text="${entry.roundScore}">8</span>
                         <span th:if="${!entry.scored}" class="text-gray-400">—</span>
                       </td>
 
-                      <!-- Zeroes -->
+                      <!--/* Zeroes */-->
                       <td class="px-3 py-4 whitespace-nowrap text-right text-sm font-semibold text-green-600">
                         <span th:if="${entry.scored}" th:text="${entry.totalZeroes}">2</span>
                         <span th:if="${!entry.scored}" class="text-gray-400 font-normal">—</span>
                       </td>
 
-                      <!-- Best -->
+                      <!--/* Best */-->
                       <td class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-600">
                         <span th:if="${entry.scored}" th:text="${entry.maxScore}">52</span>
                         <span th:if="${!entry.scored}" class="text-gray-400">—</span>
                       </td>
 
-                      <!-- Swaps -->
+                      <!--/* Swaps */-->
                       <td class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-500">
                         <span th:if="${entry.scored}" th:text="${entry.totalSwaps}">1</span>
                         <span th:if="${!entry.scored}" class="text-gray-400">—</span>
                       </td>
 
-                      <!-- Change -->
+                      <!--/* Change */-->
                       <td class="px-3 py-4 whitespace-nowrap text-center text-sm">
                         <th:block th:if="${entry.scored}">
                           <span th:if="${entry.movement > 0}" class="text-green-600 font-semibold">
@@ -543,13 +534,13 @@
                     </tr>
                   </tbody>
 
-                  <!-- Sticky user row when not on current page -->
+                  <!--/* Sticky user row when not on current page */-->
                   <tfoot th:if="${userPosition != null and !userInCurrentPage}" class="border-t-2 border-indigo-300">
                     <tr class="bg-gradient-to-r from-indigo-50 to-blue-50">
                       <td colspan="8" class="px-3 py-4">
                         <div class="flex items-center gap-4 flex-wrap">
-                          <!-- Position + "You" stacked over the name: side by side they squeeze
-                               each other on a narrow screen. -->
+                          <!--/* Position + "You" stacked over the name: side by side they squeeze
+                               each other on a narrow screen. */-->
                           <div class="flex flex-col min-w-0">
                             <div class="flex items-center gap-1">
                               <span class="text-indigo-600 text-base">🔹</span>
@@ -573,7 +564,7 @@
                 </table>
               </div>
 
-              <!-- Pagination -->
+              <!--/* Pagination */-->
               <div th:if="${totalEntries > 0}" class="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
                 <span class="text-sm text-gray-500">
                   Showing <span th:text="${showingFrom}">1</span>–<span th:text="${showingTo}">10</span>
@@ -612,8 +603,8 @@
           </div>
         </div>
 
-        <!-- ── Leave contest (non-owner, private contests only) ── -->
-        <!-- Past-season contests are historical records: no leave control at all, no explanation needed. -->
+        <!--/* ── Leave contest (non-owner, private contests only) ── */-->
+        <!--/* Past-season contests are historical records: no leave control at all, no explanation needed. */-->
         <th:block th:if="${isOwner == false and contest.private == true and isPastSeason == false}">
           <div class="mb-4">
             <th:block th:if="${isJoinWindowClosed == true}">
@@ -642,7 +633,7 @@
           </div>
         </th:block>
 
-        <!-- ── Renewal modal (owner only, when renewable) ── -->
+        <!--/* ── Renewal modal (owner only, when renewable) ── */-->
         <th:block th:if="${renewal.visible == true}">
           <div
             x-data="contestRenewal()"
@@ -654,14 +645,14 @@
 
       </div>
 
-      <!-- Modal loading spinner -->
+      <!--/* Modal loading spinner */-->
       <div id="modal-loading" class="hidden fixed inset-0 z-40 flex items-center justify-center">
         <svg class="animate-spin h-8 w-8 text-indigo-500" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
         </svg>
       </div>
-      <!-- Player modal container -->
+      <!--/* Player modal container */-->
       <div id="user-detail-modal"></div>
 
       <script th:inline="javascript">

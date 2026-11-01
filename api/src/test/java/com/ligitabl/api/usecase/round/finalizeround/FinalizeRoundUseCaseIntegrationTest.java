@@ -148,7 +148,7 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
                     .isPresent();
         }
 
-        // finalization no longer advances season pointers
+        // Finalization does not advance season pointers.
         var season = seasonRepo.findById(seasonId).orElseThrow();
         assertThat(season.getCurrentRoundId()).isEqualTo(round1.getId());
     }
@@ -356,8 +356,7 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         assertThat(standingsRepo.findBySeasonAndRoundPosition(seasonId, 2)).isPresent();
         assertThat(standingsRepo.findBySeasonAndRoundPosition(seasonId, 3)).isPresent();
 
-        // RoundAdvancementService no longer auto-completes the season on the last round advancing
-        // (that's now a separate, explicit admin action) — it just marks the round advanced.
+        // Advancing the last round only marks it advanced; completing the season is an admin action.
         assertThat(roundRepo.findById(round3.getId()).orElseThrow().isAdvanced())
                 .isTrue();
         var season = seasonRepo.findById(seasonId).orElseThrow();
@@ -380,7 +379,7 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().seasonCompleted()).isTrue();
 
-        // FinalizeRoundUseCase no longer completes the season; that happens on explicit advance.
+        // FinalizeRoundUseCase does not complete the season.
         var season = seasonRepo.findById(seasonId).orElseThrow();
         assertThat(season.isCompleted()).isFalse();
     }
@@ -501,7 +500,7 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         createFinishedMatch(round1, arsenal, chelsea, 2, 1);
         assertThat(finalizeRoundUseCase.execute(seasonId).isRight()).isTrue();
 
-        // Attach a main contest so the season is no longer in setup mode.
+        // A main contest takes the season out of setup mode.
         insertContest(UUID.randomUUID());
 
         var result = finalizeRoundUseCase.execute(FinalizeRoundCommand.refinalize(seasonId, 1));

@@ -105,10 +105,9 @@ public class EnqueueSegmentResultsEmailsUseCase {
     }
 
     /**
-     * The season finale, and only the season: the full-season span is deliberately <em>not</em>
-     * considered by {@link #execute(RoundAdvancedPayload)}, so advancing the last round closes its sprint and
-     * quarter and nothing more. Completing the season is a separate admin action taken afterwards,
-     * and it produces an email carrying the season podium alone.
+     * The season finale. {@link #execute(RoundAdvancedPayload)} never considers the full-season span,
+     * so advancing the last round closes only its sprint and quarter; completing the season is a
+     * later admin action that sends the season podium alone.
      */
     public void execute(SeasonCompletedPayload event) {
         Context ctx = resolveContext(event.seasonId(), "season-completed");
@@ -285,9 +284,8 @@ public class EnqueueSegmentResultsEmailsUseCase {
     private record Board(List<LeaderboardEntry> entries, int totalParticipants) {}
 
     /**
-     * The top {@code maxEntries} of the board for exactly this segment's window, plus the field
-     * size the email quotes ("2 of 41"). A single page covers the podium at any sane {@code topN};
-     * the loop exists only so a misconfigured one still works.
+     * The top {@code maxEntries} for exactly this segment's window, plus the field size the email
+     * quotes ("2 of 41"). One page covers any sane {@code topN}; the loop handles a misconfigured one.
      */
     private Board fetchBoard(Context ctx, RoundSpan span, int maxEntries) {
         List<LeaderboardEntry> entries = new ArrayList<>();

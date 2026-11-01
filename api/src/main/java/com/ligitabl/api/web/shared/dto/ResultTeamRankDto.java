@@ -18,7 +18,6 @@ public class ResultTeamRankDto {
     // Predicted position (from TeamRank)
     int predictedPosition;
 
-    // Team information
     String teamCode;
     UUID teamId;
     String teamName;

@@ -9,9 +9,17 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * A monadic container representing a value of one of two possible types (a disjoint union).
- * An Either is either a Left or a Right.
- * By convention, Left is used for failure/error and Right is used for success.
+ * A value of one of two types. By convention Left is failure and Right is success.
+ *
+ * <p>Wrapping code that throws — pick by what you want caught:
+ * <ul>
+ *   <li>{@code catching}: Exception, checked or runtime, but not Error. The default.
+ *   <li>{@code catchingChecked}: checked exceptions only, so a bug (a RuntimeException) still
+ *       crashes immediately. Use it to fail fast.
+ *   <li>{@code catchingAll}: everything, Error included. Only at process boundaries.
+ * </ul>
+ * Each has a supplier form and a function form for {@code flatMap}, taking an error mapper, a
+ * fixed Left value, or neither (Left is the exception itself).
  */
 public sealed interface Either<L, R> permits Either.Left, Either.Right {
 
@@ -88,9 +96,8 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     <T> Either<L, T> map(Function<? super R, ? extends T> mapper);
 
     /**
-     * Retypes a known-Left Either to a different Right type parameter, e.g. when propagating an
-     * error out of a method whose success type differs from the current step's. Throws if called
-     * on a Right, since there is no value to discard safely.
+     * Retypes a known-Left Either to a different Right type, e.g. to propagate an error out of a
+     * method with another success type. Throws on a Right.
      */
     default <T> Either<L, T> castLeft() {
         if (isRight()) {
@@ -124,13 +131,7 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
 
     R getOrElse(Supplier<? extends R> supplier);
 
-    /**
-     * Returns the right value if present, otherwise applies the mapper function to the left value.
-     * Similar to getOrElse but the mapper receives the left value.
-     *
-     * @param mapper Function to map left value to right type
-     * @return The right value or the mapped left value
-     */
+    /** Like getOrElse, but the fallback is computed from the left value. */
     default R getOrElseMap(Function<? super L, ? extends R> mapper) {
         Objects.requireNonNull(mapper, "mapper");
         return isRight() ? get() : mapper.apply(getLeft());
@@ -140,13 +141,6 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
 
     Either<L, R> orElse(Supplier<? extends Either<L, R>> supplier);
 
-    /**
-     * Returns the right value if present, otherwise throws an exception created from the left value.
-     *
-     * @param exceptionMapper Function to create exception from left value
-     * @return The right value
-     * @throws X The exception created by the mapper
-     */
     default <X extends Throwable> R getOrElseThrow(Function<? super L, ? extends X> exceptionMapper) throws X {
         Objects.requireNonNull(exceptionMapper, "exceptionMapper");
         if (isRight()) {
@@ -301,15 +295,10 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     // ========== Unified Catching API (RECOMMENDED DEFAULT) ==========
 
     /**
-     * Catches exceptions from a supplier and maps them to Left values.
-     * Catches Exception (checked + runtime) but NOT Error.
-     * This is the RECOMMENDED DEFAULT for most code.
+     * Catches Exception (checked and runtime) but NOT Error, mapping it to Left. The default for
+     * most code.
      *
      * Usage: Either.catching(() -> operation(), UseCaseErrors::catching)
-     *
-     * @param supplier Operation that may throw exceptions
-     * @param errorMapper Maps caught exceptions to Left type
-     * @return Either with Right(result) or Left(mapped error)
      */
     static <L, T> Either<L, T> catching(CheckedSupplier<T> supplier, Function<Exception, L> errorMapper) {
         Objects.requireNonNull(supplier, "supplier");
@@ -331,15 +320,9 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     }
 
     /**
-     * Catches exceptions from a function and maps them to Left values.
-     * For use in flatMap chains. Catches Exception but NOT Error.
-     * This is the RECOMMENDED DEFAULT for most code.
+     * Catches Exception but NOT Error, for use in flatMap.
      *
      * Usage: either.flatMap(Either.catching(value -> operation(value), UseCaseErrors::catching))
-     *
-     * @param operation Function that may throw exceptions
-     * @param errorMapper Maps caught exceptions to Left type
-     * @return Function suitable for flatMap
      */
     static <L, R, T> Function<R, Either<L, T>> catching(
             CheckedFunction<R, T> operation, Function<Exception, L> errorMapper) {
@@ -424,7 +407,7 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
 
     /**
      * Catches ALL exceptions including Error.
-     * ⚠️ Use sparingly - only at process boundaries where you truly want to catch everything.
+     * ⚠️ Only at process boundaries where you truly want to catch everything.
      *
      * Usage: Either.catchingAll(() -> untrustedOperation(), err -> "Failed")
      */
@@ -441,10 +424,7 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
         }
     }
 
-    /**
-     * Catches ALL exceptions including Error, for use in flatMap.
-     * ⚠️ Use sparingly.
-     */
+    /** Catches ALL exceptions including Error, for use in flatMap. ⚠️ Use sparingly. */
     static <L, R, T> Function<R, Either<L, T>> catchingAll(
             CheckedFunction<R, T> operation, Function<Throwable, L> errorMapper) {
         Objects.requireNonNull(operation, "operation");
@@ -479,8 +459,8 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     // ========== Fail-Fast API (Only Checked Exceptions) ==========
 
     /**
-     * Catches ONLY checked exceptions (not RuntimeException or Error).
-     * Use for FAIL-FAST when you want bugs to crash immediately.
+     * Catches ONLY checked exceptions (not RuntimeException or Error), so bugs still crash
+     * immediately. Use it to fail fast.
      *
      * Usage: Either.catchingChecked(() -> readFile(), err -> "IO failed")
      */

@@ -39,10 +39,7 @@ import com.ligitabl.api.usecase.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.identity.Role;
 import com.ligitabl.model.repo.UserRepo;
 
-/**
- * Regression guard: contest detail already resolves through {@code WebSecurity.resolveUser}, so
- * its leaderboard follows the impersonated user. This pins that behaviour.
- */
+/** Contest detail resolves through {@code WebSecurity.resolveUser}, so its leaderboard follows the impersonated user. */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ContestDetailController — current user follows impersonation")
 class ContestDetailControllerTest {

@@ -33,10 +33,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Public, no-login view of someone's Final Table: {@code /final-table/u/{publicId}/{seasonShorthand}}.
- *
- * <p>Always read-only. Carries OG/Twitter meta so the link unfurls, which is the point of a game
- * whose whole payoff is showing people what you called in August.
+ * Public, read-only view of someone's Final Table: {@code /final-table/u/{publicId}/{seasonShorthand}}.
+ * Carries OG/Twitter meta so the link unfurls.
  */
 @Controller
 @RequiredArgsConstructor
@@ -107,9 +105,8 @@ public class PublicFinalTableController {
         String shareUrl = "%s/final-table/u/%s/%s"
                 .formatted(frontendShareUrl, publicId, season.getSlug().toShorthand());
 
-        // One cleaned name for every use below. User.getDisplayName() is a plain Lombok getter over
-        // a nullable column, so without this a user who never set one renders as "null's Final
-        // Table"; and a name containing markup would be painted verbatim onto the share canvas.
+        // getDisplayName() is nullable, so uncleaned it renders "null's Final Table", and markup in a
+        // name would be painted onto the share canvas.
         String ownerName = DisplayNames.clean(user.getDisplayName());
         String ownerPossessive = ownerName == null ? "This player's" : DisplayNames.possessive(ownerName);
 
@@ -118,9 +115,8 @@ public class PublicFinalTableController {
         // Exposed so the page heading does not hardcode "'s" — Charles's vs Ann's is one rule, and
         // it already lives in DisplayNames.possessive.
         model.addAttribute("ownerPossessive", ownerPossessive);
-        // Distance ceiling, a zero on every club, and the champion called right — tracks the
-        // season's team count rather than assuming 20 clubs and 425 points. The formula itself
-        // lives with the scoring rule so this page can never quote a number score() cannot produce.
+        // From the season's team count; the formula lives with the scoring rule so this page can
+        // never quote a number score() cannot produce.
         int maxScore = FinalTableScorer.maxScore(season.getMaxHitPoints(), rankings.size());
         model.addAttribute("maxScore", maxScore);
         model.addAttribute("maxHitPoints", season.getMaxHitPoints());
@@ -170,11 +166,9 @@ public class PublicFinalTableController {
     }
 
     /**
-     * Resolves the opaque {@code from} marker into an internal path for the Back link.
-     *
-     * <p>A fixed set of accepted tokens, each mapping to a path built here — never a caller-supplied
-     * URL, so this can't be turned into an off-site redirect. Anything unrecognised yields no Back
-     * link at all. Mirrors {@code PublicPredictionController.resolveBackHref}.
+     * Maps the opaque {@code from} marker to an internal path for the Back link. Only fixed tokens
+     * are accepted, never a caller-supplied URL, so it can't become an off-site redirect.
+     * Mirrors {@code PublicPredictionController.resolveBackHref}.
      */
     private String resolveBackHref(String from) {
         if (from == null || from.isBlank()) return null;

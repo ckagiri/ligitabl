@@ -1,6 +1,6 @@
 <div xmlns:th="http://www.thymeleaf.org">
-<!-- Public Prediction View Fragment (historical/scored rounds — plain static table) -->
-<!-- Parameters:
+<!--/* Public Prediction View Fragment (historical/scored rounds — plain static table) */-->
+<!--/* Parameters:
      rows: List of PublicRankDto (position, teamCode, teamName, actualPosition, delta)
      hasRoundResult: Boolean - whether the round has been scored (drives the score summary block
        and the last column's label — "Hit" once scored, "Delta" for a live/unscored comparison)
@@ -9,7 +9,7 @@
      Actual/Delta columns read `compareStandings` from an ancestor Alpine x-data scope (declared
      by the caller, e.g. public-predictions.html) — shown by default, hidden if the "Compare with
      current standings" checkbox is unticked.
--->
+*/-->
 <div th:fragment="public-view(rows, hasRoundResult, totalScore, totalHits, zeroesCount)">
   <div class="px-6 py-4">
     <div class="overflow-x-auto sm:overflow-hidden">
@@ -94,7 +94,7 @@
     </div>
   </div>
 
-  <!-- Score Summary (only when this round has been scored) -->
+  <!--/* Score Summary (only when this round has been scored) */-->
   <div
     th:if="${hasRoundResult}"
     class="mt-4 text-center pb-4"
@@ -102,8 +102,8 @@
     <div
       class="inline-flex flex-col items-center px-6 py-3 bg-gray-50 rounded-lg border border-gray-200"
     >
-      <!-- Same shape as the owner's own historical summary (prediction-historical-view.html), with
-           a "Score:" label since a visitor arriving on a share link has no context for a bare sum. -->
+      <!--/* Same shape as the owner's own historical summary (prediction-historical-view.html), with
+           a "Score:" label since a visitor arriving on a share link has no context for a bare sum. */-->
       <div class="flex items-center text-sm text-gray-600 mb-1">
         <span class="mr-1">Score:</span>
         <span class="font-mono" th:text="${maxHitPoints}">200</span>
@@ -133,17 +133,12 @@
   </div>
 </div>
 
-<!-- Public Rich Table Fragment (current/live round — comparison-options: standings/points/GD/
-     fixtures/form). Entirely Alpine-rendered (x-for over `displayTeams()`, populated client-side
-     from data-predictions), same as the owner's own interactive-table — but read-only: no click/
-     select/drag, and Actual/Delta stay plain colored numbers (no arrows), unlike interactive-table.
-     Carries the same My Table / Actual Table switch, which `_predictionBase` already backs via
-     positionsReversed + toggleStandingsView. -->
+<!--/* Public Rich Table Fragment for the current round (standings/points/GD/fixtures/form toggles).
+     Alpine-rendered from data-predictions like interactive-table, but read-only, with plain
+     numbers for Actual/Delta. The My Table / Actual Table switch is backed by `_predictionBase`. */-->
 <div th:fragment="public-rich-table" class="px-6 py-4 max-sm:pt-1">
-  <!-- Switches between the viewed user's prediction and the real standings. Mirrors the owner's
-       interactive-table toolbar, minus the read-only badge and the move-up/down arrow key: this
-       whole table is already read-only and its deltas are plain numbers, so neither would be
-       telling the visitor anything new. -->
+  <!--/* Switches between the viewed user's prediction and the real standings, like the owner's
+       toolbar minus the read-only badge and the arrow key, which tell a read-only view nothing. */-->
   <div
     x-show="showStandings"
     class="flex flex-wrap items-center justify-end gap-x-2 gap-y-2 mb-3"
@@ -268,7 +263,7 @@
                     <span class="hidden lg:inline" x-text="team.name"></span>
                   </div>
 
-                  <!-- Mobile: Fixtures/Standings/Points/GD/Form combined -->
+                  <!--/* Mobile: Fixtures/Standings/Points/GD/Form combined */-->
                   <div
                     x-show="showFixtures || showStandings || showPoints || showGD || showForm"
                     class="sm:hidden flex items-center gap-1.5 mt-1 flex-wrap"
@@ -294,7 +289,7 @@
                           </template>
                           <span x-show="fixture.status === 'POSTPONED'" class="mr-1 font-bold">P</span>
                           <span x-show="!fixture.isHome">@</span><span x-text="fixture.opponent"></span>
-                          <!-- Own goals first — see fragments/prediction-table.html. -->
+                          <!--/* Own goals first — see fragments/prediction-table.html. */-->
                           <span
                             x-show="fixture.goalsFor != null && fixture.goalsAgainst != null"
                             class="ml-1 font-semibold"
@@ -304,7 +299,7 @@
                       </template>
                     </template>
 
-                    <!-- Actual position + plain-number delta (no arrows) -->
+                    <!--/* Actual position + plain-number delta (no arrows) */-->
                     <div x-show="showStandings" class="flex items-center gap-1 text-xs">
                       <span class="text-gray-500" x-text="positionsReversed ? 'Pred:' : 'Actual:'">Actual:</span>
                       <span
@@ -319,7 +314,7 @@
                       ></span>
                     </div>
 
-                    <!-- Points + GD (mobile) -->
+                    <!--/* Points + GD (mobile) */-->
                     <div x-show="showPoints || showGD" class="flex basis-full items-center gap-1 text-xs">
                       <template x-if="showPoints">
                         <span class="flex items-center gap-1">
@@ -343,7 +338,7 @@
                       </template>
                     </div>
 
-                    <!-- Form circles (mobile) -->
+                    <!--/* Form circles (mobile) */-->
                     <template x-if="showForm && getForm(team.code).length > 0">
                       <div class="flex basis-full items-center gap-1.5 mt-0.5">
                         <span
@@ -372,7 +367,7 @@
                     </template>
                   </div>
 
-                  <!-- Desktop: fixtures inline (standings/points/GD/form in their own columns) -->
+                  <!--/* Desktop: fixtures inline (standings/points/GD/form in their own columns) */-->
                   <div x-show="showFixtures && hasFixtures(team.code)" class="hidden sm:flex items-center gap-1.5 mt-1">
                     <template x-for="fixture in getFixtures(team.code)" :key="fixture.opponent">
                       <span
@@ -394,7 +389,7 @@
                         </template>
                         <span x-show="fixture.status === 'POSTPONED'" class="mr-1 font-bold">P</span>
                         <span x-show="!fixture.isHome">@</span><span x-text="fixture.opponent"></span>
-                        <!-- Own goals first — see fragments/prediction-table.html. -->
+                        <!--/* Own goals first — see fragments/prediction-table.html. */-->
                         <span
                           x-show="fixture.goalsFor != null && fixture.goalsAgainst != null"
                           class="ml-1 font-semibold"
@@ -407,14 +402,14 @@
               </div>
             </td>
 
-            <!-- Actual position - hide on mobile -->
+            <!--/* Actual position - hide on mobile */-->
             <td
               x-show="showStandings"
               class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm text-gray-400"
               x-text="positionsReversed ? team.position : getActualPosition(team.code)"
             ></td>
 
-            <!-- Delta - plain colored number, no arrow -->
+            <!--/* Delta - plain colored number, no arrow */-->
             <td x-show="showStandings" class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right">
               <span
                 class="text-sm font-semibold"
@@ -423,14 +418,14 @@
               ></span>
             </td>
 
-            <!-- Points - desktop -->
+            <!--/* Points - desktop */-->
             <td
               x-show="showPoints"
               class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-700"
               x-text="getCurrentPoints(team.code)"
             ></td>
 
-            <!-- GD - desktop -->
+            <!--/* GD - desktop */-->
             <td
               x-show="showGD"
               class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm font-semibold"
@@ -442,7 +437,7 @@
               x-text="getCurrentGD(team.code)"
             ></td>
 
-            <!-- Form circles - desktop -->
+            <!--/* Form circles - desktop */-->
             <td x-show="showForm" class="hidden sm:table-cell px-3 py-4 whitespace-nowrap">
               <div class="flex items-center justify-center gap-0.5 select-none cursor-pointer" @contextmenu.prevent>
                 <template x-for="entry in getForm(team.code)" :key="entry.opponentCode + entry.result + entry.goalsFor">
@@ -481,7 +476,7 @@
     </table>
   </div>
 
-  <!-- Mobile form popup — teleported to body to avoid fixed-position containment issues -->
+  <!--/* Mobile form popup — teleported to body to avoid fixed-position containment issues */-->
   <template x-teleport="body">
     <div
       x-show="formPopup !== null || formPopupClosing"

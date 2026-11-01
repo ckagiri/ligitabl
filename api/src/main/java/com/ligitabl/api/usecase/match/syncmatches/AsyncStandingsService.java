@@ -12,12 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Async Standings Service
- *
- * Recalculates standings asynchronously to avoid blocking the sync loop.
- * Runs in a separate transaction and thread pool.
- *
- * Failures are logged but don't propagate to prevent blocking sync.
+ * Recalculates standings on its own thread pool and transaction, so the sync loop never waits.
+ * Failures are logged and never propagate.
  */
 @Service
 @Slf4j
@@ -26,12 +22,6 @@ public class AsyncStandingsService {
 
     private final RoundStandingsCalculator standingsCalculator;
 
-    /**
-     * Recalculate standings asynchronously
-     *
-     * This method returns immediately, the calculation happens in background.
-     * Errors are logged but don't propagate.
-     */
     @Async("asyncStandingsExecutor")
     @Transactional
     public void recalculateAsync(UUID seasonId, int roundPosition) {
@@ -40,7 +30,6 @@ public class AsyncStandingsService {
 
             long startTime = System.currentTimeMillis();
 
-            // Calculate new standings
             standingsCalculator.calculateAndPersist(seasonId, roundPosition);
 
             long duration = System.currentTimeMillis() - startTime;

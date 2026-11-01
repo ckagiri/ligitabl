@@ -9,16 +9,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 public class WebUserDetails implements UserDetails {
 
     /**
-     * Pinned deliberately. This class is serialized into {@code SPRING_SESSION_ATTRIBUTES}
-     * as part of the stored {@code SecurityContext}. Without an explicit value the JVM
-     * derives one from the class's exact shape, so adding or renaming a single field or
-     * method would change it — every persisted session would then fail to deserialize and
-     * every user would be logged out.
-     *
-     * <p>The value here is the one the JVM was already deriving (confirmed with
-     * {@code serialver}), so declaring it did not invalidate sessions that existed at the
-     * time. Leave it unchanged when editing this class; only bump it on a genuinely
-     * incompatible change.
+     * Pinned: this class is serialized into {@code SPRING_SESSION_ATTRIBUTES} with the stored
+     * {@code SecurityContext}, and a derived value changes with any field or method edit, logging
+     * every user out. Bump it only on a genuinely incompatible change.
      */
     private static final long serialVersionUID = 8102740099292411777L;
 

@@ -21,11 +21,9 @@ import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 
 /**
- * Covers the one place {@link RoundSupport#resolveStatus} and
- * {@link RoundSupport#resolveJoinEligibilityStatus} disagree, which is the whole reason the
- * second method exists: {@code resolveStatus} short-circuits to OPEN for a round with no matches
- * loaded, <em>before</em> {@code Round.computeStatus} could report FINALIZED. Without the
- * lifecycle-aware variant, a join would be accepted into a round that has already been scored.
+ * Covers where {@link RoundSupport#resolveStatus} and
+ * {@link RoundSupport#resolveJoinEligibilityStatus} disagree: a round with no matches loaded but
+ * already FINALIZED, which must not accept a join.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)

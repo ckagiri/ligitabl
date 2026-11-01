@@ -39,9 +39,7 @@ public abstract class AbstractSeeder<T> {
      */
     protected abstract void performSeed(T config);
 
-    /**
-     * Returns the name of this seeder for result reporting.
-     */
+    /** For result reporting. */
     protected abstract String getSeederName();
 
     /**

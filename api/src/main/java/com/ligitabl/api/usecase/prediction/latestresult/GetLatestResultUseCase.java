@@ -62,9 +62,8 @@ public class GetLatestResultUseCase {
             return Optional.empty();
         }
 
-        // Once the season is ADVANCED past the last round there's no "next" round for currentRound
-        // to have moved to, so it stays pinned at lastRound itself — the final round's own result,
-        // not its predecessor's.
+        // Once the last round has ADVANCED there's no next round, so currentRound stays on it:
+        // the final round's own result, not its predecessor's.
         int resultRound = seasonCompleted ? currentRound : currentRound - 1;
         if (resultRound < 1) {
             return Optional.empty();
@@ -102,7 +101,6 @@ public class GetLatestResultUseCase {
         RoundSpan sprintPhase = competition.sprintForRound(round);
         sprint = sprintPhase.getCode();
 
-        // Only calculate if we have a main contest
         if (season.getMainContestId() != null) {
             var contestOpt = contestRepo.findById(season.getMainContestId());
             if (contestOpt.isPresent()) {

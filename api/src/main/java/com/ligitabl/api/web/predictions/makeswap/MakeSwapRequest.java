@@ -3,10 +3,7 @@ package com.ligitabl.api.web.predictions.makeswap;
 import java.util.Objects;
 
 /**
- * Request DTO for swapping exactly two teams.
- *
- * <p>Used by existing participants to update their prediction.
- * Only team codes are required — current positions are resolved server-side.</p>
+ * Swaps exactly two teams; positions are resolved server-side.
  *
  * <p>Example JSON: {@code { "teamACode": "MCI", "teamBCode": "ARS" }}</p>
  */

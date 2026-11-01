@@ -23,9 +23,6 @@ public class ReferenceResolver {
         this.dsl = dsl;
     }
 
-    /**
-     * Resolves a competition ID by its slug.
-     */
     public UUID resolveCompetitionId(String competitionSlug) {
         UUID id = dsl.select(T_COMPETITION.PK_ID)
                 .from(T_COMPETITION)
@@ -40,9 +37,6 @@ public class ReferenceResolver {
         return id;
     }
 
-    /**
-     * Resolves a season ID by competition and season slugs.
-     */
     public UUID resolveSeasonId(String competitionSlug, String seasonSlug) {
         UUID competitionId = resolveCompetitionId(competitionSlug);
 
@@ -61,9 +55,6 @@ public class ReferenceResolver {
         return id;
     }
 
-    /**
-     * Resolves team information by TLA codes.
-     */
     public Map<String, TeamInfo> resolveTeams(List<String> tlaCodes) {
         List<Record3<UUID, String, String>> teamRows = dsl
                 .select(T_TEAM.PK_ID, T_TEAM.C_NAME, T_TEAM.C_TLA)

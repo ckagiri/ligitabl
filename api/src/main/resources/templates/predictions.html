@@ -11,7 +11,7 @@
         th:fragment="predictionPage"
         class="max-w-4xl mx-auto"
       >
-        <!-- Page Header -->
+        <!--/* Page Header */-->
         <div class="bg-white rounded-lg shadow-sm mb-6">
           <div class="px-6 py-4 border-b border-gray-200">
             <div class="mb-4 sm:mb-6">
@@ -28,7 +28,7 @@
                   <span class="text-sm sm:text-base text-gray-600">
                     Gameweek <span th:text="${viewingRound}">19</span>
                   </span>
-                  <!-- State indicators (shown only while the season is in play or off-season — pre-season has its own banner below) -->
+                  <!--/* State indicators (shown only while the season is in play or off-season — pre-season has its own banner below) */-->
                   <span
                     th:if="${isCurrentRound && (isInPlay || isOffSeason)}"
                     class="inline-flex items-center gap-1 text-xs sm:text-sm font-medium"
@@ -54,13 +54,9 @@
                   </span>
                 </div>
 
-                <!-- Source indicator. A sibling of the Gameweek group rather than part of it:
-                     inside it, its width pushed the controls onto their own line, stranding a
-                     lone refresh button on the guest page (which has no What-If/Final Table
-                     pills beside it). max-sm:order-last + basis-full drops it to its own line
-                     below both, so Gameweek and the controls share the first line.
-                     Deliberately NOT pill-styled — the pill/border/icon treatment used by
-                     Final Table and What-If reads as tappable, and this is a static label. -->
+                <!--/* Source indicator, a sibling of the Gameweek group so it doesn't push the controls
+                     onto their own line; max-sm:order-last + basis-full put it on its own line below.
+                     Not pill-styled: pills read as tappable, and this is a label. */-->
                 <div
                   th:if="${source != 'USER_PREDICTION'}"
                   class="inline-flex items-center gap-1 min-w-0 max-sm:order-last max-sm:basis-full"
@@ -83,23 +79,16 @@
                   >
                 </div>
 
-                <!-- ml-auto rather than justify-between on the parent: these controls wrap to their
+                <!--/* ml-auto rather than justify-between on the parent: these controls wrap to their
                      own line on narrow screens, and justify-between would leave a lone wrapped item
-                     at flex-start. ml-auto pushes it right either way. -->
+                     at flex-start. ml-auto pushes it right either way. */-->
                 <div class="flex items-center gap-2 ml-auto">
-                  <!--
-                    Final Table: the side game, offered as a pill beside What-If rather than as a
-                    sentence in the pre-season banner. Two reasons. It costs no vertical space on a
-                    phone, where a full line of copy is expensive; and this header persists, while
-                    that banner disappears the moment predictions open — which is precisely the
-                    window when the Final Table is still open and about to lock, so the prompt would
-                    have vanished exactly when it mattered most.
-
-                    A plain link, not hx-get: /final-table is its own page with its own Alpine
-                    component, not a fragment of this one. Gated on entry still being open —
-                    pointing someone at a game that has closed is worse than staying quiet — and
-                    hidden for guests, who already get the link in the navbar.
-                  -->
+                  <!--/*
+                    Final Table pill beside What-If: costs no phone space and persists after the
+                    pre-season banner goes, which is when the Final Table is about to lock. A plain
+                    link (its own page), only while entry is open, and not for guests, who have the
+                    navbar link.
+                  */-->
                   <a
                     th:if="${!isGuest && finalTableEntryOpen == true}"
                     th:href="@{/final-table}"
@@ -116,16 +105,15 @@
                       stroke-linecap="round"
                       stroke-linejoin="round"
                     >
-                      <!-- A ranked list: three rows, longest at the top — a finishing table. -->
+                      <!--/* A ranked list: three rows, longest at the top — a finishing table. */-->
                       <path d="M4 6h16M4 12h11M4 18h6" />
                     </svg>
                     Final Table
                   </a>
 
-                  <!-- What-If (own predictions only, current round — renders read-only/locked
-                       once the round closes rather than requiring roundState == 'open').
-                       Shown to users who have not joined yet too: they simulate against the
-                       baseline table, and What-If writes nothing. -->
+                  <!--/* What-If: own predictions, current round; read-only once the round closes. Also
+                       for users who haven't joined: they simulate against the baseline, and What-If
+                       writes nothing. */-->
                   <button
                     th:if="${!isGuest && isCurrentRound}"
                     th:attr="hx-get=@{/predictions/user/what-if},hx-push-url=@{/my-table/what-if}"
@@ -150,7 +138,7 @@
                     </svg>
                     What-If
                   </button>
-                  <!-- Refresh (reloads this page's fragment from our DB; no admin gate) -->
+                  <!--/* Refresh (reloads this page's fragment from our DB; no admin gate) */-->
                   <button
                     th:attr="hx-get=@{/my-table(round=${viewingRound})}"
                     hx-target="#prediction-page"
@@ -178,8 +166,8 @@
               </div>
             </div>
 
-            <!-- Setup Mode Banner (season under admin reconfiguration — swaps/joins paused).
-                 Guests can only register/login here, so this admin-state banner isn't relevant to them. -->
+            <!--/* Setup Mode Banner (season under admin reconfiguration — swaps/joins paused).
+                 Guests can only register/login here, so this admin-state banner isn't relevant to them. */-->
             <th:block th:if="${seasonInSetupMode and !isGuest}">
               <div
                 class="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-4"
@@ -189,8 +177,8 @@
               </div>
             </th:block>
 
-            <!-- Inactive Season Banner (none of off-season/pre-season/in-play apply — treated the
-                 same as setup mode: swaps/joins paused until the season is properly configured). -->
+            <!--/* Inactive Season Banner (none of off-season/pre-season/in-play apply — treated the
+                 same as setup mode: swaps/joins paused until the season is properly configured). */-->
             <th:block th:if="${!seasonInSetupMode and isInactive and !isGuest}">
               <div
                 class="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-4"
@@ -200,7 +188,7 @@
               </div>
             </th:block>
 
-            <!-- Access Mode Banners (shown only while the season is in play or off-season) -->
+            <!--/* Access Mode Banners (shown only while the season is in play or off-season) */-->
             <th:block th:if="${isInPlay || isOffSeason}">
               <div
                 th:replace="~{fragments/access-banners :: banners(
@@ -214,9 +202,9 @@
               ></div>
             </th:block>
 
-            <!-- Pre-season / Off-season countdowns -->
+            <!--/* Pre-season / Off-season countdowns */-->
             <th:block th:if="${isPreSeason}">
-              <!-- Registered: predictions not yet open -->
+              <!--/* Registered: predictions not yet open */-->
               <th:block th:if="${!isGuest && !canCreateEntry}">
                 <div
                   class="mt-3 rounded-lg bg-green-50 border border-green-200 px-4 py-4"
@@ -270,7 +258,7 @@
                   </div>
                 </div>
               </th:block>
-              <!-- Not yet registered: call-to-action (also covers guests previewing pre-season) -->
+              <!--/* Not yet registered: call-to-action (also covers guests previewing pre-season) */-->
               <th:block th:if="${isGuest || canCreateEntry}">
                 <div
                   class="mt-3 rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-4"
@@ -337,7 +325,7 @@
               </th:block>
             </th:block>
 
-            <!-- Off-season banner (season completed, predictions not yet open for the new season) -->
+            <!--/* Off-season banner (season completed, predictions not yet open for the new season) */-->
             <th:block th:if="${isOffSeason}">
               <div
                 class="mt-3 rounded-lg bg-slate-50 border border-slate-200 px-4 py-4"
@@ -387,7 +375,7 @@
               </div>
             </th:block>
 
-            <!-- Debug panel (opt-in via ?debug=1) -->
+            <!--/* Debug panel (opt-in via ?debug=1) */-->
             <div th:if="${param.debug != null}" class="mt-3">
               <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
                 <p class="text-xs font-medium text-gray-700 mb-2">
@@ -412,7 +400,7 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
               </div>
             </div>
 
-            <!-- Round Navigation (only for authenticated users, non-error states) -->
+            <!--/* Round Navigation (only for authenticated users, non-error states) */-->
             <div
               th:if="${!isGuest}"
               th:with="minRoundForNav=${canCreateEntry ? currentRound : (joinedAtRound != null && joinedAtRound <= currentRound ? joinedAtRound : currentRound)}"
@@ -428,7 +416,7 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
           </div>
         </div>
 
-        <!-- Results Banner (only on current round for non-guests; loads via HTMX if latest result available) -->
+        <!--/* Results Banner (only on current round for non-guests; loads via HTMX if latest result available) */-->
         <div
           th:if="${isCurrentRound && !isGuest}"
           id="results-banner"
@@ -436,12 +424,12 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
           hx-trigger="load"
           hx-swap="innerHTML swap:100ms settle:100ms"
         >
-          <!-- Banner content loaded via HTMX -->
+          <!--/* Banner content loaded via HTMX */-->
         </div>
 
-        <!-- Prediction Table -->
+        <!--/* Prediction Table */-->
         <div id="prediction-content" th:fragment="predictionContent">
-          <!-- Guest view uses localStorage-enabled component -->
+          <!--/* Guest view uses localStorage-enabled component */-->
           <div
             th:if="${isGuest}"
             class="bg-white rounded-lg shadow-sm mb-6"
@@ -454,14 +442,14 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
                     data-form=${formJson},
                     data-round-id=${currentRoundId}"
           >
-            <!-- Contextual Swap Instructions Banner for Guests -->
+            <!--/* Contextual Swap Instructions Banner for Guests */-->
             <div
               th:replace="~{fragments/swap-instructions :: instructions(true, false, false)}"
             ></div>
 
-            <!-- Comparison Options for guests (only for current editable round, not historical views) -->
+            <!--/* Comparison Options for guests (only for current editable round, not historical views) */-->
             <th:block th:if="${!isHistoricalView}">
-              <!-- Skeleton: visible before Alpine, removed once Alpine initialises -->
+              <!--/* Skeleton: visible before Alpine, removed once Alpine initialises */-->
               <div x-skeleton class="px-6 pt-4 pb-2">
                 <div class="grid grid-cols-2 gap-x-6 gap-y-2 w-fit">
                   <div class="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
@@ -478,12 +466,12 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
               ></div>
             </th:block>
 
-            <!-- Guest Teams Table (interactive with localStorage) -->
+            <!--/* Guest Teams Table (interactive with localStorage) */-->
             <div
               th:replace="~{fragments/prediction-table :: interactive-table(alwaysHoverable=true)}"
             ></div>
 
-            <!-- Skeleton shown while Alpine initialises -->
+            <!--/* Skeleton shown while Alpine initialises */-->
             <div
               x-skeleton
               class="px-6 py-6 bg-gray-50 border-t border-gray-200"
@@ -496,8 +484,8 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
               </div>
             </div>
 
-            <!-- Changes Summary (also the first real Alpine-rendered element, so it takes
-                 over removing the skeleton above once Alpine initialises) -->
+            <!--/* Changes Summary (also the first real Alpine-rendered element, so it takes
+                 over removing the skeleton above once Alpine initialises) */-->
             <div
               x-cloak
               x-init="$el.previousElementSibling.remove()"
@@ -511,7 +499,7 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
               </div>
             </div>
 
-            <!-- Guest CTA: floating while scrolling, inline once the footer is near (see fragments/guest-cta.html) -->
+            <!--/* Guest CTA: floating while scrolling, inline once the footer is near (see fragments/guest-cta.html) */-->
             <div
               x-data="{ footerVisible: false }"
               x-init="
@@ -528,7 +516,7 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
             </div>
           </div>
 
-          <!-- Non-guest view uses regular component -->
+          <!--/* Non-guest view uses regular component */-->
           <div
             th:if="${!isGuest}"
             x-data="Ligitabl.predictionPage($el)"
@@ -550,14 +538,14 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
                     data-access-mode=${accessMode}"
           >
             <div class="bg-white rounded-lg shadow-sm mb-6">
-              <!-- Contextual Swap Instructions Banner (editable + cooldown-interactive states) -->
+              <!--/* Contextual Swap Instructions Banner (editable + cooldown-interactive states) */-->
               <div
                 th:replace="~{fragments/swap-instructions :: instructions(false, ${canInteractEffective}, ${isInitialPredictionEditable})}"
               ></div>
 
-              <!-- Comparison Options (only for current editable round, not historical views) -->
+              <!--/* Comparison Options (only for current editable round, not historical views) */-->
               <th:block th:if="${!isHistoricalView}">
-                <!-- Skeleton: visible before Alpine, removed once Alpine initialises -->
+                <!--/* Skeleton: visible before Alpine, removed once Alpine initialises */-->
                 <div x-skeleton class="px-6 pt-4 pb-2">
                   <div class="grid grid-cols-2 gap-x-6 gap-y-2 w-fit">
                     <div
@@ -582,14 +570,14 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
                 ></div>
               </th:block>
 
-              <!-- Current Round: Interactive Table (when not a historical view) -->
+              <!--/* Current Round: Interactive Table (when not a historical view) */-->
               <th:block th:if="${!isHistoricalView}">
                 <div
                   th:replace="~{fragments/prediction-table :: interactive-table(alwaysHoverable=false)}"
                 ></div>
               </th:block>
 
-              <!-- Historical Rounds: Static Table (past rounds or season completed) -->
+              <!--/* Historical Rounds: Static Table (past rounds or season completed) */-->
               <th:block th:if="${isHistoricalView}">
                 <div
                   th:replace="~{fragments/prediction-historical-view :: historical-view(
@@ -599,25 +587,19 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
                 ></div>
               </th:block>
 
-              <!-- Swap history (see fragments/swap-history.html) — part of the round's result
-                   view, so it lives inside this card. Collapsed by default: the What-If swaps
-                   card below opens instead, and two expanded lists of swaps read as one muddle. -->
+              <!--/* Swap history (fragments/swap-history.html), part of the round's result. Collapsed,
+                   since the What-If swaps card below opens instead. */-->
               <div th:replace="~{fragments/swap-history :: history(false, false)}"></div>
             </div>
 
-            <!-- What-If swaps (see fragments/what-if-swaps.html) — read-only reminder of what the
-                 user tried in the sandbox, to copy onto the real table above, falling back to a
-                 pitch for the feature when there's nothing saved. Its own card rather than part
-                 of the table card: it describes a separate sandbox, not this round's result.
-                 Current round only, matching the What-If pill at the top of the page: What-If
-                 only runs there, and a historical round shows its real scored result, where
-                 speculative swaps would only be noise. -->
+            <!--/* What-If swaps (fragments/what-if-swaps.html): its own card, since it describes the
+                 sandbox, not this round's result. Current round only, as is the What-If pill. */-->
             <th:block th:if="${!isHistoricalView}">
               <div th:replace="~{fragments/what-if-swaps :: swaps}"></div>
             </th:block>
 
-            <!-- footerVisible is shared between the inline "actions" button and the floating pill so exactly
-               one of them is ever showing: the pill while scrolling, the inline one once the footer is near. -->
+            <!--/* footerVisible is shared between the inline "actions" button and the floating pill so exactly
+               one of them is ever showing: the pill while scrolling, the inline one once the footer is near. */-->
             <th:block th:if="${canInteractEffective}">
               <div
                 x-data="{ footerVisible: false }"
@@ -641,7 +623,7 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
               </div>
             </th:block>
 
-            <!-- Mutually exclusive with the copy insidec the actions footer, so exactly one ever renders. -->
+            <!--/* Mutually exclusive with the copy insidec the actions footer, so exactly one ever renders. */-->
             <th:block th:if="${!canInteractEffective}">
               <div
                 th:replace="~{fragments/share-prediction :: card(
@@ -650,7 +632,7 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
             </th:block>
           </div>
 
-          <!-- What-If recap: its own section (see fragments/what-if-recap.html) -->
+          <!--/* What-If recap: its own section (see fragments/what-if-recap.html) */-->
           <div th:replace="~{fragments/what-if-recap :: recap}"></div>
         </div>
       </div>

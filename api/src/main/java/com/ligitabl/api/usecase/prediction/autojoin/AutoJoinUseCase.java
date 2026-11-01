@@ -30,19 +30,16 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Joins users who never created a SeasonPrediction, triggered by ROUND_LOCKED and SEASON_IN_PLAY.
- * The cohort is evaluated fresh at processing time, not from the payload, so it reflects whichever
- * round and rankings are current when this actually runs.
+ * The cohort is evaluated at processing time, not from the payload.
  *
- * <p>Not {@code @Transactional}: it runs inside the outbox processor's per-event transaction, so
- * the joins and the event's markSent commit together. A proxy here would mark that shared
- * transaction rollback-only on any runtime exception and bypass the processor's own markFailed.
+ * <p>Not {@code @Transactional}: it runs in the outbox processor's per-event transaction, so the
+ * joins commit with markSent. A proxy here would mark that transaction rollback-only on any runtime
+ * exception and bypass the processor's markFailed.
  *
- * <p>A database error is rethrown rather than logged per user: the batch shares one transaction,
- * and a failed statement aborts it, so every remaining user would fail too and be logged as if
- * they were at fault. The whole batch retries, and the NOT EXISTS filter skips anyone already
- * created. Both {@code DataAccessException} types are caught deliberately: the repos surface
- * jOOQ's (verified in OutboxFailureIsolationIT), while Spring's is what a translated JDBC path
- * would throw. They share no supertype.
+ * <p>A database error is rethrown, not logged per user: it aborts the shared transaction, so every
+ * later user would fail too. The batch retries and NOT EXISTS skips those already created. Both
+ * {@code DataAccessException} types are caught: the repos throw jOOQ's, a translated JDBC path
+ * Spring's, and they share no supertype.
  */
 @Component
 @RequiredArgsConstructor
@@ -116,22 +113,18 @@ public class AutoJoinUseCase {
 
     /**
      * Gives a round-0 pre-season registration to everyone who was around during pre-season and
-     * never submitted, then chains the welcome fan-out.
-     *
-     * <p>Unlike the ROUND_LOCKED path this uses {@link RegisterDefaultTableCommand}, which writes
-     * the row a user would have produced by submitting the default table themselves — the mid-season
-     * {@code NewJoin} shape would quietly cost them the guest-prediction import and most of their
-     * swap allowance.
+     * never submitted, then chains the welcome fan-out. Uses {@link RegisterDefaultTableCommand},
+     * not the mid-season {@code NewJoin} shape, which would cost them the guest-prediction import
+     * and most of their swap allowance.
      */
     public void execute(SeasonInPlayPayload event) throws JsonProcessingException {
         Season season = findSeason(event.seasonId());
 
         autoRegisterEligibleUsers(season);
 
-        // Always, even when nothing was auto-joined: genuine pre-season registrants are waiting on
-        // this email too, and they exist independently of whether anyone needed auto-joining.
-        // Written in this transaction so "auto-joins committed ⇒ recipients will be welcomed"
-        // holds; processed in a later one so the fan-out gets its own retry budget.
+        // Always, even when nobody was auto-joined: genuine pre-season registrants wait on this
+        // email too. Written in this transaction so committed auto-joins are always welcomed;
+        // processed in a later one so the fan-out gets its own retry budget.
         writeWelcomeFanoutEvent(season.getId());
     }
 

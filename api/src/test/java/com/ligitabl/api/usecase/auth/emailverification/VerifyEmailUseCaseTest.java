@@ -139,9 +139,8 @@ class VerifyEmailUseCaseTest {
         assertThat(tokenCaptor.getValue().isUsed()).isTrue();
         assertThat(tokenCaptor.getValue().getUsedAt()).isNotNull();
 
-        // The exact instant, not any(OffsetDateTime.class): the use case reads its clock once and
-        // stamps the token and the user from it, so a second read creeping back in would show up
-        // here rather than as two timestamps that merely look close together.
+        // The exact instant, not any(OffsetDateTime.class): the clock is read once for the token and
+        // the user, so a second read would show here.
         verify(userRepo).markEmailVerified(userId, OffsetDateTime.ofInstant(TestClock.NOW, ZoneOffset.UTC));
         assertThat(tokenCaptor.getValue().getUsedAt()).isEqualTo(TestClock.NOW);
     }
@@ -149,10 +148,8 @@ class VerifyEmailUseCaseTest {
     @Test
     @DisplayName("Should treat a token expiring at this exact instant as still live")
     void shouldTreatExactExpiryAsNotYetExpired() {
-        // Untestable while `isExpired` read the wall clock: there was no way to name "now" and have
-        // the assertion still hold by the time it ran. `isExpired` is strict (`at.isAfter`), so a
-        // token expiring exactly now is valid — and one second later it is not, which is what pins
-        // the strictness as chosen rather than an off-by-one nobody noticed.
+        // `isExpired` is strict (`at.isAfter`): a token expiring exactly now is valid and one second
+        // later is not, pinning the strictness as chosen.
         EmailVerificationToken atTheBoundary = tokenExpiringAt(TestClock.NOW);
         when(tokenRepo.findByToken(atTheBoundary.getToken())).thenReturn(Optional.of(atTheBoundary));
         when(userRepo.findById(userId)).thenReturn(Optional.of(user));

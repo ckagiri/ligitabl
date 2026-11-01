@@ -15,16 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Round Advancement Recovery
- *
- * On startup, finds rounds that should have auto-advanced while the server was
- * down and advances them immediately.
- *
- * Example scenario:
- *   3:00 PM  Round finalized, advancement scheduled for 3:10 PM
- *   3:05 PM  Server restarts
- *   3:15 PM  Server back up — this component detects the missed 3:10 PM advancement
- *            and advances the round immediately.
+ * On startup, advances rounds whose scheduled auto-advance fell while the server was down.
  */
 @Component
 @RequiredArgsConstructor

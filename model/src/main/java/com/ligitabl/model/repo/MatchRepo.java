@@ -32,9 +32,6 @@ public interface MatchRepo {
 
     Optional<Match> findById(UUID id);
 
-    /**
-     * Finds match with teams loaded.
-     */
     Optional<Match> findByIdWithTeams(UUID id);
 
     /**
@@ -42,9 +39,6 @@ public interface MatchRepo {
      */
     List<Match> findByRoundIdWithTeams(UUID roundId);
 
-    /**
-     * Finds finished matches up to round with teams loaded.
-     */
     List<Match> findFinishedMatchesUpToRoundWithTeams(UUID seasonId, int roundPosition);
 
     boolean existsBySeasonAndRoundAndTeams(UUID seasonId, UUID roundId, UUID homeTeamId, UUID awayTeamId);

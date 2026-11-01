@@ -17,18 +17,12 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 /**
  * Shared {@link ObjectMapper} factory for the jsonb columns this module reads and writes.
  *
- * <p>Exists because {@code findAndRegisterModules()} is a runtime classpath lookup and this module
- * does not depend on jackson-datatype-jsr310. Inside the api module Spring Boot supplies that jar
- * transitively, so {@code Instant} serializes; on the model module's own test classpath it does
- * not, and every {@code SwapChange} — which carries an {@code Instant} timestamp — fails with
- * "Java 8 date/time type not supported by default". Registering the handling explicitly makes the
- * behaviour the same in both places instead of depending on who happens to be on the classpath.
+ * <p>Registers Instant handling explicitly: {@code findAndRegisterModules()} only finds
+ * jackson-datatype-jsr310 when the api module puts it on the classpath, and this module does not
+ * depend on it.
  *
- * <p><b>The encoding deliberately matches what jackson-datatype-jsr310 produces by default</b>: a
- * decimal epoch-seconds number such as {@code 1785578400.000000000}. Existing
- * {@code t_season_prediction.c_swaps} data was written that way through the api module, so
- * switching to ISO-8601 text here would leave already-stored rows in a format this mapper no longer
- * writes. Reads accept both encodings regardless, so either form round-trips.
+ * <p>Writes decimal epoch seconds such as {@code 1785578400.000000000}, jsr310's default, because
+ * stored {@code t_season_prediction.c_swaps} rows use it. Reads accept ISO-8601 too.
  */
 public final class JsonMappers {
 

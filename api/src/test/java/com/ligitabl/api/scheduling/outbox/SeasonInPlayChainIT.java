@@ -35,9 +35,8 @@ import com.ligitabl.model.repo.OutboxRepo;
  * SEASON_WELCOME  →  render + send                           [tx 3..]
  * </pre>
  *
- * <p>Split from {@code OutboxFailureIsolationIT}, which shares the fixture but tests the opposite
- * question. Keeping them together meant a class-wide {@code @SpyBean} — and its separate Spring
- * context — for tests that never needed one, under a name that described half its contents.
+ * <p>Separate from {@code OutboxFailureIsolationIT}, which shares the fixture but needs a
+ * class-wide {@code @SpyBean} and so its own Spring context.
  */
 @SpringBootTest
 @DisplayName("Season in-play auto-join chain (real Postgres)")
@@ -142,9 +141,8 @@ class SeasonInPlayChainIT extends AbstractPostgresIT {
         @Test
         @DisplayName("chains the fan-out even when nobody needed auto-joining")
         void chainsTheFanoutWithNoEligibleUsers() throws Exception {
-            // No users at all. The ROUND_LOCKED auto-join returns early on an empty candidate list;
-            // copying that here would silently skip welcoming genuine pre-season registrants,
-            // who exist regardless of whether anyone needed auto-joining.
+        // No users at all, yet the chain still continues: genuine pre-season registrants need
+        // welcoming whether or not anyone was auto-joined.
             enqueueSeasonInPlay("season-in-play:empty");
             relayOnce();
 

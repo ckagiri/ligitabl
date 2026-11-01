@@ -145,11 +145,7 @@ class UserPredictionsControllerTest {
                         .build()));
     }
 
-    /**
-     * The negative cases only care that the request reached the use case rather than short-
-     * circuiting into a redirect — a left result is the cheapest way through {@code fold} without
-     * building a whole {@link UserPredictionViewData}.
-     */
+    /** A left result is the cheapest way through {@code fold}; the negative cases only check the use case was reached. */
     private void stubUseCaseError() {
         when(getUserPredictionUseCase.execute(any())).thenReturn(Either.left(new NotFoundError("prediction")));
     }

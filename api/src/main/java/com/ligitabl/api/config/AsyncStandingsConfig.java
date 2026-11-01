@@ -22,22 +22,17 @@ public class AsyncStandingsConfig {
     public Executor asyncStandingsExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
 
-        // Core pool size: number of threads to keep alive
         executor.setCorePoolSize(2);
 
-        // Max pool size: maximum number of threads
         executor.setMaxPoolSize(5);
 
-        // Queue capacity: tasks to queue before creating new threads
         executor.setQueueCapacity(100);
 
-        // Thread name prefix for easy identification in logs
         executor.setThreadNamePrefix("async-standings-");
 
-        // Wait for tasks to complete on shutdown
         executor.setWaitForTasksToCompleteOnShutdown(true);
 
-        // Maximum time to wait for tasks on shutdown (seconds)
+        // Seconds
         executor.setAwaitTerminationSeconds(60);
 
         // Rejection policy: log and discard if queue is full

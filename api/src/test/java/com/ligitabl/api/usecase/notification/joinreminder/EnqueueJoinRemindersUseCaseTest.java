@@ -216,9 +216,8 @@ class EnqueueJoinRemindersUseCaseTest {
 
     @Test
     void resumesAfterPredictionsHaveOpened_forMidSeasonSignups() {
-        // The quiet period is one-sided. Once predictions are open the auto-join has already
-        // emptied the eligible set, so anyone still matching is a fresh signup who does deserve
-        // a nudge — silencing reminders for the rest of the season would drop them.
+        // The quiet period is one-sided: once predictions open, anyone still eligible is a fresh
+        // signup who does need a nudge.
         activeSeason(
                 PRE_SEASON_OPENED, OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(3));
         when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))

@@ -1,38 +1,20 @@
 <!doctype html>
 <html xmlns:th="http://www.thymeleaf.org">
   <body>
-    <!--
-      Entirely Alpine-rendered (x-for over `teams`), matching fragments/prediction-table.html: a swap
-      has to reorder rows in place, which server-rendered rows cannot do. Row data comes from the
-      component's data-rows JSON, so team display names are available client-side.
+    <!--/*
+      Entirely Alpine-rendered (x-for over `teams`), as in fragments/prediction-table.html, so a swap
+      can reorder rows in place. Interactivity comes from the component (canEdit), so the read-only
+      public view mounts the same fragment.
 
-      Two columns, not one long list: 20 rows in a single column forces the page to scroll while
-      swapping, so the two teams you want to trade are often not on screen together. Both columns
-      render from the same `teams` array, so a swap still reorders the whole table.
+      Two columns from one `teams` array, so the two teams being traded are usually on screen
+      together. Row styling mirrors prediction-table.html (badge, selection dot, amber dirty tint,
+      arrows) plus a faint zone wash; selected and dirty use the -100 step to out-shout it. Hover is
+      a ring so it layers over the wash.
 
-      Interactivity is decided by the component (canEdit), not here — so the read-only public view
-      mounts the same fragment and simply never enables tapping.
-
-      Row styling mirrors fragments/prediction-table.html deliberately — badge, blue selection dot,
-      amber dirty tint, ↑/↓ movement arrows — so the two games read as one product. On top of that
-      each row carries a faint qualification-zone wash; selected and dirty use the -100 step so they
-      always out-shout the zone colour underneath them.
-
-      Hover is a ring rather than a background, so it layers over the zone wash instead of replacing
-      it — a hover that blanked the tint would read as the row changing zone. It is a copy,
-      not a reuse of `interactive-table`: that fragment is parameterised on standings/fixtures/
-      points/GD/form, none of which exist before GW1, so reusing it would mount five toggles that
-      render "-" for the entire pre-season.
-    -->
-    <!--
-      One x-for over `teams`, with CSS splitting it into columns. The previous version nested an
-      x-for over `[leftColumn(), rightColumn()]` — a fresh array literal on every render, so any
-      state change (selecting a row, for instance) produced new array identities and made Alpine
-      tear down and rebuild both column subtrees rather than patch the one row that changed.
-
-      `columns-2` reflows the same single list into two, so there is nothing to rebuild and each row
-      is keyed stably by team code.
-    -->
+      A copy rather than `interactive-table`, which is built on standings/fixtures/points/GD/form,
+      none of which exist before GW1.
+    */-->
+    <!--/* One x-for with `columns-2` splitting it, so each row is keyed stably by team code and a selection patches one row instead of rebuilding a column. */-->
     <div th:fragment="table" class="gap-x-6 sm:columns-2">
       <template x-for="team in teams" :key="team.code">
         <div
@@ -46,7 +28,7 @@
           ]"
           class="prediction-row mb-1 flex break-inside-avoid items-center gap-2 overflow-hidden rounded-md border border-gray-100 py-2 pr-3 transition-all duration-200"
         >
-              <!-- Zone band: colour only, so it never competes with the row tints. -->
+              <!--/* Zone band: colour only, so it never competes with the row tints. */-->
               <span
                 class="h-8 w-1 flex-shrink-0 rounded-r"
                 :class="zoneBarClass(team.position)"
@@ -73,7 +55,7 @@
               ></span>
 
               <span class="flex min-w-0 flex-1 items-center gap-1">
-                <!-- Selection dot: the first tap of a swap. -->
+                <!--/* Selection dot: the first tap of a swap. */-->
                 <span
                   x-show="isSelected(team.code)"
                   class="flex-shrink-0 text-xs font-medium text-blue-600"
@@ -85,12 +67,10 @@
                 </span>
               </span>
 
-              <!--
-                Live columns: where the team actually sits now, and the gap. Rendered on the same
-                row as the prediction rather than in a separate table, so "I said 3rd, they're 1st"
-                reads left to right. Hidden entirely outside the locked-but-unscored state, which
-                is the only time `hasLiveProgress` is true.
-              -->
+              <!--/*
+                Live columns: where the team sits now, and the gap, on the prediction's row so "I
+                said 3rd, they're 1st" reads left to right. Only while `hasLiveProgress`.
+              */-->
               <template x-if="hasLiveProgress">
                 <span class="flex flex-shrink-0 items-center gap-1.5">
                   <span
@@ -122,16 +102,12 @@
       </template>
     </div>
 
-    <!--
-      The revealed result: prediction beside the real finish, with the distance for each row.
-      Server-rendered — nothing here is interactive, and resultRankings is non-null only once the
-      row is scored (Change 5).
-
-      The header is conditional, not absent. It was dropped once because an unconditional thead
-      rendered as a stray empty strip when the fragment was inserted with no rows — but without it
-      a row reads "1 Leeds 11 10" and nothing says which number is the finish and which is the gap.
-      th:if on the thead fixes the empty-strip problem without costing the labels.
-    -->
+    <!--/*
+      The revealed result: prediction beside the real finish, with each row's distance.
+      Server-rendered; resultRankings is non-null only once the row is scored. The thead is
+      conditional: unconditional, it rendered as an empty strip with no rows; absent, nothing says
+      which number is the finish and which the gap.
+    */-->
     <table th:fragment="result" class="min-w-full divide-y divide-gray-200">
       <thead th:if="${resultRankings != null and !resultRankings.isEmpty()}">
         <tr class="bg-gray-50">

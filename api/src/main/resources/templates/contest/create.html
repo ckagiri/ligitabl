@@ -8,7 +8,7 @@
     <div layout:fragment="content">
       <div class="max-w-2xl mx-auto px-4 py-8">
 
-        <!-- Back link -->
+        <!--/* Back link */-->
         <a th:href="@{/contests}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6 transition">
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -19,7 +19,6 @@
         <h1 class="text-2xl font-bold text-gray-900 mb-1">Create a Private Contest</h1>
         <p class="text-gray-500 text-sm mb-8">Set up a contest for your group with a custom name and window.</p>
 
-        <!-- Error banner -->
         <th:block th:if="${error != null}">
           <div class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -32,7 +31,7 @@
         <div x-data="contestCreator()" x-init="init()">
           <form method="post" th:action="@{/contests}">
 
-            <!-- Contest name -->
+            <!--/* Contest name */-->
             <div class="mb-6">
               <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
                 Contest name <span class="text-red-500">*</span>
@@ -50,7 +49,7 @@
               <p class="text-xs text-gray-500 mt-1">Please keep it appropriate and respectful.</p>
             </div>
 
-            <!-- Member cap (optional) -->
+            <!--/* Member cap (optional) */-->
             <div class="mb-6">
               <label for="maxEntries" class="block text-sm font-medium text-gray-700 mb-1">
                 Member limit <span class="text-gray-400 font-normal">(optional)</span>
@@ -68,7 +67,7 @@
               <p class="text-xs text-gray-500 mt-1">Leave blank for unlimited members.</p>
             </div>
 
-            <!-- Contest Window -->
+            <!--/* Contest Window */-->
             <div class="mb-6">
               <div class="flex items-center justify-between mb-3">
                 <p class="block text-sm font-medium text-gray-700">
@@ -84,7 +83,7 @@
                 </button>
               </div>
 
-              <!-- Window explainer -->
+              <!--/* Window explainer */-->
               <div x-show="windowHelpOpen" x-cloak x-transition
                    class="bg-indigo-50 border border-indigo-100 rounded-lg p-4 mb-4 text-xs text-gray-700 space-y-2">
                 <p><span class="font-semibold">FROM</span> and <span class="font-semibold">TO</span> set the sprint range your contest covers. A sprint is a block of game weeks (e.g. Sprint 5 = GW20–24).</p>
@@ -94,7 +93,7 @@
 
               <div class="grid grid-cols-2 gap-4 mb-4">
 
-                <!-- FROM custom dropdown -->
+                <!--/* FROM custom dropdown */-->
                 <div>
                   <label class="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">From</label>
                   <div class="relative">
@@ -111,13 +110,13 @@
                       </svg>
                     </button>
 
-                    <!-- Desktop: anchored dropdown (flips above the trigger when short on room below) -->
+                    <!--/* Desktop: anchored dropdown (flips above the trigger when short on room below) */-->
                     <div x-show="fromOpen" @click.away="fromOpen = false" x-cloak x-transition
                          :class="fromDropUp ? 'bottom-full mb-1' : 'mt-1'"
                          class="hidden md:block absolute z-50 w-64 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
                       <div class="overflow-y-auto pb-2 max-h-80">
 
-                        <!-- Available sprints grouped by quarter -->
+                        <!--/* Available sprints grouped by quarter */-->
                         <template x-for="quarter in getAvailableQuarters()" :key="'avail-' + quarter.code">
                           <div>
                             <div class="px-3 py-1.5 bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
@@ -147,14 +146,14 @@
                           </div>
                         </template>
 
-                        <!-- Past divider -->
+                        <!--/* Past divider */-->
                         <template x-if="getPastQuarters().length > 0">
                           <div class="px-3 py-2 bg-gray-100 border-t border-b border-gray-200">
                             <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Past</span>
                           </div>
                         </template>
 
-                        <!-- Past sprints grouped by quarter -->
+                        <!--/* Past sprints grouped by quarter */-->
                         <template x-for="quarter in getPastQuarters()" :key="'past-' + quarter.code">
                           <div>
                             <div class="px-3 py-1.5 bg-gray-50 border-b border-gray-100">
@@ -176,7 +175,7 @@
                       </div>
                     </div>
 
-                    <!-- Mobile: bottom sheet, not capped by remaining viewport space below the button -->
+                    <!--/* Mobile: bottom sheet, not capped by remaining viewport space below the button */-->
                     <div x-show="fromOpen" x-cloak @click="fromOpen = false"
                          class="md:hidden fixed inset-0 z-50 flex items-end bg-black bg-opacity-40 px-2 pb-2">
                       <div @click.stop class="w-full bg-white rounded-2xl shadow-xl max-h-[70vh] overflow-y-auto">
@@ -247,7 +246,7 @@
                   </div>
                 </div>
 
-                <!-- TO custom dropdown -->
+                <!--/* TO custom dropdown */-->
                 <div>
                   <label class="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">To</label>
                   <div class="relative">
@@ -265,7 +264,7 @@
                       </svg>
                     </button>
 
-                    <!-- Desktop: anchored dropdown (flips above the trigger when short on room below) -->
+                    <!--/* Desktop: anchored dropdown (flips above the trigger when short on room below) */-->
                     <div x-show="toOpen" @click.away="toOpen = false" x-cloak x-transition
                          :class="toDropUp ? 'bottom-full mb-1' : 'mt-1'"
                          class="hidden md:block absolute z-50 w-64 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
@@ -293,7 +292,7 @@
                       </div>
                     </div>
 
-                    <!-- Mobile: bottom sheet, not capped by remaining viewport space below the button -->
+                    <!--/* Mobile: bottom sheet, not capped by remaining viewport space below the button */-->
                     <div x-show="toOpen" x-cloak @click="toOpen = false"
                          class="md:hidden fixed inset-0 z-50 flex items-end bg-black bg-opacity-40 px-2 pb-2">
                       <div @click.stop class="w-full bg-white rounded-2xl shadow-xl max-h-[70vh] overflow-y-auto">
@@ -333,7 +332,7 @@
 
               </div>
 
-              <!-- Contest structure preview (collapsible) -->
+              <!--/* Contest structure preview (collapsible) */-->
               <div x-show="selectedFrom && selectedTo" x-cloak class="bg-gray-50 rounded-lg border border-gray-200">
                 <button
                   type="button"
@@ -352,11 +351,11 @@
               </div>
             </div>
 
-            <!-- Hidden form inputs synced with Alpine -->
+            <!--/* Hidden form inputs synced with Alpine */-->
             <input type="hidden" name="fromSprintCode" :value="selectedFrom ? selectedFrom.code : ''" />
             <input type="hidden" name="toSprintCode" :value="selectedTo ? selectedTo.code : ''" />
 
-            <!-- Submit -->
+            <!--/* Submit */-->
             <div class="flex gap-3">
               <button
                 type="submit"

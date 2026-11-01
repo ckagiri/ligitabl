@@ -21,7 +21,6 @@ public class CachedHeadToHeadRule implements RankingRule {
     public int compare(TeamStats a, TeamStats b) {
         Set<UUID> teams = Set.of(a.teamId(), b.teamId());
 
-        // Check cache
         Integer cached = cache.get(teams);
         if (cached != null) {
             return cached;
@@ -50,10 +49,8 @@ public class CachedHeadToHeadRule implements RankingRule {
                     .ifPresent(view -> h2hStats.computeIfPresent(match.getAwayTeamId(), (k, v) -> v.withMatch(view)));
         }
 
-        // Compare using the tie-breaker rule
         int result = tieBreaker.compare(h2hStats.get(a.teamId()), h2hStats.get(b.teamId()));
 
-        // Cache result
         cache.put(teams, result);
 
         return result;

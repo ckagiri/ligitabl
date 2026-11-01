@@ -11,10 +11,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Remember-me auto-login authenticates via {@code RememberMeAuthenticationFilter}, which bypasses
- * both the form-login controller and {@code OAuth2AuthenticationSuccessHandler} entirely — it only
- * publishes this event, never an {@code AuthenticationSuccessHandler} callback. This is the only
- * hook point for tracking last-login on cookie-based auto-logins.
+ * The only hook for tracking last-login on remember-me auto-logins: {@code RememberMeAuthenticationFilter}
+ * bypasses the form-login controller and {@code OAuth2AuthenticationSuccessHandler}, and publishes
+ * only this event.
  */
 @Component
 @RequiredArgsConstructor

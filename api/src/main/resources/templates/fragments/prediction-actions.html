@@ -1,6 +1,5 @@
-<!-- Submit Button (shared markup — reused inline, below, and in the floating pill, so the
-     two never drift apart). `shapeClasses` lets each call site style its own container
-     shape (inline rounded-lg card button vs. floating rounded-full pill). -->
+<!--/* Submit Button, shared by the inline slot and the floating pill. `shapeClasses` styles each
+     container (rounded-lg card button vs. rounded-full pill). */-->
 <button
   th:fragment="submit-button(shapeClasses)"
   @click="submitChanges()"
@@ -68,17 +67,15 @@
   <span x-show="isSaving">Saving...</span>
 </button>
 
-<!-- Prediction Actions Footer Fragment. The submit button here only shows once the
-     floating pill (fragment "floating-submit" below) hides near the footer — see
-     `footerVisible`, shared via the wrapping x-data in predictions.html — so submit
-     stays reachable even when the floating pill steps aside for the footer. -->
+<!--/* Prediction Actions Footer Fragment. Its submit button shows once the floating pill hides near
+     the footer (`footerVisible`, from the wrapping x-data in predictions.html). */-->
 <div
   x-cloak
   th:fragment="actions"
   class="px-6 py-4 bg-gray-50 border-t border-gray-200"
 >
   <div class="flex flex-col items-center space-y-3">
-    <!-- Backend Error Banner -->
+    <!--/* Backend Error Banner */-->
     <div
       x-show="errorMessage"
       class="w-full max-w-md bg-red-50 border border-red-200 rounded-lg px-4 py-3"
@@ -114,11 +111,10 @@
       </div>
     </div>
 
-    <!-- Changes Summary -->
     <div th:replace="~{fragments/prediction-actions :: changes-summary}"></div>
 
-    <!-- Cooldown notices — why the submit button below is unavailable. Sits after the changes
-         summary so the order reads: what you changed, why you can't submit it yet, the button. -->
+    <!--/* Cooldown notices — why the submit button below is unavailable. Sits after the changes
+         summary so the order reads: what you changed, why you can't submit it yet, the button. */-->
     <p
       x-show="roundAllowsEditing && !canSwap && !isInitialPrediction && isRoundOpen"
       class="text-xs text-yellow-700 text-center"
@@ -132,22 +128,16 @@
       Round is not open — submit resumes when the next round opens.
     </p>
 
-    <!-- the run reads: what you changed, why you can't submit yet, share it, submit.
-         Collapsed by default, and hidden entirely on historical views.
-         Width: this column is items-center, so without an explicit width the card sizes to its
-         content — narrow collapsed, wide expanded. self-stretch fills the column, and -mx-6 cancels
-         this fragment's px-6 so the card lines up edge-to-edge with the table card above rather
-         than sitting inset from it. -->
+    <!--/* What you changed, why you can't submit yet, share it, submit. Collapsed by default, hidden
+         on historical views. self-stretch with -mx-6 lines the card up edge-to-edge with the table
+         card above, since this column is items-center. */-->
     <div
       th:replace="~{fragments/share-prediction :: card(
         'self-stretch -mx-6 bg-white rounded-lg shadow-sm overflow-hidden', 'false')}"
     ></div>
 
-    <!-- Submit Button — takes over once the floating pill hides near the footer.
-         Uses `invisible` (not x-show) so this slot always reserves its height: toggling
-         it via display:none would shift the footer's position, re-triggering the
-         IntersectionObserver that drives footerVisible and causing a scroll-position
-         feedback loop (the footer becoming "visible" pushes it back out of view). -->
+    <!--/* Takes over once the floating pill hides near the footer. `invisible`, not x-show: hiding it
+         would move the footer, re-trigger the IntersectionObserver behind footerVisible and loop. */-->
     <div
       :class="footerVisible ? '' : 'invisible'"
       th:insert="~{fragments/prediction-actions :: submit-button('rounded-full shadow-lg')}"
@@ -155,20 +145,13 @@
   </div>
 </div>
 
-<!-- Floating Submit Button Fragment: pinned to the bottom of the screen so it stays
-     reachable while scrolling through the team table, instead of only appearing after
-     the actions panel above (which most users never scroll far enough to see).
+<!--/* Floating Submit Button Fragment: pinned to the screen bottom so it stays reachable while
+     scrolling the table.
 
-     Teleported to body — #prediction-page has `will-change: opacity, transform` (for the
-     HTMX page-transition animation, see layout/base.html's inline <style>), and a
-     `will-change: transform` ancestor creates a containing block for `position: fixed`
-     descendants. Without teleporting, this button would end up fixed relative to
-     #prediction-page's own box (bottom of all page content) instead of the viewport —
-     the same class of bug documented on the mobile form popup teleport below.
-
-     `footerVisible` (declared on the wrapping x-data in predictions.html, shared with
-     the inline button above) hides this pill once the page footer scrolls into view,
-     so it never covers the footer links — the inline button takes over at that point. -->
+     Teleported to body: #prediction-page's `will-change: opacity, transform` (layout/base.html)
+     makes it the containing block for `position: fixed`, so the pill would pin to the page
+     content instead of the viewport. `footerVisible` hides it once the footer scrolls into view,
+     and the inline button takes over. */-->
 <template th:fragment="floating-submit" x-teleport="body">
   <div
     x-cloak
@@ -179,7 +162,7 @@
   ></div>
 </template>
 
-<!-- Changes Summary Fragment (reused in guest and non-guest views) -->
+<!--/* Changes Summary Fragment (reused in guest and non-guest views) */-->
 <div
   th:fragment="changes-summary"
   x-cloak
@@ -204,10 +187,10 @@
   </div>
 
   <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
-    <!-- Controls: Reset all | Undo last when over limit -->
+    <!--/* Controls: Reset all | Undo last when over limit */-->
     <div class="flex items-center gap-5 mb-3">
       <div class="flex items-center gap-3">
-        <!-- Reset all — always shown when there are changes -->
+        <!--/* Reset all — always shown when there are changes */-->
         <button
           x-show="!undoing"
           @click="reset()"
@@ -229,7 +212,7 @@
           reset all
         </button>
 
-        <!-- Undo last — show when > 1 swap and not currently undoing -->
+        <!--/* Undo last — show when > 1 swap and not currently undoing */-->
         <span x-show="canUndo() && getSwapCount() > 1 && !undoing">
           <button
             @click="undoLastSwap()"
@@ -252,7 +235,7 @@
           </button>
         </span>
 
-        <!-- Undoing flash -->
+        <!--/* Undoing flash */-->
         <span
           x-show="undoing"
           class="text-sm font-semibold text-amber-600 animate-pulse whitespace-nowrap"
@@ -262,17 +245,15 @@
 
     </div>
 
-    <!-- Stats -->
+    <!--/* Stats */-->
     <div
       class="flex items-center justify-between text-sm mb-3 pb-3 border-b border-gray-100"
     >
-      <!--
-        The two counts double as the switch for the list below: Teams shows what moved, Swaps
-        shows how. Buttons rather than plain text, with the active one underlined, so the pair
-        reads as a toggle instead of two links that happen to be numbers. The inactive side keeps
-        full-strength colour — dimming it read as disabled rather than tappable — and is
-        distinguished by the underline alone, which fills in on hover.
-      -->
+      <!--/*
+        The two counts switch the list below: Teams shows what moved, Swaps how. Buttons with the
+        active one underlined so they read as a toggle; the inactive side keeps full colour, since
+        dimming read as disabled.
+      */-->
       <div class="flex items-center space-x-4">
         <button
           type="button"
@@ -296,8 +277,8 @@
           class="transition-colors"
         >
           <span :class="changesView === 'swaps' ? 'text-gray-900' : 'text-gray-500'">Swaps:</span>
-          <!-- exceedsLimit() keeps the count red in both states: being over the limit outranks
-               which view is selected. -->
+          <!--/* exceedsLimit() keeps the count red in both states: being over the limit outranks
+               which view is selected. */-->
           <span
             class="font-semibold ml-1"
             :class="exceedsLimit() ? 'text-red-600' : 'text-indigo-600'"
@@ -318,7 +299,7 @@
       </div>
     </div>
 
-    <!-- List of Changes — teams view: what moved, and where to. -->
+    <!--/* List of Changes — teams view: what moved, and where to. */-->
     <div class="space-y-2" x-show="changesView === 'teams'">
       <template x-for="(change, index) in getChangedTeams()" :key="change.code">
         <div
@@ -356,16 +337,12 @@
       </template>
     </div>
 
-    <!--
-      Swaps view: the pairs behind those moves, in the same format as the swap history on this
-      page and the sandbox log on What-If (fragments/what-if-swap-log.html) — one swap per line,
-      shrinking the type on narrow screens rather than wrapping, so the A→B ↔ B→A symmetry
-      survives. Codes rather than names, matching those lists: swapStack records codes only.
-
-      Two-digit positions on both sides ("LEE #14 → #18 ↔ COV #18 → #14") outrun a narrow card,
-      so overflow-x-auto sits on the row rather than the list — only the row that needs it
-      scrolls. shrink-0 is what triggers that; without it flex compresses the halves to fit.
-    -->
+    <!--/*
+      Swaps view: the pairs behind those moves, formatted like the swap history and the What-If
+      sandbox log, one swap per line (smaller type on narrow screens), codes only since swapStack
+      records codes. overflow-x-auto sits on each row so only a row with two-digit positions
+      scrolls; shrink-0 stops flex compressing the halves.
+    */-->
     <div class="space-y-2" x-show="changesView === 'swaps'" x-cloak>
       <template x-for="(entry, index) in getSwapEntries()" :key="index">
         <div
@@ -407,11 +384,7 @@
           </span>
         </div>
       </template>
-      <!--
-        Reachable: a session restored from the legacy storage shape has its team order back but
-        no swapStack, so there is a team diff with no swaps behind it. Say so rather than leave
-        the panel blank.
-      -->
+      <!--/* A session restored from the old storage shape has a team diff but no swapStack; say so rather than show a blank panel. */-->
       <p
         x-show="getSwapEntries().length === 0"
         class="text-xs text-gray-400 text-center py-2"
@@ -420,7 +393,7 @@
       </p>
     </div>
 
-    <!-- Warning for exceeding limit -->
+    <!--/* Warning for exceeding limit */-->
     <div
       x-show="exceedsLimit()"
       class="mt-3 pt-3 border-t border-red-100 bg-red-50 -mx-4 -mb-4 px-4 py-3 rounded-b-lg"

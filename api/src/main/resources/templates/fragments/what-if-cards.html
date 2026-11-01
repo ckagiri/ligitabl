@@ -12,8 +12,8 @@
         <th class="pb-2 font-medium text-right">GD</th>
       </tr>
     </thead>
-    <!-- Skeleton rows: standingsRows() is Alpine-rendered, so the table body is empty until Alpine
-         boots. Removed by the x-init on the real tbody below. -->
+    <!--/* Skeleton rows: standingsRows() is Alpine-rendered, so the table body is empty until Alpine
+         boots. Removed by the x-init on the real tbody below. */-->
     <tbody x-skeleton>
       <tr th:each="i : ${#numbers.sequence(1, 6)}" class="border-t border-gray-100">
         <td class="py-2.5"><div class="h-3 w-3 bg-gray-200 rounded animate-pulse"></div></td>
@@ -65,9 +65,9 @@
         </thead>
         <tbody>
           <template x-for="team in teams" :key="team.code">
-            <!-- Interactive only while the round is open: teamClick() ignores the click once it
+            <!--/* Interactive only while the round is open: teamClick() ignores the click once it
                  locks, so the pointer/hover affordances have to go too or the row would still
-                 look tappable. -->
+                 look tappable. */-->
             <tr
               class="prediction-row no-hover border-t border-gray-100"
               :class="roundOpen ? 'cursor-pointer hover:bg-gray-100' : ''"
@@ -75,9 +75,9 @@
               @click="teamClick(team.code)"
             >
               <td class="py-2.5 text-gray-500" x-text="team.position"></td>
-              <!-- Selection reads as a dot beside the name, same as the my-table row: washing the
+              <!--/* Selection reads as a dot beside the name, same as the my-table row: washing the
                    whole row in colour fights the amber .swapping highlight the swap animation
-                   applies to that same row moments later. -->
+                   applies to that same row moments later. */-->
               <td class="py-2.5 font-medium text-gray-900">
                 <span class="inline-flex items-center gap-1">
                   <span

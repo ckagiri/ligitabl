@@ -45,10 +45,8 @@ public class SyncMatchesUseCase {
     private final MatchUpdateHelper matchUpdateHelper;
 
     /**
-     * The sync window is a calendar date, so it needs a zone: this resolves it in UTC, matching the
-     * application's {@code Clock.systemUTC()} bean and the timestamps the upstream API returns.
-     * Previously a bare {@code LocalDate.now()} in the JVM default zone — identical on a UTC
-     * deployment, but unfreezable in a test and a day out on a developer machine east of UTC.
+     * The sync window is a calendar date, so it needs a zone: UTC, matching the {@code Clock} bean
+     * and the upstream API's timestamps.
      */
     private final Clock clock;
 
@@ -63,7 +61,7 @@ public class SyncMatchesUseCase {
 
         return resolveHierarchy()
                 .map(this::updateTracking) // Track live match transitions
-                .flatMap(this::determineAndFetchMatches) // Smart endpoint selection
+                .flatMap(this::determineAndFetchMatches)
                 .flatMap(this::updateMatches)
                 .flatMap(this::recalculateStandings)
                 .map(this::calculateNextSync);
@@ -109,10 +107,9 @@ public class SyncMatchesUseCase {
             return fetchTodayMatches(context);
         }
 
-        // Strategy 2: Matches currently live - fetch LIVE endpoint with validation.
-        // Falls back to TODAY if DB-tracked live matches are missing from the API response,
-        // which catches stale LIVE status after a restart and race conditions where a match
-        // finishes between the DB read and the API call.
+        // Matches live: fetch the LIVE endpoint, falling back to TODAY if DB-tracked live matches
+        // are missing from it (stale LIVE status after a restart, or a match finishing between
+        // the DB read and the API call).
         if (trackingResult != null && trackingResult.hasLive()) {
             log.debug("Live matches in progress - using LIVE endpoint with validation");
 
@@ -180,9 +177,7 @@ public class SyncMatchesUseCase {
         return fetchUpcomingMatches(context);
     }
 
-    /**
-     * Fetch via GET /matches?status=LIVE
-     */
+    /** GET /matches?status=LIVE */
     private Either<SyncMatchesError, FetchedMatchData> fetchLiveMatches(RoundContext context) {
         return matchFeed
                 .liveMatches(competitionCode)
@@ -190,9 +185,7 @@ public class SyncMatchesUseCase {
                 .map(matches -> new FetchedMatchData(context, matches));
     }
 
-    /**
-     * Fetch via GET /matches?date=today
-     */
+    /** GET /matches?date=today */
     private Either<SyncMatchesError, FetchedMatchData> fetchTodayMatches(RoundContext context) {
         var today = LocalDate.now(clock);
 
@@ -203,10 +196,8 @@ public class SyncMatchesUseCase {
     }
 
     /**
-     * Fetch via GET /matches?dateFrom=2daysAgo&dateTo=tomorrow
-     * dateTo is exclusive, so tomorrow is needed to include today's matches.
-     * Used when DB-tracked live matches are missing from the LIVE endpoint response,
-     * covering matches that finished past midnight or were processed a day late.
+     * GET /matches?dateFrom=2daysAgo&dateTo=tomorrow; dateTo is exclusive. For DB-tracked live
+     * matches missing from the LIVE response: finished past midnight, or processed a day late.
      */
     private Either<SyncMatchesError, FetchedMatchData> fetchYesterdayAndTodayMatches(RoundContext context) {
         var yesterday = LocalDate.now(clock).minusDays(2);

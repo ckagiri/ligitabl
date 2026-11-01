@@ -1,19 +1,8 @@
 package com.ligitabl.api.shared;
 
-/**
- * Unit type - represents the presence of a value without any meaningful data.
- * Used in functional programming when you need to return something but the value doesn't matter.
- *
- * Common use cases:
- * - Representing successful completion of operations that don't return a value
- * - Combining multiple validations where you only care about pass/fail
- * - Side-effect operations wrapped in Either/Try
- */
+/** The result of an operation that succeeds without a value, e.g. {@code Either<Error, Unit>}. */
 public final class Unit {
 
-    /**
-     * The single instance of Unit.
-     */
     public static final Unit INSTANCE = new Unit();
 
     /**

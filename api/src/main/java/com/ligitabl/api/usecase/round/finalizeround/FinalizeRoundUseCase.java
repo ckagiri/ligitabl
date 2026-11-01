@@ -108,9 +108,8 @@ public class FinalizeRoundUseCase {
                 .orElseGet(() -> Either.left(new FinalizeRoundError.RoundNotFound(null)));
     }
 
-    // A target round beyond the season's current round is never valid — the round hasn't been
-    // reached yet, so there's nothing to (re)finalize. Equal is fine (normal finalize of the
-    // current round); only strictly ahead is rejected.
+    // A target beyond the current round hasn't been reached, so there's nothing to (re)finalize.
+    // Equal is a normal finalize.
     private Either<FinalizeRoundError, Void> checkTargetNotAheadOfCurrent(FinalizationContext ctx) {
         if (ctx.round().getPosition() > ctx.currentRound().getPosition()) {
             return Either.left(new FinalizeRoundError.RoundAheadOfCurrent(
@@ -151,7 +150,6 @@ public class FinalizeRoundUseCase {
 
     private Either<FinalizeRoundError, FinalizeRoundResult> executeFinalizationWorkflow(FinalizationContext ctx) {
         try {
-            // Step 1: Calculate final standings
             var standingsResult = calculateFinalStandings(ctx);
             if (standingsResult.isLeft()) {
                 return Either.left(standingsResult.getLeft());
@@ -161,34 +159,30 @@ public class FinalizeRoundUseCase {
             List<SeasonPrediction> predictions = predictionRepo.findBySeasonAndAtRoundNumberLessThanEqual(
                     ctx.season().getId(), ctx.round().getPosition());
 
-            // Step 2: Create round submissions
             List<RoundSubmission> submissions = createRoundSubmissions(predictions, ctx);
 
-            // Step 3: Calculate round results
             List<RoundResult> results = calculateRoundResults(predictions, submissions, finalStandings, ctx);
 
-            // Step 4: Create next round standings (if not last round)
             boolean isLastRound = ctx.round().getPosition() >= ctx.season().getMaxRounds();
             if (!isLastRound) {
                 createNextRoundStandings(ctx.round(), ctx.season(), finalStandings);
             }
 
-            // Step 5: Mark round as finalized (do NOT advance season pointer here)
+            // Do NOT advance the season pointer here.
             if (!ctx.round().isFinalized()) {
                 ctx.round().markFinalized();
                 roundRepo.save(ctx.round());
                 log.info("Round {} marked as finalized", ctx.round().getPosition());
             }
 
-            // Step 5.5: Refinalize cascade — a recompute of a round before the current one means
-            // every round's cumulative standings from here through the current round (inclusive)
-            // are now stale. Mark them unfinalized/out-of-sync; nothing here re-scores them — the
-            // admin walks forward refinalizing each in turn.
+            // Refinalize cascade: recomputing an earlier round makes every round's cumulative
+            // standings from here through the current one stale. Mark them unfinalized; the admin
+            // walks forward refinalizing each.
             if (ctx.recompute()) {
                 markDownstreamOutOfSync(ctx);
             }
 
-            // STEP 6: Send notifications (fire-and-forget; Slack call never blocks or throws)
+            // Fire-and-forget; the Slack call never blocks or throws.
             adminAlerts.notifyRoundFinalized(
                     ctx.round().getId(), ctx.round().getPosition(), submissions.size(), results.size(), isLastRound);
 
@@ -228,7 +222,6 @@ public class FinalizeRoundUseCase {
         log.info("Refinalize cascade: marked rounds {}-{} unfinalized for season {}", from, currentPosition, seasonId);
     }
 
-    // STEP 1: Calculate Final Standings
     private Either<FinalizeRoundError, Standings> calculateFinalStandings(FinalizationContext ctx) {
         try {
             Either<FinalizeRoundError, List<StandingsTeamRank>> calculation = standingsCalculator
@@ -262,7 +255,6 @@ public class FinalizeRoundUseCase {
         }
     }
 
-    // STEP 2: Create Round Submissions
     private List<RoundSubmission> createRoundSubmissions(List<SeasonPrediction> predictions, FinalizationContext ctx) {
         List<RoundSubmission> submissions = new ArrayList<>();
 
@@ -290,7 +282,6 @@ public class FinalizeRoundUseCase {
         return submissions;
     }
 
-    // STEP 3: Calculate Round Results
     private List<RoundResult> calculateRoundResults(
             List<SeasonPrediction> predictions,
             List<RoundSubmission> submissions,
@@ -336,7 +327,6 @@ public class FinalizeRoundUseCase {
         return results;
     }
 
-    // STEP 4: Create Next Round Standings
     private void createNextRoundStandings(Round currentRound, Season season, Standings finalStandings) {
         int nextRoundPosition = currentRound.getPosition() + 1;
 

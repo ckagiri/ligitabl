@@ -12,15 +12,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Generic Slack notifier via an Incoming Webhook.
+ * Sends a string to Slack through an Incoming Webhook; message assembly lives in callers such as
+ * {@link AdminNotificationService}.
  *
- * Deliberately domain-agnostic — "send this string to Slack", nothing more. Domain-specific
- * message assembly lives in callers (see {@link AdminNotificationService}).
- *
- * Fire-and-forget: the HTTP call runs asynchronously on the reactor pipeline and no failure
- * (Slack error, timeout, misconfiguration) ever propagates to the caller. Error logs carry the
- * exception class only — WebClientRequestException messages embed the request URI, and the
- * webhook URL is a secret.
+ * Fire-and-forget: no failure reaches the caller. Error logs carry the exception class only,
+ * because WebClientRequestException messages embed the URI and the webhook URL is a secret.
  */
 @Service
 @Slf4j

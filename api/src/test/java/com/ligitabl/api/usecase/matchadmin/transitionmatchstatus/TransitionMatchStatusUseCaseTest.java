@@ -411,9 +411,8 @@ class TransitionMatchStatusUseCaseTest {
                 .reason("Same round as current")
                 .build();
 
-        // `round` (position 1) is used as both the match's round and the season's current round —
-        // in setup mode, the current round can already be finalized+advanced (via a refinalize
-        // cascade), so a status change here is just as stale as one in a genuinely past round.
+        // `round` is both the match's round and the current round: in setup mode a refinalize
+        // cascade can leave the current round finalized and advanced, so this is just as stale.
         when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(round));
         when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
         when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));

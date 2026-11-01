@@ -7,13 +7,13 @@
   <body>
     <div layout:fragment="content">
       <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Page Header -->
+        <!--/* Page Header */-->
         <div class="mb-6 sm:mb-8">
           <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">My Contests</h1>
           <p class="mt-2 text-sm sm:text-base text-gray-600">Your contest history across all seasons.</p>
         </div>
 
-        <!-- Profile Tabs -->
+        <!--/* Profile Tabs */-->
         <div class="mb-6 border-b border-gray-200 overflow-x-auto overflow-y-hidden">
           <nav class="-mb-px flex space-x-6 sm:space-x-8 min-w-max" aria-label="Profile sections">
             <a th:href="@{/profile/settings}"
@@ -25,7 +25,7 @@
           </nav>
         </div>
 
-        <!-- Contest tabs: Active / Past -->
+        <!--/* Contest tabs: Active / Past */-->
         <div x-data="{ tab: 'active' }" class="bg-white shadow rounded-lg">
           <div class="border-b border-gray-200 px-4 sm:px-6">
             <nav class="-mb-px flex gap-5" aria-label="Contest tabs">
@@ -40,7 +40,6 @@
             </nav>
           </div>
 
-          <!-- Active tab -->
           <div x-show="tab === 'active'" class="p-4 sm:p-6">
             <th:block th:if="${activeTotal > 0}">
               <table class="min-w-full divide-y divide-gray-200">
@@ -116,7 +115,6 @@
             </th:block>
           </div>
 
-          <!-- Past tab -->
           <div x-show="tab === 'past'" style="display:none" class="p-4 sm:p-6">
             <th:block th:if="${pastTotal > 0}">
               <table class="min-w-full divide-y divide-gray-200">
@@ -148,7 +146,7 @@
                     </td>
                     <td class="py-3 text-sm text-gray-700" th:text="${c.memberCount()}"></td>
                     <td th:if="${showRenewColumn}" class="py-3 pr-4">
-                      <!-- Renew button + modal (owner only, when renewable) — scoped to this row -->
+                      <!--/* Renew button + modal (owner only, when renewable) — scoped to this row */-->
                       <th:block th:if="${c.isOwner() and c.renewal().visible()}">
                         <div
                           th:attr="data-contest-id=${c.contestId()},

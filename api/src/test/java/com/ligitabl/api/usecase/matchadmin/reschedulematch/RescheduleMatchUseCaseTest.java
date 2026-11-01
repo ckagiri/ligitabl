@@ -189,9 +189,8 @@ class RescheduleMatchUseCaseTest {
                 .status(MatchStatus.FINISHED)
                 .build();
 
-        // Setup mode allows a FINISHED match to move into the past (unlike live mode, where
-        // FINISHED matches can't be rescheduled at all) — and doing so marks the affected rounds
-        // out of sync, from the target round through the season's current round (10).
+        // Setup mode lets a FINISHED match move into the past (live mode can't reschedule it at
+        // all), marking rounds out of sync from the target through the current round (10).
         Round pastRound = Round.builder()
                 .id(UUID.randomUUID())
                 .seasonId(seasonId)

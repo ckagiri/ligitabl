@@ -556,7 +556,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         assertThat(results).anyMatch(e -> e.displayName().equals("Dave") && !e.scored());
     }
 
-    // ─── Per-member scoring floor (Phase 2 leaderboard change) ────────────────
+    // ─── Per-member scoring floor ─────────────────────────────────────────────
 
     @Test
     @DisplayName("per-member scoring floor: mid-segment joiner accumulates scores from join round only")
@@ -671,7 +671,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         assertThat(response.entries()).noneMatch(e -> e.displayName().equals("Charlie"));
     }
 
-    // ─── Regression: main contest unaffected by T_SEASON_PREDICTION join removal ──
+    // ─── Main contest unaffected by the T_SEASON_PREDICTION join removal ──────
 
     @Test
     @DisplayName("regression: activeOnly=true matches pre-refactor behaviour for main contest")
@@ -694,11 +694,9 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
     @Test
     @DisplayName("round-0 pre-season swaps/scores never count toward leaderboard totals")
     void round0PreSeasonResultsExcludedFromTotals() {
-        // Defensive regression test: pre-season registration is bookkept as round 0 on
-        // SeasonPrediction.swaps and never reaches FinalizeRoundUseCase in production (round 0
-        // is not a real Round entity). But even if a RoundResult existed at round_position=0,
-        // it must never be counted — fromRound is always >= 1 (validateInputs), and the join's
-        // GREATEST(fromRound, joinedAtRound) lower bound excludes round 0 by construction.
+        // Round 0 never reaches FinalizeRoundUseCase (it is not a real Round), but a RoundResult
+        // there must still never count: fromRound is always >= 1 and the join's
+        // GREATEST(fromRound, joinedAtRound) lower bound excludes round 0.
         RoundSubmission preSeasonSubmission = RoundSubmission.builder()
                 .userId(aliceId)
                 .seasonId(seasonId)

@@ -136,9 +136,8 @@ class ComputeWhatIfUseCaseTest {
     }
 
     /**
-     * Round resolution, stubbed per-test rather than in setUp: the season-phase tests short-circuit
-     * before the round is ever looked up, and a blanket stub would either go unused there (strict-stub
-     * failure) or have to be made lenient, which would stop verifying it anywhere.
+     * Stubbed per test, not in setUp: the season-phase tests return before the lookup, so a blanket
+     * stub would fail strict stubbing or need {@code lenient()}.
      */
     private void stubCurrentRound() {
         when(roundRepo.findById(round2Id)).thenReturn(Optional.of(round));
@@ -284,9 +283,8 @@ class ComputeWhatIfUseCaseTest {
     }
 
     /**
-     * A locked round still projects: the user can no longer change the scores, but the page has to be
-     * able to show the standings behind the ones they saved while it was open. The real result of an
-     * already-played match is ignored — the hypothetical score is what's replayed.
+     * A locked round still projects, so the page can show the standings behind the scores saved while
+     * it was open. The hypothetical score is replayed, not the real result.
      */
     @Test
     void shouldComputeOnLockedRound_replayingTheHypotheticalOverRealResults() {

@@ -16,10 +16,8 @@ class DisplayNamesTest {
 
     @Test
     void salvagesLegibleTextFromAScriptTag() {
-        // The real case: a stored name that renders as literal markup in leaderboards and would be
-        // painted verbatim onto the share canvas. Salvaging beats blanking — a personalised card is
-        // still possible — but the code punctuation goes, so it reads as an odd name rather than as
-        // a deliberate joke ("alert 1's prediction", not "alert(1)'s prediction").
+        // A stored name that renders as literal markup and would be painted onto the share canvas.
+        // Salvage the text but drop the code punctuation, so it reads as an odd name.
         assertThat(DisplayNames.clean("<script>alert(1)</script>")).isEqualTo("alert 1");
         assertThat(DisplayNames.clean("Ann<script>alert(1)</script>")).isEqualTo("Ann alert 1");
     }
@@ -68,9 +66,8 @@ class DisplayNamesTest {
 
     @Test
     void leavesStrayBracketsThatAreNotTags() {
-        // "Ann <b Bo" is far more likely a name with an odd character than broken markup, and
-        // deleting the "b" would be silently mangling someone's name. Brackets are inert in every
-        // render path, so keeping them costs nothing.
+        // "Ann <b Bo" is likelier a name than broken markup; deleting the "b" would mangle it, and
+        // brackets are inert in every render path.
         assertThat(DisplayNames.clean("Ann <b Bo")).isEqualTo("Ann <b Bo");
         assertThat(DisplayNames.clean("a > b")).isEqualTo("a > b");
         assertThat(DisplayNames.clean("3 < 4")).isEqualTo("3 < 4");

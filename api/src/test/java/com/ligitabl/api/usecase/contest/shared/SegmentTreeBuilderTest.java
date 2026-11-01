@@ -193,7 +193,7 @@ class SegmentTreeBuilderTest {
 
         SegmentNodeDto q2 = overall.children().get(1);
         assertThat(q2.status()).isEqualTo("FUTURE");
-        assertThat(q2.children().get(0).status()).isEqualTo("FUTURE"); // S3: 11-15, 11 == 6+1? no, 6+1=7 ≠ 11
+        assertThat(q2.children().get(0).status()).isEqualTo("FUTURE"); // S3: 11-15, not adjacent to 6
         assertThat(q2.children().get(1).status()).isEqualTo("FUTURE"); // S4: 16-20
     }
 

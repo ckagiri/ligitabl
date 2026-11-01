@@ -1,10 +1,6 @@
 package com.ligitabl.api.web.admin;
 
-/**
- * <p>Delete-eligibility requires BOTH {@code pastSeasonPredictions() == 0} AND {@code
- * currentSeasonSwaps == 0} — any current-season swap activity blocks deletion, full stop,
- * regardless of past-season history or total lifetime swap count.
- */
+/** Delete-eligible only when {@code pastSeasonPredictions() == 0} and {@code currentSeasonSwaps == 0}. */
 public record EngagementInfo(
         int totalPredictions, boolean hasCurrentSeasonPrediction, int totalSwaps, int currentSeasonSwaps) {
 
@@ -17,12 +13,9 @@ public record EngagementInfo(
     }
 
     /**
-     * 🚩 = never predicted anything, ever ({@code totalPredictions == 0}). 👀 = zero swaps this
-     * season in every other case — this covers both a first-season user who started a
-     * current-season prediction but hasn't swapped yet ({@code 1:1} predictions — still eligible,
-     * just shown as "watching" rather than flagged, since they did technically start something) and
-     * a returning user who's simply idle this season. Anything with {@code currentSeasonSwaps >= 1}
-     * is active and never eligible, so it gets no icon at all.
+     * 🚩 = never predicted anything. 👀 = no swaps this season otherwise, whether a first-season user
+     * who hasn't swapped yet (still eligible) or an idle returning user. Any current-season swap
+     * means active and never eligible, so no icon.
      */
     public String indicator() {
         if (totalPredictions == 0) {

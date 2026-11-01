@@ -104,7 +104,7 @@ class LoginUseCaseTest {
         verify(tokenGenerator, never()).generateAccessToken(any(), any());
     }
 
-    /** Regression: this used to fail with an NPE (a 500). The null-hash half is in BCryptPasswordHasherTest. */
+    /** Must not NPE into a 500. The null-hash half is in BCryptPasswordHasherTest. */
     @Test
     void shouldFailWhenAccountHasNoPassword() {
         var cmd = new LoginCommand(email, password);

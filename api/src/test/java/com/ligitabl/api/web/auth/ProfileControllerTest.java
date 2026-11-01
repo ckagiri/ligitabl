@@ -40,12 +40,7 @@ import com.ligitabl.model.domain.identity.Role;
 import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.UserRepo;
 
-/**
- * Focused on the round-results email opt-out checkbox (Part 6). The rest of
- * ProfileController's behavior (impersonation, password set, share data) has
- * no dedicated test coverage to extend, so this stays narrow rather than
- * attempting a full controller test from scratch.
- */
+/** The round-results email opt-out checkbox; the rest of ProfileController has no test here. */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class ProfileControllerTest {

@@ -30,13 +30,8 @@ import com.ligitabl.model.repo.PasswordResetTokenRepo;
 import com.ligitabl.model.repo.UserRepo;
 
 /**
- * The password-reset twin of {@link VerifyEmailUseCaseTest}, and written because it did not exist.
- *
- * <p>{@code PasswordResetToken} and {@code EmailVerificationToken} are line-for-line mirrors, and
- * both had their {@code Instant.now()} reads replaced by an explicit instant at the same time — but
- * only the email-verification side had any test at all, so half of that change shipped on
- * compile-check alone. The boundary case below is the one that could not be expressed while
- * {@code isExpired} read the wall clock, and it is the whole reason the signature changed.
+ * The password-reset twin of {@link VerifyEmailUseCaseTest}: {@code PasswordResetToken} mirrors
+ * {@code EmailVerificationToken} line for line, including the boundary case below.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Reset Password Use Case")
@@ -128,10 +123,8 @@ class ResetPasswordUseCaseTest {
     @Test
     @DisplayName("Should treat a token expiring at this exact instant as still live")
     void shouldTreatExactExpiryAsNotYetExpired() {
-        // Untestable while `isExpired` read the wall clock: naming "now" meant naming an instant
-        // that had already passed by the time the assertion ran. `isExpired` is strict
-        // (`at.isAfter`), so a token expiring exactly now is valid — and one second staler is not,
-        // which is what pins the strictness as chosen rather than an off-by-one nobody noticed.
+        // `isExpired` is strict (`at.isAfter`): a token expiring exactly now is valid and one second
+        // later is not, pinning the strictness as chosen.
         PasswordResetToken atTheBoundary = tokenExpiringAt(TestClock.NOW);
         when(tokenRepo.findByToken(atTheBoundary.getToken())).thenReturn(Optional.of(atTheBoundary));
         when(userRepo.findById(userId)).thenReturn(Optional.of(user));

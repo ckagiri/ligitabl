@@ -40,7 +40,6 @@ public class FinalizeRoundController {
     public ResponseEntity<?> finalizeDefaultRound(@RequestBody(required = false) FinalizeCurrentRoundRequest request) {
         boolean recompute = request != null && request.recomputeOrDefault();
 
-        // Get default competition's current round
         var defaultCompetition = competitionDefaults.defaultCompetitionSlug();
         var season = seasonRepo
                 .findActiveSeason(defaultCompetition)

@@ -10,10 +10,9 @@ import com.ligitabl.model.repo.UserRepo;
 public class ImpersonationConfig {
 
     /**
-     * Registered as a {@code @Bean} (not {@code @Component}) deliberately: {@code @WebMvcTest}
-     * slices instantiate component-scanned {@code Filter}s but skip plain {@code @Configuration}
-     * classes, so this keeps the filter — and its hard {@link UserRepo} dependency — out of MVC
-     * slice tests while staying eager and fail-fast in the real app.
+     * A {@code @Bean}, not {@code @Component}: {@code @WebMvcTest} slices instantiate component-scanned
+     * {@code Filter}s but skip plain {@code @Configuration} classes, so this keeps the filter and its
+     * {@link UserRepo} dependency out of MVC slice tests.
      */
     @Bean
     public ImpersonationSessionFilter impersonationSessionFilter(UserRepo userRepo) {

@@ -9,7 +9,7 @@ package com.ligitabl.api.scheduling.health;
  */
 public final class JobNames {
 
-    /** The chain that stalled for five days on 2026-09-06; see {@code .art/task_89.md}. */
+    /** A self-rescheduling chain: it can stop without ever failing. */
     public static final String MATCH_SYNC = "matchSync";
 
     public static final String OUTBOX_RELAY = "outboxRelay";

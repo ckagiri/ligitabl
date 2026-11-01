@@ -7,7 +7,7 @@
   <body>
     <div layout:fragment="content">
       <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Page Header -->
+        <!--/* Page Header */-->
         <div class="mb-6 sm:mb-8">
           <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
             Profile Settings
@@ -17,7 +17,7 @@
           </p>
         </div>
 
-        <!-- Profile Tabs -->
+        <!--/* Profile Tabs */-->
         <div class="mb-6 border-b border-gray-200 overflow-x-auto overflow-y-hidden">
           <nav class="-mb-px flex space-x-6 sm:space-x-8 min-w-max" aria-label="Profile sections">
             <a th:href="@{/profile/settings}"
@@ -29,7 +29,7 @@
           </nav>
         </div>
 
-        <!-- Profile Form -->
+        <!--/* Profile Form */-->
         <div class="bg-white shadow rounded-lg">
           <form
             th:action="@{/profile/settings}"
@@ -43,7 +43,7 @@
               th:value="${_csrf.token}"
             />
 
-            <!-- Display Name -->
+            <!--/* Display Name */-->
             <div>
               <label
                 for="displayName"
@@ -68,7 +68,7 @@
               </p>
             </div>
 
-            <!-- Email Address -->
+            <!--/* Email Address */-->
             <div>
               <div class="flex items-center justify-between mb-2">
                 <label
@@ -125,8 +125,8 @@
               <p class="mt-2 text-xs sm:text-sm text-gray-500">
                 Email cannot be changed from profile settings.
               </p>
-              <!-- Nested forms are invalid HTML — the button targets a form
-                   declared outside the profile form via the form attribute. -->
+              <!--/* Nested forms are invalid HTML — the button targets a form
+                   declared outside the profile form via the form attribute. */-->
               <div th:if="${user.emailVerified == false}" class="mt-2">
                 <button
                   type="submit"
@@ -138,10 +138,10 @@
               </div>
             </div>
 
-            <!-- Divider -->
+            <!--/* Divider */-->
             <div class="border-t border-gray-200"></div>
 
-            <!-- Account Information -->
+            <!--/* Account Information */-->
             <div class="pt-4 sm:pt-6">
               <h2 class="text-sm font-medium text-gray-700 mb-3">
                 Account Information
@@ -152,7 +152,7 @@
                     Sign-in methods
                   </dt>
                   <dd>
-                    <!-- Google + Password -->
+                    <!--/* Google + Password */-->
                     <div
                       th:if="${user.googleLinked and user.hasPassword()}"
                       class="flex flex-wrap gap-2"
@@ -200,7 +200,7 @@
                       </span>
                     </div>
 
-                    <!-- Google only -->
+                    <!--/* Google only */-->
                     <span
                       th:if="${user.googleLinked and user.hasPassword() == false}"
                       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100"
@@ -226,7 +226,7 @@
                       Google only
                     </span>
 
-                    <!-- Password only -->
+                    <!--/* Password only */-->
                     <span
                       th:if="${user.googleLinked == false}"
                       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200"
@@ -251,7 +251,6 @@
               </dl>
             </div>
 
-            <!-- Roles -->
             <th:block th:if="${showRoles == true}">
               <div class="border-t border-gray-200"></div>
               <div class="pt-4 sm:pt-6">
@@ -266,7 +265,7 @@
               </div>
             </th:block>
 
-            <!-- Show Latest Result Banner -->
+            <!--/* Show Latest Result Banner */-->
             <th:block th:if="${latestResultPresent}">
               <div class="border-t border-gray-200"></div>
               <div class="pt-4 sm:pt-6 flex items-start gap-2">
@@ -292,7 +291,7 @@
               </div>
             </th:block>
 
-            <!-- Email me my round results -->
+            <!--/* Email me my round results */-->
             <div class="border-t border-gray-200"></div>
             <div class="pt-4 sm:pt-6 flex items-start gap-2">
               <input
@@ -314,10 +313,10 @@
               </div>
             </div>
 
-            <!-- Divider -->
+            <!--/* Divider */-->
             <div class="border-t border-gray-200"></div>
 
-            <!-- Action Buttons -->
+            <!--/* Action Buttons */-->
             <div
               class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 sm:pt-6"
             >
@@ -336,8 +335,8 @@
             </div>
           </form>
 
-          <!-- Resend-verification form target for the button next to the email
-               field (kept outside the profile form — forms cannot nest). -->
+          <!--/* Resend-verification form target for the button next to the email
+               field (kept outside the profile form — forms cannot nest). */-->
           <form
             th:if="${user.emailVerified == false}"
             id="resend-verification-form"
@@ -352,7 +351,7 @@
           </form>
         </div>
 
-        <!-- Share Prediction card (see fragments/share-prediction.html) -->
+        <!--/* Share Prediction card (see fragments/share-prediction.html) */-->
         <div
           th:replace="~{fragments/share-prediction :: card(
             'bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mt-6', 'true')}"

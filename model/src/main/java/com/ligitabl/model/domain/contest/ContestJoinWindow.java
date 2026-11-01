@@ -42,11 +42,7 @@ public final class ContestJoinWindow {
         return roundStatus != RoundStatus.OPEN;
     }
 
-    /**
-     * {@code statusSupplier} is only invoked when the round's OPEN/locked status must be resolved
-     * (exactly at the opening round of the last sprint), so callers can defer resolving it until
-     * actually needed.
-     */
+    /** {@code statusSupplier} runs only at the last sprint's opening round, so callers can defer resolving it. */
     public static boolean isJoinWindowClosed(
             int toRoundPosition, Round currentRound, Competition competition, Supplier<RoundStatus> statusSupplier) {
         int pos = currentRound.getPosition();

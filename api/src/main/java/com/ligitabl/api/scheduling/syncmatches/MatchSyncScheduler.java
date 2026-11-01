@@ -33,32 +33,14 @@ import io.sentry.Sentry;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Match Sync Scheduler
+ * Schedules match sync dynamically from match status, starting on application startup. The
+ * cadence rules live in {@link SyncFrequencyCalculator}.
  *
- * Dynamically schedules match synchronization based on match status.
- * Runs immediately on application startup.
+ * Admin Slack notifications post whenever {@link NextSyncSchedule#shouldNotify()} is true. The
+ * live, imminent and soon polling branches stay silent on repeats and notify once on entry into a
+ * new {@link NextSyncSchedule.Phase}.
  *
- * Frequency rules are determined by {@link SyncFrequencyCalculator}:
- * - All matches complete: Immediate (trigger finalization)
- * - Round obstructed: Immediate (trigger admin notification), then 2h backoff
- * - Season complete: Every 24 hours
- * - No upcoming matches: Every 12 hours
- * - Live matches: Every 90 seconds
- * - Kickoff passed, not started: Every 1 minute; every 15 minutes after 3 hours, with a stale-feed alert
- * - Kickoff <= 10 min: Every 1 minute
- * - Kickoff <= 60 min: Every 10 minutes
- * - Kickoff < 6 hours: Every 1 hour
- * - Default: Every 6 hours
- * - Suspended match present: at most every 10 minutes
- * - Cancelled match present: at most every 30 minutes
- *
- * Admin Slack notifications are posted whenever {@link NextSyncSchedule#shouldNotify()} is true —
- * every schedule above except the high-frequency live/imminent/soon polling branches, which are
- * deliberately silent on repeats (they'd otherwise post on every minute-by-minute reason change)
- * but still notify once on entry into a new {@link NextSyncSchedule.Phase}.
- *
- * Repeated sync failures trip {@link com.ligitabl.api.scheduling.resilience.MatchSyncCircuitBreaker},
- * which blocks further attempts until its recovery period elapses.
+ * Repeated sync failures trip {@link MatchSyncCircuitBreaker}.
  */
 @Component
 @ConditionalOnProperty(name = "ligitabl.scheduling.enabled", havingValue = "true", matchIfMissing = true)
@@ -82,7 +64,7 @@ public class MatchSyncScheduler {
 
     /**
      * Floor on every scheduled delay. A zero delay fires the next run while the current one is
-     * still inside result.fold(), which orphaned the chain on 2026-09-06 (.art/task_89.md).
+     * still inside result.fold(), and the chain orphans.
      */
     private static final Duration MIN_SYNC_DELAY = Duration.ofSeconds(30);
 
@@ -123,11 +105,7 @@ public class MatchSyncScheduler {
         this.heartbeat = heartbeat;
     }
 
-    /**
-     * Starts the sync chain on startup. The requested zero delay is floored to
-     * {@link #MIN_SYNC_DELAY} like every other path — deliberate, so no caller can schedule at
-     * "now" while the app is still warming.
-     */
+    /** The zero delay is floored to {@link #MIN_SYNC_DELAY} like every other path. */
     @EventListener(ApplicationReadyEvent.class)
     public void onStartup() {
         log.info("MatchSyncScheduler: Scheduling initial sync on application startup");
@@ -136,12 +114,9 @@ public class MatchSyncScheduler {
         scheduleNextSync(Duration.ZERO);
     }
 
-    /**
-     * Execute sync and schedule next run based on result
-     */
     private void executeSync() {
         if (!running.compareAndSet(false, true)) {
-            // Must re-arm: returning empty-handed here is what orphaned the chain on 2026-09-06.
+            // Must re-arm: returning empty-handed here orphans the chain.
             log.warn("Sync already running, rescheduling in {}", formatDuration(REENTRANT_SKIP_RETRY));
             scheduleNextSync(REENTRANT_SKIP_RETRY);
             return;
@@ -313,12 +288,10 @@ public class MatchSyncScheduler {
     }
 
     /**
-     * The one choke point every caller passes through, so the floor is applied here rather than in
-     * {@link SyncFrequencyCalculator} — {@code immediate()} stays meaningful, and {@code onStartup}
-     * bypasses the calculator entirely.
-     *
-     * <p>{@code synchronized} also stops two pool threads cancelling each other's freshly-scheduled
-     * task; the method does no blocking work.
+     * Every caller passes through here, so the floor lives here rather than in
+     * {@link SyncFrequencyCalculator}: {@code immediate()} stays meaningful, and {@code onStartup}
+     * bypasses the calculator. {@code synchronized} stops two pool threads cancelling each other's
+     * freshly scheduled task.
      */
     private synchronized void scheduleNextSync(Duration requested) {
         Duration delay = (requested == null || requested.compareTo(MIN_SYNC_DELAY) < 0) ? MIN_SYNC_DELAY : requested;
@@ -329,8 +302,7 @@ public class MatchSyncScheduler {
             currentTask.cancel(false);
         }
 
-        // ⚠️ A deliberate wall-clock read — do not route this through the application `Clock` bean.
-        // This instant is handed straight to `taskScheduler`, which fires on real time.
+        // ⚠️ Wall clock on purpose, not the `Clock` bean: `taskScheduler` fires on real time.
         Instant nextRun = Instant.now().plus(delay);
         currentTask = taskScheduler.schedule(this::executeSync, Objects.requireNonNull(nextRun));
 
@@ -348,7 +320,7 @@ public class MatchSyncScheduler {
         } else if (minutes > 0) {
             return String.format("%d minute%s", minutes, minutes == 1 ? "" : "s");
         } else {
-            // Without this the 30s floor and 60s skip-retry both log as "0 minutes".
+            // Without this the sub-minute floor and skip-retry both log as "0 minutes".
             return String.format("%d second%s", seconds, seconds == 1 ? "" : "s");
         }
     }

@@ -17,11 +17,8 @@ import com.ligitabl.model.domain.prediction.ResultTeamRank;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Serialises table rows for the Alpine component and the share canvas.
- *
- * <p>Shared between the owner's page and the public view so both serialise identically — a swap
- * reorders rows client-side, so the browser needs each row's code and display name without another
- * round trip.
+ * Serialises table rows for the Alpine component and the share canvas, for both the owner's page
+ * and the public view. A swap reorders rows client-side, so each row carries code and display name.
  */
 @Component
 @Slf4j
@@ -112,10 +109,8 @@ public class FinalTableRowsJson {
 
     /**
      * Qualification zones as inclusive position ranges, e.g.
-     * {@code {"CL":[1,5],"UEL":[6,7],"UECL":[8,8],"REL":[18,20]}}.
-     *
-     * <p>Derived from the team count rather than hardcoded to 20, and emitted as data so the view
-     * needs no league-specific branching.
+     * {@code {"CL":[1,5],"UEL":[6,7],"UECL":[8,8],"REL":[18,20]}}. Derived from the team count and
+     * emitted as data, so the view needs no league-specific branching.
      *
      * <p>⚠️ These are the current Premier League allocations.
      */
@@ -135,9 +130,8 @@ public class FinalTableRowsJson {
     }
 
     /**
-     * An empty literal rather than a 500: the page still renders, the table just comes up empty (or
-     * unbanded). The fallback must match the shape the client parses — {@code []} for rows,
-     * {@code {}} for zones.
+     * An empty literal rather than a 500, so the page still renders. The fallback must match the
+     * shape the client parses: {@code []} for rows, {@code {}} for zones.
      */
     private String write(Object value, String fallback) {
         try {

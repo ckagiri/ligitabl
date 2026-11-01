@@ -38,20 +38,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Processes one claimed outbox event: dispatches on event type, then marks the
- * terminal state. Separate bean from {@link OutboxRelayJob} so the
- * {@code @Transactional} boundary is a real proxy call — each event's work and
- * its markSent commit (or roll back) together.
+ * Processes one claimed outbox event: dispatches on event type, then marks the terminal state.
+ * Separate from {@link OutboxRelayJob} so {@code @Transactional} is a real proxy call and each
+ * event's work commits or rolls back with its markSent.
  *
- * <p>Failure contract: any exception during processing marks the event FAILED
- * with backoff, or DEAD_LETTER once attempts are exhausted (the claim already
- * counted the in-flight attempt). Unknown event types dead-letter immediately —
- * retrying can't fix an event the code doesn't know how to handle. If the
- * failure was a database error that aborted the transaction, the markFailed
- * write itself fails too and the exception escapes this method;
- * {@link OutboxRelayJob} then retries {@link #recordFailure} from outside the
- * rolled-back transaction, so the row still enters the retry cycle promptly
- * rather than waiting on the stuck-row sweep.
+ * <p>Any exception marks the event FAILED with backoff, or DEAD_LETTER once attempts are exhausted
+ * (the claim already counted the in-flight attempt). Unknown event types dead-letter immediately.
+ * A database error that aborted the transaction escapes instead; see {@link #recordFailure}.
  */
 @Component
 @RequiredArgsConstructor
@@ -101,18 +94,16 @@ public class OutboxEventProcessor {
     }
 
     /**
-     * Fan-out: expands the thin round-advanced fact into per-user
-     * ROUND_RESULTS events. Runs in this event's transaction together with the
-     * parent's markSent, so a crash mid-fan-out retries the whole expansion —
-     * duplicate-free via the per-user idempotency keys.
+     * Fan-out: expands the round-advanced fact into per-user ROUND_RESULTS events in this event's
+     * transaction, so a crash mid-fan-out retries the whole expansion; per-user idempotency keys keep
+     * it duplicate-free.
      */
     private void processRoundAdvanced(OutboxEvent event) throws Exception {
         RoundAdvancedPayload payload = objectMapper.readValue(event.getPayload(), RoundAdvancedPayload.class);
         enqueueRoundResultsEmailsUseCase.execute(payload);
 
-        // Second fan-out from the same fact. Most rounds close no segment and this is a cheap
-        // no-op; at a boundary it writes the podium emails. Sharing this transaction means a
-        // failure in either expansion retries both, which is safe — every insert is keyed.
+        // Second fan-out from the same fact, usually a no-op; at a segment boundary it writes the
+        // podium emails. A failure in either retries both, which is safe because every insert is keyed.
         enqueueSegmentResultsEmailsUseCase.execute(payload);
     }
 
@@ -134,9 +125,9 @@ public class OutboxEventProcessor {
     }
 
     /**
-     * Second hop of the chain: expands into per-user SEASON_WELCOME events. Runs in its own
-     * transaction alongside its markSent, so a crash mid-fan-out retries the whole expansion —
-     * duplicate-free via the per-user idempotency keys.
+     * Second hop of the chain: expands into per-user SEASON_WELCOME events in this event's
+     * transaction, so a crash mid-fan-out retries the whole expansion; per-user idempotency keys keep
+     * it duplicate-free.
      */
     private void processSeasonWelcomeFanout(OutboxEvent event) throws Exception {
         SeasonWelcomeFanoutPayload payload =
@@ -164,9 +155,8 @@ public class OutboxEventProcessor {
         data.put("leaderboardUrl", frontendUrl + "/leaderboard");
         data.put("faqUrl", frontendUrl + "/faq");
         data.put("whatIfUrl", frontendUrl + "/my-table/what-if");
-        // Safe to offer here only because both windows are the same one: EnqueueSeasonInPlayUseCase
-        // fires this chain solely while round 1 is OPEN, which is exactly when FinalTableSupport
-        // reports entry open. If that guard is relaxed, this link starts pointing at a closed door.
+        // Safe only while EnqueueSeasonInPlayUseCase fires this chain solely with round 1 OPEN, the
+        // same window FinalTableSupport reports entry open. Relax that guard and this links to a closed page.
         data.put("finalTableUrl", frontendUrl + "/final-table");
         return data;
     }
@@ -260,12 +250,9 @@ public class OutboxEventProcessor {
     }
 
     /**
-     * Sends one email, translating a failure into the exception {@link #processOne} expects.
-     *
-     * <p>A provider rate limit is raised as {@link EmailRateLimitedException} so
-     * {@link #recordFailure} can park the event instead of spending an attempt on it — the
-     * message was never the problem and the window typically outlasts the whole backoff
-     * schedule.
+     * Sends one email. A provider rate limit becomes {@link EmailRateLimitedException}, so
+     * {@link #recordFailure} parks the event instead of spending an attempt on a limit that
+     * outlasts the backoff schedule.
      */
     private void send(String recipientEmail, EmailContent content) {
         emailProvider
@@ -293,16 +280,11 @@ public class OutboxEventProcessor {
     }
 
     /**
-     * Records a failed attempt: FAILED with backoff, or DEAD_LETTER once attempts are
-     * exhausted (the claim already counted the in-flight attempt).
+     * Records a failed attempt: FAILED with backoff, or DEAD_LETTER once attempts are exhausted.
      *
-     * <p>Deliberately <em>not</em> {@code @Transactional}. When the failure was a database
-     * error, {@link #processOne}'s transaction is already aborted and this write cannot
-     * land from inside it — Postgres rejects every subsequent statement with
-     * {@code current transaction is aborted}. {@link OutboxRelayJob} therefore calls this
-     * again from outside, after the exception has crossed the transactional proxy and
-     * Spring has rolled back: by then the connection is clean and the write commits on
-     * its own. Adding {@code @Transactional} here would re-break that.
+     * <p>⚠️ Not {@code @Transactional}. After a database error {@link #processOne}'s transaction is
+     * aborted and Postgres rejects every further statement, so {@link OutboxRelayJob} calls this
+     * again once Spring has rolled back, on a clean connection.
      */
     public void recordFailure(OutboxEvent event, Exception e) {
         String error = e.getMessage() != null ? e.getMessage() : e.toString();

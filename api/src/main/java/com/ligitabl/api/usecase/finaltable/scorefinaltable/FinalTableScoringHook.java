@@ -18,11 +18,9 @@ public class FinalTableScoringHook {
     private final ScoreFinalTablePredictionsUseCase scoreUseCase;
 
     /**
-     * Runs inside the completing transaction, so the result is there the moment the season is.
-     *
-     * <p>Swallows and logs, matching {@code enqueueSeasonCompleted} beside it and for the same
-     * reason: a side-game failure must never block an admin from completing the season. The admin
-     * recompute endpoint is the retry path.
+     * Runs inside the completing transaction, so the result exists the moment the season completes.
+     * Swallows and logs, like {@code enqueueSeasonCompleted}: a side-game failure must never block
+     * completing the season. The admin recompute endpoint is the retry path.
      */
     public void onSeasonCompleted(Season season) {
         try {

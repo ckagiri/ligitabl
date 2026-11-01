@@ -35,24 +35,19 @@ import com.ligitabl.model.outbox.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 
 /**
- * What happens to the outbox when a batch dies mid-flight.
+ * What happens to the outbox when a batch dies mid-flight. Only real PostgreSQL shows it: the
+ * mechanism is server-side transaction abort ({@code current transaction is aborted}), which mocks
+ * cannot reproduce.
  *
- * <p>Only provable against a real PostgreSQL: the whole mechanism turns on server-side
- * transaction-abort behaviour — {@code current transaction is aborted, commands ignored until
- * end of transaction block} — which mocks cannot reproduce. A unit test can assert the wiring;
- * only this can assert the guarantee.
- *
- * <p>The poison is a trigger that raises on {@code t_season_prediction} insert, standing in for
- * "any database error mid-batch", which is the real precondition. An earlier attempt used a
- * genuine unique-constraint violation and proved nothing, because
- * {@code EntryPersistenceAdapter.save} is an upsert and quietly absorbed it. Everything after
- * the raise is production code:
+ * <p>The poison is a trigger raising on {@code t_season_prediction} insert, standing in for any
+ * database error mid-batch; a unique violation won't do, because {@code EntryPersistenceAdapter.save}
+ * upserts. Everything after the raise is production code:
  *
  * <ol>
- *   <li>the auto-join catches the error itself and returns {@code Either.left(TransactionFailed)},
- *       so the loop sees no exception — but the transaction is already dead;
- *   <li>the <em>next</em> user's query throws for real, and the narrowed catch stops the loop
- *       there instead of blaming that user;
+ *   <li>the auto-join catches the error and returns {@code Either.left(TransactionFailed)}, so the
+ *       loop sees no exception, but the transaction is dead;
+ *   <li>the next user's query throws for real, and the narrowed catch stops the loop there instead
+ *       of blaming that user;
  *   <li>{@code markSent}, then {@code recordFailure}, both fail inside the dead transaction, so
  *       the exception escapes {@code processOne};
  *   <li>{@link OutboxRelayJob} records the failure from outside the rolled-back transaction.
@@ -129,10 +124,8 @@ class OutboxFailureIsolationIT extends AbstractPostgresIT {
     }
 
     /**
-     * The scheduled relay bean is absent in tests ({@code ligitabl.scheduling.enabled=false}), and
-     * the batch order has to be deterministic — so the repo is spied for
-     * {@code claimBatchForProcessing} only. Every other call, and all of the processor's work,
-     * hits the real database.
+     * The relay bean is absent in tests and batch order must be deterministic, so only
+     * {@code claimBatchForProcessing} is spied; everything else hits the real database.
      */
     private void relay(List<OutboxEvent> batch) {
         OutboxRepo spied = spy(outboxRepo);
@@ -148,10 +141,8 @@ class OutboxFailureIsolationIT extends AbstractPostgresIT {
     @Test
     @DisplayName("A poisoned event lands FAILED with backoff rather than stranded PROCESSING")
     void poisonedEventIsMarkedFailedOutOfBand() throws Exception {
-        // Three candidates, because the cascade has two distinct stages: the first user's failure
-        // is swallowed inside createPredictionAndEntry, the second throws for real off the dead
-        // transaction, and the third must never be attempted. With two users the call count is
-        // identical whether the loop stops or not, so the test would prove nothing.
+        // Three candidates: the first failure is swallowed, the second throws off the dead
+        // transaction, the third must never run. With two, the call count is the same either way.
         season.insertUser("first@example.com");
         season.insertUser("second@example.com");
         season.insertUser("third@example.com");
@@ -208,9 +199,7 @@ class OutboxFailureIsolationIT extends AbstractPostgresIT {
     @Test
     @DisplayName("A poisoned SEASON_IN_PLAY rolls back its auto-joins and its chain event together")
     void poisonedSeasonInPlayRollsBackTheChainEventToo() throws Exception {
-        // The guarantee the three-hop design rests on. A half-state — nobody auto-joined but
-        // everyone queued to be welcomed — is the one outcome that cannot be recovered from,
-        // because the welcome would tell users about a table they do not have.
+        // Never half a state: users queued for a welcome about a table they do not have.
         season.insertUser("first@example.com");
         season.insertUser("second@example.com");
         season.insertUser("third@example.com");

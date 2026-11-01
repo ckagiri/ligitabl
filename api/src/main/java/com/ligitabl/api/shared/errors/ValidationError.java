@@ -9,7 +9,7 @@ public record ValidationError(List<ValidationMessage> messages) implements UseCa
         if (messages == null || messages.isEmpty()) {
             throw new IllegalArgumentException("ValidationError must contain at least one message");
         }
-        messages = List.copyOf(messages); // defensive copy
+        messages = List.copyOf(messages);
     }
 
     // Convenience constructor for a single message

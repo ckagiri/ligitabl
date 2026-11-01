@@ -10,19 +10,11 @@ import org.junit.jupiter.api.Test;
 
 import com.ligitabl.api.testsupport.TestCalendar;
 
-/**
- * Ported from .art/testing/SyncFrequencyCalculatorTest.java.
- */
 class SyncFrequencyCalculatorTest {
 
     /**
-     * The instant every kickoff here is placed relative to, and the one passed to the calculator.
-     *
-     * <p>The calculator used to read {@code OffsetDateTime.now()} internally while these fixtures
-     * read it again, so "kickoff in exactly 10 minutes" was really "in 10 minutes minus however long
-     * the two reads were apart" — which is why the production code carries a ceiling-rounding
-     * workaround. One instant for both sides removes the gap, and the exact-boundary cases below
-     * (10, 60 minutes, 6 hours) now mean what they say.
+     * One instant for both the fixtures and the calculator, so the exact-boundary cases below (10, 60
+     * minutes, 6 hours) mean what they say.
      */
     private static final OffsetDateTime NOW = OffsetDateTime.ofInstant(TestCalendar.MID_SEASON, ZoneOffset.UTC);
 

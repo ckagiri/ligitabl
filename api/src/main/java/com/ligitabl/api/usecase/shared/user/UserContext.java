@@ -29,9 +29,6 @@ public record UserContext(UUID userId, UserType userType, boolean hasMainContest
         return userType == UserType.AUTHENTICATED;
     }
 
-    /**
-     * Create context for a guest user (not logged in).
-     */
     public static UserContext guest() {
         return new UserContext(null, UserType.GUEST, false);
     }

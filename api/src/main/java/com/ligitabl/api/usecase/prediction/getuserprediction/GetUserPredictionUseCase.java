@@ -36,12 +36,9 @@ import com.ligitabl.model.repo.*;
 import lombok.AllArgsConstructor;
 
 /**
- * Use case for retrieving user predictions with access mode resolution.
- *
- * Handles different user contexts:
- *   Guest: Returns fallback rankings as READONLY
- *   Authenticated with prediction: Returns user's prediction as EDITABLE or READONLY
- *   Authenticated without prediction: Returns fallback as CAN_CREATE_ENTRY
+ * Resolves the viewer's predictions and access mode: a guest gets fallback rankings READONLY; a
+ * user with a prediction gets it EDITABLE or READONLY; a user without one gets the fallback as
+ * CAN_CREATE_ENTRY.
  */
 @Service
 @AllArgsConstructor
@@ -58,9 +55,6 @@ public class GetUserPredictionUseCase {
     private final PreviewRankingsSupport previewRankingsSupport;
     private final Clock clock;
 
-    /**
-     * Execute the use case with user context resolution.
-     */
     public Either<UseCaseError, UserPredictionViewData> execute(GetUserPredictionQuery query) {
         return Either.catching(() -> buildViewData(query), ErrorMapper::toUseCaseError);
     }
@@ -79,9 +73,6 @@ public class GetUserPredictionUseCase {
             Map<String, List<Match>> currentRoundMatches,
             UUID mainContestId) {}
 
-    /**
-     * Build complete prediction view data based on user context.
-     */
     private UserPredictionViewData buildViewData(GetUserPredictionQuery query) {
         UserContext ctx = query.userContext();
         Season season = getActiveSeason();
@@ -97,9 +88,8 @@ public class GetUserPredictionUseCase {
         RoundStatus currentRoundStatus = resolveRoundStatus(currentRoundEntity, currentRoundMatches);
         String roundState = isCurrentRound ? currentRoundStatus.name() : resolveRoundState(viewingRoundEntity);
 
-        // The season completion flag is no longer an automatic side effect of the last round
-        // advancing (RoundAdvancementService leaves season.completed for an admin to set
-        // explicitly) — derive the UI-facing "season is done" signal from round state instead.
+        // RoundAdvancementService leaves season.completed for an admin to set, so derive the
+        // UI-facing "season is done" signal from round state.
         boolean seasonCompleted = currentRoundStatus == RoundStatus.ADVANCED && currentRound == lastRound;
 
         RequestContext rc = new RequestContext(
@@ -148,11 +138,8 @@ public class GetUserPredictionUseCase {
     }
 
     /**
-     * Build view for authenticated users viewing their own predictions.
-     *
-     * <p>Dispatches to one of three shapes: no prediction yet (fallback + can-create-entry),
-     * a historical/scored round (own prediction, but genuinely past or the season's last round
-     * once it has advanced), or the current, still-editable round.</p>
+     * Three shapes: no prediction yet (fallback, can-create-entry), a historical round (genuinely
+     * past, or the last round once advanced), or the current, still-editable round.
      */
     private UserPredictionViewData buildAuthenticatedView(GetUserPredictionQuery qry, RequestContext rc) {
         UserContext ctx = qry.userContext();
@@ -165,9 +152,8 @@ public class GetUserPredictionUseCase {
                 .findByUserAndSeason(ctx.userId(), qry.seasonId())
                 .orElseThrow(() -> new IllegalStateException("User context indicates prediction exists but not found"));
 
-        // SeasonPrediction.atRoundNumber moves with swaps (it marks the round currentRankings
-        // belong to), so the stable "when did this user join" marker for round navigation is the
-        // main-contest Entry's joinedAtRound instead.
+        // SeasonPrediction.atRoundNumber moves with swaps, so the stable join marker for round
+        // navigation is the main-contest Entry's joinedAtRound.
         Integer joinedAtRound = rc.mainContestId() == null
                 ? null
                 : entryRepo
@@ -247,18 +233,12 @@ public class GetUserPredictionUseCase {
                 .build();
     }
 
-    /**
-     * Build view for the current, still-editable round — the user's live prediction.
-     */
     private UserPredictionViewData buildCurrentEditableView(
             GetUserPredictionQuery qry, RequestContext rc, SeasonPrediction seasonPrediction, Integer joinedAtRound) {
-        // A still-unmerged pre-season "easter egg" registration (atRoundNumber == 0) must behave
-        // exactly like a brand-new predictor once the season starts — any swap made while it was
-        // just a pre-season row must not count toward the real opening-round bonus or first-swap-bonus messaging.
-        // Read once and hand downstream. The controller derives the cooldown banner from the same
-        // SwapCooldown this access mode was decided from, so a second read there could disagree
-        // with this one across the 24-hour boundary — a page telling the user they may swap while
-        // the table it renders is read-only, or the reverse.
+        // An unmerged pre-season registration (atRoundNumber == 0) behaves like a brand-new
+        // predictor: swaps made then don't count toward the opening-round or first-swap bonus.
+        // One clock read, handed downstream: the controller derives the cooldown banner from this
+        // SwapCooldown, so a second read could disagree with the access mode across the boundary.
         Instant evaluatedAt = clock.instant();
         SwapCooldown swapCooldown;
         PredictionAccessMode accessMode;
@@ -351,9 +331,6 @@ public class GetUserPredictionUseCase {
                 .build();
     }
 
-    /**
-     * Convert RoundResult rankings to TeamRanking list for template display.
-     */
     private List<TeamRank> convertResultRankingsToTeamRankings(RoundResult result) {
         return result.getRankings().stream().map(ResultTeamRank::getRanking).toList();
     }
@@ -404,9 +381,6 @@ public class GetUserPredictionUseCase {
                 .orElse(List.of());
     }
 
-    /**
-     * Get matches for a round.
-     */
     private Map<String, List<Match>> getMatches(UUID seasonId, int round) {
         return matchRepo.findBySeasonAndRound(seasonId, round);
     }
@@ -433,14 +407,9 @@ public class GetUserPredictionUseCase {
     }
 
     /**
-     * Resolve a round's status from an already-fetched matches map (avoids re-querying matches
-     * for the same round the caller already fetched for the view payload).
-     *
-     * <p>{@code matchesByTeam} is keyed by team code, so every match appears under both its home
-     * and away team's list — dedupe by id, not equality: {@link Match}'s Lombok-generated
-     * equals/hashCode call {@code getHomeTeam()}/{@code getAwayTeam()}, which throw when those
-     * transient, repository-populated fields aren't loaded (as here — this map comes from a
-     * plain, team-less finder).</p>
+     * Resolves round status from the already-fetched matches. The map is keyed by team, so each
+     * match appears twice: dedupe by id, not equality, because {@link Match}'s equals/hashCode call
+     * {@code getHomeTeam()}/{@code getAwayTeam()}, which throw when those fields aren't loaded.
      */
     private RoundStatus resolveRoundStatus(Round round, Map<String, List<Match>> matchesByTeam) {
         Map<UUID, Match> byId = new LinkedHashMap<>();

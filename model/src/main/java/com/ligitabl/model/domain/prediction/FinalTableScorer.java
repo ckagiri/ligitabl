@@ -9,10 +9,8 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Scores a Final Table prediction: the standard {@link ScoringEngine} distance score, a flat bonus
- * per exactly-right position, and a further bonus for calling the champion.
- *
- * <p>A thin wrapper rather than a change to {@link ScoringEngine}, so the main game's scoring stays
- * byte-identical and the bonus rules live in exactly one place.
+ * per exactly-right position, and a further bonus for calling the champion. Wraps
+ * {@link ScoringEngine} rather than changing it, so the main game's scoring is untouched.
  */
 @RequiredArgsConstructor
 public class FinalTableScorer {
@@ -31,10 +29,8 @@ public class FinalTableScorer {
 
     /**
      * The best score obtainable in a season: the distance ceiling, a zero on every club, and the
-     * champion called right.
-     *
-     * <p>Here rather than at each call site because it is the scoring rule read backwards — three
-     * pages quote this number and they must never disagree with what {@link #score} can produce.
+     * champion called right. Pages quote this number: call this rather than re-deriving it, so it
+     * always agrees with what {@link #score} can produce.
      */
     public static int maxScore(int maxHitPoints, int teamCount) {
         return maxHitPoints + teamCount * ZERO_BONUS + CHAMPION_BONUS;
@@ -61,12 +57,9 @@ public class FinalTableScorer {
     }
 
     /**
-     * Read off the scored rows rather than the raw input: the row placed 1st is the claim, and its
-     * {@code standingsPosition} is where that club actually finished.
-     *
-     * <p>Returns 0 for a prediction with no 1st place at all. A malformed row is the caller's
-     * problem to log, not this method's to throw on — the season pass isolates faults per row and
-     * this must not be what fails a whole table.
+     * The row placed 1st is the claim; its {@code standingsPosition} is where that club finished.
+     * Returns 0 rather than throwing when there is no 1st place: the season pass isolates faults per
+     * row, and this must not fail a whole table.
      */
     private int championBonus(List<ResultTeamRank> resultRankings) {
         if (resultRankings == null) {

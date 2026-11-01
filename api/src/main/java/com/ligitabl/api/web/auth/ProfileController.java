@@ -272,11 +272,7 @@ public class ProfileController {
                 HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
     }
 
-    /**
-     * Populates the "share your prediction" section — only visible when the user actually has
-     * something to share: pre-season registration (initialRankings) or an in-play prediction
-     * (currentRankings).
-     */
+    /** Visible only with something to share: a pre-season registration or an in-play prediction. */
     private void populateShareModel(User user, Model model) {
         var shareData = seasonPredictionSupport.buildShareData(user, competitionDefaults.defaultCompetitionSlug());
         model.addAttribute("showShareSection", shareData.visible());

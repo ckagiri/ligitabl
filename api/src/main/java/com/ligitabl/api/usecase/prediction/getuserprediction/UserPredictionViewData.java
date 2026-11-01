@@ -15,12 +15,6 @@ import com.ligitabl.model.domain.prediction.SwapCooldown;
 
 import lombok.Builder;
 
-/**
- * Complete view data returned by this use case.
- *
- * <p>Contains all information needed by the template to render the prediction view,
- * including access mode for UI control rendering.</p>
- */
 @Builder
 public record UserPredictionViewData(
         List<TeamRank> rankings,
@@ -73,9 +67,6 @@ public record UserPredictionViewData(
         return roundResult != null;
     }
 
-    /**
-     * Check if viewing the current round.
-     */
     public boolean isCurrentRound() {
         return viewingRound == currentRound;
     }

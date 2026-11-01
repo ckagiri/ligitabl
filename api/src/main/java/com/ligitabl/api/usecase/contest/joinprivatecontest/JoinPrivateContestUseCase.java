@@ -59,7 +59,6 @@ public class JoinPrivateContestUseCase {
             return Either.left(new JoinPrivateContestError.SeasonNotJoinable());
         }
 
-        // Verify user has made a prediction (is participating in the season)
         if (!predictionRepo.existsByUserAndSeason(cmd.userId(), contest.getSeasonId())) {
             return Either.left(new JoinPrivateContestError.NoPrediction());
         }

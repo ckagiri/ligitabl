@@ -106,10 +106,9 @@ public class ManageSeasonSetupModeUseCase
         });
     }
 
-    // A past round is out of sync if it was marked
-    // unfinalized by a setup-mode reschedule/transition/refinalize cascade, OR its matches aren't
-    // actually complete (e.g. one was reverted to SCHEDULED mid-correction). Leaving setup mode
-    // with any of those still unresolved would silently ship stale standings once main-contest reattaches.
+    // A past round is out of sync if a setup-mode cascade marked it unfinalized, or its matches
+    // aren't complete (e.g. one reverted to SCHEDULED). Leaving setup mode then would ship stale
+    // standings once the main contest reattaches.
     private Either<UseCaseError, List<Round>> findOutOfSyncRounds(Season season) {
         return hierarchyValidator.validateCurrentRound(season).map(currentRound -> {
             int currentPosition = currentRound.getPosition();

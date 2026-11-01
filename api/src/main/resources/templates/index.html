@@ -6,14 +6,14 @@
 >
   <body>
     <div layout:fragment="content">
-      <!-- Preview rankings for the hero's tap-to-swap demo, from PublicController -->
+      <!--/* Preview rankings for the hero's tap-to-swap demo, from PublicController */-->
       <script th:inline="javascript">
         /*<![CDATA[*/
         window.previewTeams = /*[[${previewRankings}]]*/ [];
         /*]]>*/
       </script>
 
-      <!-- Pre-Season Banner -->
+      <!--/* Pre-Season Banner */-->
       <div
         th:if="${isPreSeason}"
         class="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3 mb-6 text-center"
@@ -35,14 +35,13 @@
         </p>
       </div>
 
-      <!-- Hero -->
+      <!--/* Hero */-->
       <div
         class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 sm:p-12 mb-12 text-white"
       >
-        <!-- Three grid children rather than two, so the preview card can sit between the pitch
-             and the buttons on a phone: the demo is what sells the game, and stacked full-width
-             CTAs pushed it below the fold. Desktop is unchanged — md:col-start-1 puts the CTA
-             block back under the text in the left column instead of wrapping to a new row. -->
+        <!--/* Three grid children so the preview card sits between the pitch and the buttons on a
+             phone, where full-width CTAs pushed the demo below the fold. md:col-start-1 keeps
+             desktop's CTA under the text. */-->
         <div
           class="max-w-5xl mx-auto grid md:grid-cols-2 gap-x-10 gap-y-6 md:gap-y-10 items-center"
         >
@@ -59,8 +58,8 @@
             </p>
           </div>
 
-          <!-- Buttons and secondary links: straight after the pitch on mobile, back under the
-               text on desktop. -->
+          <!--/* Buttons and secondary links: straight after the pitch on mobile, back under the
+               text on desktop. */-->
           <div class="text-center md:text-left order-2 md:order-3 md:col-start-1">
             <div
               class="flex flex-col sm:flex-row sm:flex-wrap justify-center md:justify-start gap-3 mb-6"
@@ -107,7 +106,7 @@
             </p>
           </div>
 
-          <!-- Interactive preview card: tap two teams to swap them -->
+          <!--/* Interactive preview card: tap two teams to swap them */-->
           <div
             x-data="{
               original: (window.previewTeams || []).map(t => ({ code: t.teamCode, name: t.teamName })),
@@ -152,8 +151,8 @@
                 class="flex items-center gap-2 text-[11px] uppercase tracking-widest text-indigo-200 font-medium"
               >
                 Top of the table
-                <!-- Marks the card as real current standings, not sample data:
-                     getPreviewRankings reads live standings for the round. -->
+                <!--/* Marks the card as real current standings, not sample data:
+                     getPreviewRankings reads live standings for the round. */-->
                 <span class="flex items-center gap-1.5 shrink-0">
                   <span
                     class="w-1.5 h-1.5 rounded-full bg-green-500"
@@ -201,7 +200,7 @@
         </div>
       </div>
 
-      <!-- How It Works -->
+      <!--/* How It Works */-->
       <div class="bg-white rounded-lg shadow-md p-8 mb-12">
         <h2 class="text-3xl font-bold mb-8 text-center text-gray-900">
           How It Works
@@ -294,7 +293,7 @@
         </div>
       </div>
 
-      <!-- Leaderboard Phases -->
+      <!--/* Leaderboard Phases */-->
       <div class="bg-white rounded-lg shadow-md p-8 mb-12">
         <h2 class="text-3xl font-bold mb-2 text-center text-gray-900">
           Leaderboard Phases
@@ -338,7 +337,7 @@
         </div>
       </div>
 
-      <!-- Join Anytime -->
+      <!--/* Join Anytime */-->
       <div
         class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-8 mb-12"
       >
@@ -361,7 +360,7 @@
         </div>
       </div>
 
-      <!-- Contests -->
+      <!--/* Contests */-->
       <div class="bg-white rounded-lg shadow-md p-8 mb-12">
         <div class="max-w-2xl mx-auto text-center">
           <div class="text-4xl mb-4">🤝</div>
@@ -375,7 +374,7 @@
         </div>
       </div>
 
-      <!-- Scoring & Rankings (short teaser — full breakdown lives in the FAQ) -->
+      <!--/* Scoring & Rankings (short teaser — full breakdown lives in the FAQ) */-->
       <div
         class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-8 mb-12"
       >
@@ -387,7 +386,7 @@
           The leaderboard ranks by points, then zeroes, then swap efficiency.
         </p>
 
-        <!-- Two motivation loops -->
+        <!--/* Two motivation loops */-->
         <div class="max-w-2xl mx-auto grid sm:grid-cols-2 gap-4 mb-8">
           <div class="bg-white rounded-lg p-5 border border-purple-100">
             <div class="text-2xl mb-2">📈</div>
@@ -416,7 +415,6 @@
         </div>
       </div>
 
-      <!-- Logged-in CTA -->
       <div th:if="${isLoggedIn && showLoggedInCta}" class="text-center py-12">
         <div class="text-4xl mb-4">🎯</div>
         <h2 class="text-2xl font-bold mb-3 text-gray-900">

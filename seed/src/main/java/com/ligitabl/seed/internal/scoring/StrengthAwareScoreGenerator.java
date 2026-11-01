@@ -35,7 +35,6 @@ public class StrengthAwareScoreGenerator {
         double attackStrength = attacking.getAttackingStrength();
         double defenseStrength = defending.getDefensiveStrength();
 
-        // Apply home/away modifiers
         attackStrength *= isHome ? HOME_ATTACK_BOOST : AWAY_ATTACK_PENALTY;
         defenseStrength *= isHome ? AWAY_DEFENSE_PENALTY : HOME_DEFENSE_BOOST;
 

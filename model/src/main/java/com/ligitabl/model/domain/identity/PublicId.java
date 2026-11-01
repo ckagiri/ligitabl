@@ -15,9 +15,6 @@ public record PublicId(String value) {
         }
     }
 
-    /**
-     * Create a PublicId with validation.
-     */
     public static PublicId create(String value) {
         assertArgumentNotEmpty(value, "Public id cannot be empty");
 

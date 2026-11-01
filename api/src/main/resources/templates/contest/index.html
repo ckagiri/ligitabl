@@ -22,11 +22,11 @@
           }
         }"
       >
-        <!-- ── Header ── -->
+        <!--/* ── Header ── */-->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
           <h1 class="text-2xl font-bold text-gray-900">Contests</h1>
           <div class="flex flex-wrap gap-2">
-            <!-- Join inline toggle -->
+            <!--/* Join inline toggle */-->
             <button
               type="button"
               @click="showJoinForm ? closeJoinForm() : openJoinForm()"
@@ -66,7 +66,7 @@
           </div>
         </div>
 
-        <!-- ── Season prediction required banner ── -->
+        <!--/* ── Season prediction required banner ── */-->
         <div th:if="${!hasSeasonPrediction}" class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div class="flex items-start">
             <svg class="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -81,7 +81,7 @@
           </div>
         </div>
 
-        <!-- ── Inline join form (Alpine.js x-show) ── -->
+        <!--/* ── Inline join form (Alpine.js x-show) ── */-->
         <div x-show="showJoinForm" x-cloak class="mb-6 bg-white rounded-xl border border-gray-200 shadow-sm p-5">
           <p class="text-sm font-medium text-gray-700 mb-3">Enter contest code</p>
           <div class="flex gap-2">
@@ -116,11 +116,11 @@
             </button>
           </div>
 
-          <!-- Preview result area -->
+          <!--/* Preview result area */-->
           <div id="inline-preview" class="mt-3"></div>
         </div>
 
-        <!-- ── General Contests section ── -->
+        <!--/* ── General Contests section ── */-->
         <section class="mb-8">
           <h2 class="text-base font-semibold text-gray-700 uppercase tracking-wide mb-3">General Contests</h2>
           <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -178,7 +178,7 @@
           </div>
         </section>
 
-        <!-- ── Private Contests section ── -->
+        <!--/* ── Private Contests section ── */-->
         <section>
           <h2 class="text-base font-semibold text-gray-700 uppercase tracking-wide mb-3">Private Contests</h2>
           <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -240,7 +240,7 @@
                       >Open</span>
                     </td>
                     <td th:if="${showRenewColumn}" class="px-3 sm:px-4 py-3">
-                      <!-- Renew button + modal (owner only, when renewable) — scoped to this row -->
+                      <!--/* Renew button + modal (owner only, when renewable) — scoped to this row */-->
                       <th:block th:if="${row.isOwner and row.renewal.visible}">
                         <div
                           th:attr="data-contest-id=${row.id},

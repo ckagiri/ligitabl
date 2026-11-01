@@ -1,11 +1,5 @@
 package com.ligitabl.api.runners.importer.model.errors;
 
-/**
- * Base sealed interface for all import domain errors.
- * Using sealed types ensures exhaustive error handling.
- *
- * No external dependencies - pure domain model.
- */
 public sealed interface ImportError permits ApiError, ValidationError, DatabaseError, MappingError {
 
     String message();

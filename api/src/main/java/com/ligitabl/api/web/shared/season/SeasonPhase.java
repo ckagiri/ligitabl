@@ -27,10 +27,8 @@ public record SeasonPhase(
         OffsetDateTime predictionsOpenAt) {
 
     /**
-     * @param at the instant to resolve against — {@code clock.instant()} in production. Taken as a
-     *     parameter rather than read here so every field below is derived from one instant: a method
-     *     that called the clock four times could report a countdown and a phase that disagree,
-     *     across a midnight boundary.
+     * @param at {@code clock.instant()} in production; one instant for every field, so the countdown
+     *     and phase can't straddle midnight
      */
     public static SeasonPhase resolve(Season season, Instant at) {
         OffsetDateTime now = OffsetDateTime.ofInstant(at, ZoneOffset.UTC);

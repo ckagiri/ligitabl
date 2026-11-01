@@ -49,9 +49,6 @@ public class RankingBuilder {
         return this;
     }
 
-    /**
-     * Set team short names map directly.
-     */
     public RankingBuilder withTeamShortNames(Map<UUID, String> teamShortNames) {
         this.teamShortNames = Objects.requireNonNull(teamShortNames);
         return this;
@@ -59,26 +56,17 @@ public class RankingBuilder {
 
     // ========== TECHNICAL METHODS (for power users) ==========
 
-    /**
-     * Add a custom ranking rule.
-     */
     public RankingBuilder then(RankingRule next) {
         Objects.requireNonNull(next);
         rule = rule.then(next);
         return this;
     }
 
-    /**
-     * Add a descending ordering by the given integer extractor.
-     */
     public RankingBuilder thenDescending(Function<TeamStats, Integer> extractor) {
         Objects.requireNonNull(extractor);
         return then(RankingRule.descending(extractor));
     }
 
-    /**
-     * Add an ascending ordering by the given string extractor.
-     */
     public RankingBuilder thenAscending(Function<TeamStats, String> extractor) {
         Objects.requireNonNull(extractor);
         return then(RankingRule.ascending(extractor));
@@ -103,16 +91,10 @@ public class RankingBuilder {
         return thenDescending(TeamStats::points);
     }
 
-    /**
-     * Rank by best goal difference (higher is better).
-     */
     public RankingBuilder byBestGoalDifference() {
         return thenDescending(TeamStats::goalDiff);
     }
 
-    /**
-     * Rank by most goals scored (higher is better).
-     */
     public RankingBuilder byMostGoalsScored() {
         return thenDescending(TeamStats::goalsFor);
     }
@@ -173,9 +155,6 @@ public class RankingBuilder {
         return then(new CachedHeadToHeadRule(matches, h2hTieBreaker));
     }
 
-    /**
-     * Build the final ranking rule.
-     */
     public RankingRule build() {
         return rule;
     }

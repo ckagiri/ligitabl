@@ -38,13 +38,8 @@ public class JoinContestController {
     private final SeasonPredictionRepo predictionRepo;
 
     /**
-     * GET /contests/join
-     *
-     * Three states:
-     *  - no code              → blank form
-     *  - code + invalid       → error card
-     *  - code + no prediction → redirect to /predictions?next=...
-     *  - code + valid         → preview card + confirm button
+     * No code → blank form; invalid code → error card; no prediction → redirect to
+     * /predictions?next=...; valid → preview card and confirm button.
      */
     @GetMapping("/join")
     public String joinForm(
@@ -131,10 +126,8 @@ public class JoinContestController {
     }
 
     /**
-     * Codes are lowercase now, so whatever arrives — typed in caps, pasted from an old invite, or
-     * autocapitalised by a phone keyboard — is folded before it's looked up or echoed back into the
-     * form. Matching is case-insensitive either way; this is what keeps the page reading lowercase.
-     * Null for a blank code, so callers can treat "nothing entered" as one case.
+     * Folds the code to lowercase before lookup or echo, whatever caps a keyboard or old invite
+     * added; matching is case-insensitive anyway. Null for a blank code.
      */
     private static String normalize(String code) {
         if (code == null || code.isBlank()) {

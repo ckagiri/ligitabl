@@ -49,10 +49,9 @@ public class FinalTablePrediction extends AbstractModel<UUID> {
     private int swapCount = 0;
 
     /**
-     * The leaderboard tiebreak: when this user settled on their table. Set to the create date when
-     * the row is created — a player who accepts the baseline has settled the moment they entered —
-     * and thereafter only ever advanced by {@link #addSwap}. Never recomputed, and never rewound:
-     * a player who swapped in August and reopens the page in December keeps their August time.
+     * The leaderboard tiebreak: when this user settled on their table. Set to the create date — a
+     * player who accepts the baseline settled on entering — then only advanced by {@link #addSwap},
+     * never recomputed or rewound.
      */
     private Instant settledAt;
 

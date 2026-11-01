@@ -6,7 +6,7 @@
 >
   <body>
     <div layout:fragment="content">
-      <!-- Hero -->
+      <!--/* Hero */-->
       <div
         class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 sm:p-12 mb-12 text-white text-center"
       >
@@ -21,7 +21,7 @@
 
       <div class="bg-white rounded-lg shadow-md p-8 mb-12">
         <div class="max-w-2xl mx-auto">
-          <!-- Getting started -->
+          <!--/* Getting started */-->
           <p
             class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
           >
@@ -376,7 +376,7 @@
             </div>
           </div>
 
-          <!-- Swaps during the season -->
+          <!--/* Swaps during the season */-->
           <p
             class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
           >
@@ -534,9 +534,8 @@
             </div>
           </div>
 
-          <!-- Pre-season & joining later — placed after "Swaps during the season": both the
-               pre-season allowance and what becomes of that table afterwards only make sense once
-               the normal one-swap-per-24h rule has been introduced. -->
+          <!--/* After "Swaps during the season": the pre-season allowance only makes sense once the
+               one-swap-per-24h rule is introduced. */-->
           <p
             class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
           >
@@ -669,7 +668,7 @@
             </div>
           </div>
 
-          <!-- Planning with What-If -->
+          <!--/* Planning with What-If */-->
           <p
             class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
           >
@@ -802,7 +801,7 @@
             </div>
           </div>
 
-          <!-- Grades -->
+          <!--/* Grades */-->
           <p
             class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
           >
@@ -837,7 +836,7 @@
                   week.
                 </p>
                 <div class="space-y-4">
-                  <!-- Outstanding -->
+                  <!--/* Outstanding */-->
                   <div>
                     <p
                       class="text-xs font-semibold text-indigo-500 uppercase tracking-wider mb-2 px-1"
@@ -875,7 +874,7 @@
                     </div>
                   </div>
 
-                  <!-- Strong -->
+                  <!--/* Strong */-->
                   <div>
                     <p
                       class="text-xs font-semibold text-green-500 uppercase tracking-wider mb-2 px-1"
@@ -913,7 +912,7 @@
                     </div>
                   </div>
 
-                  <!-- Fair -->
+                  <!--/* Fair */-->
                   <div>
                     <p
                       class="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-2 px-1"
@@ -955,15 +954,15 @@
             </div>
           </div>
 
-          <!-- Tiebreakers -->
+          <!--/* Tiebreakers */-->
           <p
             class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
           >
             Tiebreakers
           </p>
           <div class="divide-y divide-gray-100 mb-8">
-            <!-- Leads the section: it defines the term the tie-break ordering below uses, and
-                 its closing line runs straight into that item. -->
+            <!--/* Leads the section: it defines the term the tie-break ordering below uses, and
+                 its closing line runs straight into that item. */-->
             <div class="py-1" x-data="{ open: false }">
               <button
                 type="button"
@@ -1161,7 +1160,7 @@
             </div>
           </div>
 
-          <!-- Competition formats -->
+          <!--/* Competition formats */-->
           <p
             class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
           >
@@ -1239,16 +1238,15 @@
             </div>
           </div>
 
-          <!-- Final Table Predictor: shared with /faq/final-table, which serves this same
-               section as a page of its own. Closed first item — this sits among other
-               sections here, and an open one would break their rhythm. -->
+          <!--/* Final Table Predictor, shared with /faq/final-table. Starts closed so it keeps the
+               rhythm of the sections around it. */-->
           <th:block
             th:replace="~{fragments/faq-final-table :: section(false)}"
           ></th:block>
         </div>
       </div>
 
-      <!-- CTA -->
+      <!--/* CTA */-->
       <div
         class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-xl p-8 sm:p-10 text-white text-center"
       >

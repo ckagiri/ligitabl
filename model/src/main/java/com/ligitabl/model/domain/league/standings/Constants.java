@@ -20,6 +20,5 @@ public final class Constants {
     public static final Pattern SCORE_PATTERN = Pattern.compile("^(\\d+)-(\\d+)$");
     public static final int MAX_GOALS_PER_MATCH = 50;
 
-    // Cache configuration
     public static final int MAX_CACHE_SIZE = 1000;
 }

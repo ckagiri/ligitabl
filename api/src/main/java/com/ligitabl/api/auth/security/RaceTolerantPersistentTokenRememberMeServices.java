@@ -17,55 +17,30 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * A {@link PersistentTokenBasedRememberMeServices} that tolerates the token-rotation
- * race caused by concurrent requests from the same browser.
+ * A {@link PersistentTokenBasedRememberMeServices} that tolerates the token-rotation race between
+ * concurrent requests from the same browser.
  *
- * <p><b>The problem.</b> Persistent-token remember-me rotates the token on every
- * auto-login, keeping the same series. Spring's implementation treats <em>any</em>
- * series/token mismatch as cookie theft and responds by calling
- * {@code removeUserTokens(username)} — deleting every remember-me token that user has,
- * on every device — before throwing {@link CookieTheftException}.
+ * <p>Spring treats any series/token mismatch as cookie theft: it deletes every remember-me token
+ * the user has, on every device, then throws {@link CookieTheftException}. But one page load sends
+ * parallel requests carrying the same cookie. Static assets are {@code permitAll()} yet still run
+ * the filter chain, so each calls {@code autoLogin}; the first rotates the token and the rest
+ * mismatch before its {@code Set-Cookie} lands. With no session (e.g. after a deploy), stock Spring
+ * logs the user out.
  *
- * <p>That is far too blunt here, because a single page load produces several
- * <em>parallel</em> requests that all carry the same cookie. Static assets
- * ({@code /css/**}, {@code /dist/**}, {@code /js/**}, {@code /images/**}) are
- * {@code permitAll()} but still run through the security filter chain — {@code permitAll}
- * skips authorization, not the filters — so each one hits
- * {@code RememberMeAuthenticationFilter} with an empty security context and calls
- * {@code autoLogin}. Whichever request wins rotates the token; the others are still
- * holding the previous value, because the winner's {@code Set-Cookie} has not reached
- * the browser yet. Under stock Spring, those losers wipe the user's tokens and force a
- * full re-login. This fires reliably on the first page load after every deploy, when no
- * session exists and every request falls back to the cookie.
- *
- * <p><b>The fix.</b> A mismatch is only treated as theft once the stored token has been
- * sitting untouched for longer than {@link #GRACE_WINDOW_MS}. Inside that window the
- * mismatch is read as "a sibling request just rotated this token", so the login is
- * accepted, the token store is left alone, and the cookie currently in the store is
- * re-issued — which also repairs the browser's cookie if the winner's {@code Set-Cookie}
- * was lost.
- *
- * <p>This does not meaningfully weaken theft detection. An attacker replaying a stolen
- * cookie outside the window still trips the original path in full; to land inside it
- * they would have to race the legitimate browser's own in-flight requests, within a
- * minute of that browser's last auto-login.
- *
- * <p>Every other branch — malformed cookie, unknown series, expiry, and the normal
- * matching-token rotation — behaves exactly as in
+ * <p>So a mismatch counts as theft only once the stored token has gone untouched for longer than
+ * {@link #GRACE_WINDOW_MS}. Inside the window the login is accepted, the store is left alone, and
+ * the stored cookie is re-issued, which also repairs a lost {@code Set-Cookie}. A replayed cookie
+ * outside the window still trips the full theft path; to land inside it, an attacker must race the
+ * browser's own in-flight requests. Every other branch behaves exactly as in
  * {@link PersistentTokenBasedRememberMeServices}, including ordering.
  *
- * @see QuietRememberMeServices which stops a genuine {@link CookieTheftException} from
- *     surfacing as an error page, but cannot prevent the token deletion that happens
- *     before it is thrown
+ * @see QuietRememberMeServices which stops a genuine {@link CookieTheftException} from surfacing as
+ *     an error page, but cannot prevent the token deletion before it is thrown
  */
 @Slf4j
 public class RaceTolerantPersistentTokenRememberMeServices extends PersistentTokenBasedRememberMeServices {
 
-    /**
-     * How long after a token was last rotated a mismatch is still assumed to be a
-     * concurrent request from the same browser rather than a stolen cookie. Needs only
-     * to cover the spread of one page load's parallel requests; a minute is generous.
-     */
+    /** Needs only to cover the spread of one page load's parallel requests. */
     static final long GRACE_WINDOW_MS = 60_000L;
 
     /** Own reference: the superclass keeps its copy private with no accessor. */

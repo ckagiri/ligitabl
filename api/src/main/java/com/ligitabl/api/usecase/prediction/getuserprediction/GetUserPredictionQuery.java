@@ -15,12 +15,7 @@ public record GetUserPredictionQuery(UserContext userContext, UUID seasonId, Int
         // requestedRound can be null (defaults to current round)
     }
 
-    /**
-     * Validate and normalize round number.
-     * - If null or invalid → currentRound
-     * - If > currentRound → currentRound
-     * - If < 1 → currentRound
-     */
+    /** Null, below 1, or past currentRound all resolve to currentRound. */
     public int resolveRound(int currentRound, int maxRounds) {
         if (requestedRound == null) return currentRound;
         if (requestedRound < 1) return currentRound;
@@ -37,9 +32,6 @@ public record GetUserPredictionQuery(UserContext userContext, UUID seasonId, Int
         return new GetUserPredictionQuery(UserContext.authenticated(userId, hasMainContestEntry), seasonId, round);
     }
 
-    /**
-     * Create command for a guest user.
-     */
     public static GetUserPredictionQuery forGuest(UUID seasonId, Integer round) {
         return new GetUserPredictionQuery(UserContext.guest(), seasonId, round);
     }

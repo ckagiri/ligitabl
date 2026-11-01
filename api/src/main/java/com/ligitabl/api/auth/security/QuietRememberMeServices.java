@@ -10,18 +10,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Wraps a persistent-token {@link RememberMeServices} so a stale or reused
- * remember-me cookie never surfaces as an uncaught {@code CookieTheftException}
- * (Spring's alarmingly-named response to a series/token mismatch — usually
- * caused by a DB reset invalidating a cookie still held by an open browser
- * tab, or two requests racing the same cookie, not an actual attack).
- *
- * <p>{@code RememberMeAuthenticationFilter} normally catches this itself, but
- * that protection only covers the standard filter-chain call path; wrapping
- * the service guarantees the same outcome — one calm log line, and the cookie
- * cleared via {@code loginFail} — regardless of which code path calls
- * {@code autoLogin}. The request is simply treated as logged out, same as any
- * other invalid remember-me token.
+ * Wraps a persistent-token {@link RememberMeServices} so a stale or reused remember-me cookie never
+ * surfaces as an uncaught {@code CookieTheftException}, whatever path calls {@code autoLogin}.
+ * The mismatch is usually a DB reset or two requests racing one cookie, not an attack; the
+ * request is treated as logged out, with one log line and the cookie cleared via {@code loginFail}.
  */
 @RequiredArgsConstructor
 @Slf4j

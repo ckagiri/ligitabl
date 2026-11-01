@@ -35,9 +35,8 @@ public class VerifyEmailUseCase {
             return Either.left(new VerifyEmailError.InvalidToken());
         }
 
-        // One read, reused for the validity branch, the used-at stamp and emailVerifiedAt: separate
-        // reads could straddle the expiry boundary, and could stamp the user verified at an instant
-        // before the token that verified them was marked used.
+        // One read for the validity check, the used-at stamp and emailVerifiedAt, so they can't
+        // straddle the expiry boundary or stamp verification before the token's use.
         Instant now = clock.instant();
 
         var verificationToken = tokenResult.get();

@@ -32,8 +32,7 @@ import com.ligitabl.model.repo.UserRepo;
 
 /**
  * Account and sign-in flows against real Postgres. The unit tests mock {@code UserRepo}, so they
- * can't see a write that skips a column; set-password once returned success without saving.
- * Each test reloads the row and signs in for real.
+ * can't see a write that skips a column; each test here reloads the row and signs in for real.
  *
  * <p>Emails and Google subjects are random per test, so the shared container needs no cleanup.
  */

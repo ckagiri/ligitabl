@@ -16,16 +16,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Polls for the pre-season → in-play transition. {@code fixedDelay} rather than a cron because
- * the window this must catch is short (round 1 open) and a restart should resume checking
- * promptly — which also removes any need for a separate startup-recovery bean.
+ * Polls for the pre-season → in-play transition. {@code fixedDelay} rather than a cron: the window
+ * (round 1 open) is short, and a restart resumes checking without a startup-recovery bean.
  */
 @Component
 @RequiredArgsConstructor
 @Slf4j
-// ligitabl.scheduling.enabled is the global scheduler kill-switch, auto-join writes real rows,
-// so a job that ignored it would keep mutating data in environments (tests, staging) that had
-// explicitly turned scheduling off.
+// Honours the global scheduling switch: auto-join writes real rows, and tests and staging turn
+// scheduling off.
 @ConditionalOnProperty(
         name = {"ligitabl.scheduling.enabled", "ligitabl.auto-join.enabled"},
         havingValue = "true",

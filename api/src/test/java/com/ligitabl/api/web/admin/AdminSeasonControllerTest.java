@@ -38,21 +38,17 @@ import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 /**
- * Covers the model attributes {@code admin/seasons.html} reads, which had no test.
- *
- * <p>Two of them — {@code activeSeasonInPlay} and {@code seasonStatesById} — exist because the
- * template used to call {@code activeSeason.isInPlay()} and {@code s.getSeasonState()} directly.
- * Those predicates now require an explicit instant, so the values are computed here instead. The
- * failure modes are asymmetric and both bad: a missing {@code seasonStatesById} throws at render
- * time, while a missing {@code activeSeasonInPlay} just makes the "(opened)" badge quietly vanish.
- * Neither would have been caught by anything before this class existed.
+ * Covers the model attributes {@code admin/seasons.html} reads. {@code activeSeasonInPlay} and
+ * {@code seasonStatesById} are computed here because the predicates need an explicit instant. A
+ * missing {@code seasonStatesById} throws at render time; a missing {@code activeSeasonInPlay}
+ * quietly drops the "(opened)" badge.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("AdminSeasonController — seasons page model")
 class AdminSeasonControllerTest {
 
-    /** Mid-season, derived — see {@link TestCalendar}. The absolute date is not load-bearing here. */
+    /** Mid-season, derived — see {@link TestCalendar}. The absolute date doesn't matter here. */
     private static final Instant NOW = TestCalendar.middayMidwayBetween(
             LocalDate.of(TestCalendar.SEASON_START_YEAR, 8, 1),
             LocalDate.of(TestCalendar.SEASON_START_YEAR + 1, 5, 31));

@@ -78,11 +78,9 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
                 .flatMap(ctx -> validateOperationalMode(ctx).map(ignored -> ctx));
     }
 
-    // SUSPENDED/CANCELLED/LIVE are always blocked, in both modes — an actively-live or
-    // mid-transition match can't be rescheduled regardless of setup mode. FINISHED, and the
-    // past-round/finalized-round restrictions for SCHEDULED/POSTPONED, are relaxed in setup mode
-    // so admins can rearrange historical fixture data (see RescheduleMatchUseCase javadoc / task
-    // notes) — but a FINISHED match still can't be pushed into an unplayed future round.
+    // SUSPENDED/CANCELLED/LIVE are blocked in both modes. Setup mode relaxes FINISHED and the
+    // past-round/finalized-round limits on SCHEDULED/POSTPONED so admins can rearrange historical
+    // fixtures, but a FINISHED match still can't move into an unplayed future round.
     private Either<UseCaseError, Void> validateOperationalMode(RescheduleContext ctx) {
         Match match = ctx.match();
         Round seasonCurrentRound = ctx.seasonCurrentRound();
@@ -162,12 +160,9 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
         }
     }
 
-    // Only reachable in setup mode (validateOperationalMode blocks any past-round move otherwise).
-    // Landing in a round before the season's current one means whatever finalized standings
-    // included that round range are now stale — mirrors FinalizeRoundUseCase's refinalize cascade:
-    // mark unfinalized, don't auto-recompute. Applies regardless of the match's status: the common
-    // case is moving a not-yet-played match into the past to backfill it, then editing its
-    // score/status afterward — by then standings are already correctly flagged out of sync.
+    // Setup mode only. Moving a match into a round before the current one makes the finalized
+    // standings covering it stale, whatever the match's status: mark them unfinalized, as
+    // FinalizeRoundUseCase's refinalize cascade does, and don't recompute.
     private void markOutOfSyncIfMovedToPastRound(RescheduleContext ctx, int fromRound, int toRound) {
         int currentPosition = ctx.seasonCurrentRound().getPosition();
         if (toRound >= currentPosition) {

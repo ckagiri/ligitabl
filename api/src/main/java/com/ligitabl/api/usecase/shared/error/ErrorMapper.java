@@ -4,14 +4,8 @@ import com.ligitabl.api.shared.errors.*;
 import com.ligitabl.api.shared.errors.UseCaseError;
 
 /**
- * Maps domain exceptions to use case errors.
- *
- * public Either<UseCaseError, SeasonPrediction> execute(Command cmd) {
- *     return Either.catching(
- *         () -> domainOperation(),
- *         ErrorMapper::toUseCaseError  // Convert exceptions to errors
- *     );
- * }
+ * Maps domain exceptions to use case errors, e.g.
+ * {@code Either.catching(() -> domainOperation(), ErrorMapper::toUseCaseError)}.
  */
 public class ErrorMapper {
 
@@ -40,9 +34,6 @@ public class ErrorMapper {
         return 500;
     }
 
-    /**
-     * Convert any exception to a UseCaseError.
-     */
     public static UseCaseError toUseCaseError(Exception exception) {
         return switch (exception) {
                 // Standard Java exceptions

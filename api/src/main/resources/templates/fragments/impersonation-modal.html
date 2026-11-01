@@ -51,11 +51,10 @@
               >
                 Cancel
               </button>
-              <!--
-                A lookup plus a session mutation, answered with HX-Redirect — so htmx keeps
-                .htmx-request set through the navigation and the spinner stays up until the new
-                page paints. The error path replaces the whole modal, resetting the button.
-              -->
+              <!--/*
+                Answered with HX-Redirect, so htmx keeps .htmx-request through the navigation and the
+                spinner stays until the new page paints. The error path replaces the whole modal.
+              */-->
               <button
                 type="submit"
                 hx-disabled-elt="this"

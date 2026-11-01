@@ -17,18 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Use Case: Get Leaderboard
- * <p>
- * Retrieves user contest leaderboard for the default competition's main contest.
- * Supports filtering by phase (Q1, Q2, Q3, Q4, FS).
- * <p>
- * Flow:
- * 1. Find default competition (premier-league)
- * 2. Find active season
- * 3. Find contest (default is main)
- * 4. Resolve phase to round range
- * 5. Compute leaderboard from repository
- * 6. Return rankings with phase info
+ * Leaderboard for the default competition's main contest, filtered by phase (Q1-Q4, FS).
  */
 @Service
 @RequiredArgsConstructor

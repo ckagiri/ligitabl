@@ -14,15 +14,12 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Records when each monitored background job last succeeded, so {@link JobWatchdog} can detect a
- * job that has gone <em>quiet</em> rather than one that failed loudly. Every other signal in the
- * codebase fires on failure; nothing fired when the match-sync chain stopped being scheduled on
- * 2026-09-06 (see {@code .art/task_89.md}).
+ * job that has gone quiet rather than one that failed loudly; nothing else fires when a
+ * self-rescheduling chain simply stops.
  *
- * <p>Jobs {@link #register} from {@code @PostConstruct} and {@link #ping} on success. Registering
- * at bean creation is what distinguishes two cases: a job disabled by
- * {@code @ConditionalOnProperty} never constructs, so is never alerted on; a job that exists but
- * whose schedule is broken registers and never pings, so staleness measures from
- * {@code registeredAt} and still alerts.
+ * <p>Jobs {@link #register} from {@code @PostConstruct} and {@link #ping} on success. A job
+ * disabled by {@code @ConditionalOnProperty} never constructs, so is never alerted on; one whose
+ * schedule is broken registers and never pings, so staleness measures from {@code registeredAt}.
  *
  * <p>Mutations go through {@link ConcurrentHashMap#compute}, never {@code put}, so a concurrent
  * {@link #markAlerted} cannot be lost.

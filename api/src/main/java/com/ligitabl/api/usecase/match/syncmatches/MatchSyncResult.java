@@ -8,9 +8,6 @@ import com.ligitabl.model.domain.league.RoundStatus;
 
 import lombok.Builder;
 
-/**
- * Result of a match synchronization operation
- */
 @Builder
 public record MatchSyncResult(
         UUID seasonId,

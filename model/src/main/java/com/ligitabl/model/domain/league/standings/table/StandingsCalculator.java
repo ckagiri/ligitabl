@@ -33,25 +33,16 @@ public class StandingsCalculator {
             return List.of();
         }
 
-        // Build stats for each team
         Map<UUID, TeamStats> statsMap = buildStatsMap(teams, matches);
 
         // Sort by ranking rule
         List<TeamStats> sortedStats = new ArrayList<>(statsMap.values());
         sortedStats.sort(rankingRule::compare);
 
-        // Assign positions
         return assignPositions(sortedStats);
     }
 
-    /**
-     * Validates that calculated standings match expected values.
-     *
-     * @param standings Calculated standings
-     * @param finishedMatches Matches used for calculation
-     * @param totalTeams Expected number of teams
-     * @return true if valid
-     */
+    /** True when there are {@code totalTeams} rows and each team's played count matches the finished matches. */
     public static boolean validate(List<StandingsTeamRank> standings, List<Match> finishedMatches, int totalTeams) {
         if (standings.size() != totalTeams) {
             return false;
@@ -69,7 +60,6 @@ public class StandingsCalculator {
             matchCounts.merge(awayCode, 1, Integer::sum);
         }
 
-        // Validate each team
         for (StandingsTeamRank rank : standings) {
             String teamCode = rank.getRanking().getCode();
             int expectedPlayed = matchCounts.getOrDefault(teamCode, 0);
@@ -103,11 +93,9 @@ public class StandingsCalculator {
         for (Match match : matches) {
             if (!match.isPlayed()) continue;
 
-            // Update home team
             match.viewFor(match.getHomeTeamId())
                     .ifPresent(view -> statsMap.computeIfPresent(match.getHomeTeamId(), (k, v) -> v.withMatch(view)));
 
-            // Update away team
             match.viewFor(match.getAwayTeamId())
                     .ifPresent(view -> statsMap.computeIfPresent(match.getAwayTeamId(), (k, v) -> v.withMatch(view)));
         }

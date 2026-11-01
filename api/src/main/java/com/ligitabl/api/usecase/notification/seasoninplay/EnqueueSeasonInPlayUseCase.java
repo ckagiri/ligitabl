@@ -24,13 +24,9 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Writes the one-shot SEASON_IN_PLAY event when the season opens for play.
  *
- * <p>{@code SeasonState} is derived rather than persisted, so there is no transition hook to
- * subscribe to — this polls, and the unique idempotency key {@code season-in-play:{seasonId}}
- * (ON CONFLICT DO NOTHING) is what makes it fire exactly once per season. Every subsequent poll
- * is a cheap no-op insert.
- *
- * <p>Skip reasons log at debug deliberately: this runs every 15 minutes and spends almost all of
- * its life legitimately skipping. Only an actual insert is worth an info line.
+ * <p>{@code SeasonState} is derived, not persisted, so there is no transition hook: this polls,
+ * and the idempotency key {@code season-in-play:{seasonId}} (ON CONFLICT DO NOTHING) makes it fire
+ * once per season. Skips log at debug because nearly every poll skips.
  */
 @Component
 @RequiredArgsConstructor
@@ -81,13 +77,10 @@ public class EnqueueSeasonInPlayUseCase {
     }
 
     /**
-     * The late-fire guard. Round-0 rows are scored from round 1 onwards, so creating them after
-     * round 1 has locked would leave those users a missing or wrong result for it. Missing the
-     * window must therefore mean "no auto-join" rather than "a half-join" — ROUND_LOCKED stays
-     * the catch-up path for anyone who surfaces later.
-     *
-     * <p>Both halves are needed: OPEN alone would let a late fire through at round 5 if that
-     * round happened to be open, and position 1 alone would let it through once round 1 locked.
+     * Round-0 rows are scored from round 1, so creating them after round 1 locks would leave those
+     * users a missing or wrong result. A missed window means no auto-join; ROUND_LOCKED catches up
+     * anyone later. Both halves are needed: OPEN alone passes an open later round, and position 1
+     * alone passes a locked round 1.
      */
     private boolean isFirstRoundStillOpen(Season season) {
         Round currentRound = roundRepo.findById(season.getCurrentRoundId()).orElse(null);

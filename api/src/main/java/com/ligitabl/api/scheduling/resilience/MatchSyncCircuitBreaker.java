@@ -13,15 +13,8 @@ import com.ligitabl.api.notification.AdminNotificationService;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Circuit Breaker for Match Sync
- *
- * Prevents runaway failures by stopping sync attempts after N consecutive failures.
- * Automatically recovers after a wait period.
- *
- * States:
- * - CLOSED: Normal operation
- * - OPEN: Too many failures, blocking requests
- * - HALF_OPEN: Testing if service recovered
+ * Stops sync attempts after consecutive failures and lets one through again (HALF_OPEN) once the
+ * recovery period elapses.
  */
 @Component
 @Slf4j
@@ -62,7 +55,7 @@ public class MatchSyncCircuitBreaker {
         // Check if recovery period has passed
         if (Instant.now(clock).isAfter(openedAt.plus(RECOVERY_WAIT))) {
             log.info("Circuit breaker recovery period elapsed, entering HALF_OPEN state");
-            return State.HALF_OPEN; // Try again
+            return State.HALF_OPEN;
         }
 
         return State.OPEN;

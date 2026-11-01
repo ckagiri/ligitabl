@@ -75,12 +75,7 @@ class CreatePredictionUseCaseTest {
     @Mock
     private StandingsRepo standingsRepo;
 
-    /**
-     * A real frozen clock, not a mock. Every stub this replaced returned the same instant and
-     * nothing verified interactions on it, so the mock bought nothing — while costing a
-     * {@code lenient()} default, because the season-phase predicates consult the clock on paths
-     * that return before reaching the rest of the use case. A real clock cannot be unstubbed.
-     */
+    /** A real frozen clock, not a mock: a mock needs {@code lenient()} stubbing for paths that return early. */
     private final Instant now = TestCalendar.MID_SEASON;
 
     private final Clock clock = Clock.fixed(now, ZoneOffset.UTC);
@@ -96,15 +91,7 @@ class CreatePredictionUseCaseTest {
     private Round round;
     private Contest defaultContest;
 
-    /**
-     * The frozen {@code now} as an {@link OffsetDateTime}.
-     *
-     * <p>Season fixtures must be dated relative to the same instant the use case reads from the
-     * clock. They previously used real {@code OffsetDateTime.now()} while the clock was pinned to
-     * 2024 — harmless only because the season predicates read the wall clock themselves and so
-     * never consulted this clock. Now that they take an explicit instant, a fixture and a clock
-     * that disagree describe two different worlds.
-     */
+    /** The frozen {@code now}: season fixtures must be dated against the instant the clock gives. */
     private OffsetDateTime atNow() {
         return OffsetDateTime.ofInstant(now, ZoneOffset.UTC);
     }
@@ -701,10 +688,8 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void newJoin_whenRoundNotOpen_commitsTheOpeningWindowOfTheRoundTheUserStartsPlaying() {
-        // Joining while round 1 is finalized places the user at round 2, and joining consumes
-        // round 2's opening window — so openingCommittedRound must follow atRoundNumber, not the
-        // current round position. Dating it at round 1 would hand them a round-2 opening swap that
-        // belongs only to users who committed while round 1 was open.
+        // Joining with round 1 finalized places the user at round 2 and consumes its opening window,
+        // so openingCommittedRound follows atRoundNumber, not the current round position.
         Round finalizedRound = createRound(1, true);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
@@ -756,10 +741,8 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void joinLockedRound_preSeasonRegistration_neverResolvesTheRound() {
-        // The pre-season branch must not consult the round at all: round resolution carries the
-        // Ended / last-round-must-be-OPEN checks, which have no business failing a round-0
-        // registration. This is what the lazy Supplier in executeJoinPlan protects — an eagerly
-        // resolved value would drag those checks onto this branch.
+        // The pre-season branch must not consult the round: resolution carries the Ended /
+        // last-round-must-be-OPEN checks. The lazy Supplier in executeJoinPlan protects this.
         season = season.toBuilder()
                 .predictionsOpenAt(atNow().plusDays(30))
                 .preSeasonOpensAt(atNow().minusDays(1))
@@ -854,9 +837,8 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void registerDefaultTable_worksWhileTheSeasonIsAlreadyInPlay() {
-        // The reason this overload exists at all: resolveJoinPlan gates NewPreSeasonRegistration
-        // on isPreSeason(), which is false by the time the auto-join fires. A plain
-        // CreatePredictionCommand here would produce a NewJoin row instead.
+        // resolveJoinPlan gates NewPreSeasonRegistration on isPreSeason(), false once the auto-join
+        // fires, so a plain CreatePredictionCommand would produce a NewJoin row.
         Season inPlaySeason = createSeason();
         inPlaySeason = inPlaySeason.toBuilder()
                 .preSeasonOpensAt(atNow().minusDays(30))
