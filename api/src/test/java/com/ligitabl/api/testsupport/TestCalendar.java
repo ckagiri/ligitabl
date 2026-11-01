@@ -17,7 +17,8 @@ import java.time.ZoneOffset;
  * because every date derives from it and every assertion is about ordering, which a whole-year
  * shift preserves; evaluation instants derive from the calendars, so a run is deterministic. To
  * re-check, pin {@link #SEASON_START_YEAR} to a literal far from now and run
- * {@code make test-api-core} and {@code make test-api-it}: the counts must not change.
+ * {@code make test-api-core} and {@code make test-api-it}: the counts must not change. If they do,
+ * something depends on the absolute year, and that calendar needs a fixed date instead.
  *
  * <p>⚠️ Read at a fixed zone: {@code Year.now()} uses the JVM default, so a run across New Year's
  * midnight could compute two base years.
@@ -44,7 +45,8 @@ public final class TestCalendar {
     /**
      * Midday, halfway through {@link #SEASON_START}–{@link #SEASON_END}: the instant DB-backed tests
      * evaluate at, and what {@link FixedClockConfig} freezes its {@code Clock} to. Far from either end,
-     * so a test shifting it by hours or days stays in the same season phase.
+     * so a test shifting it by hours or days (a 24-hour swap cooldown, {@code .plusMinutes(10)})
+     * stays in the same season phase.
      */
     public static final Instant MID_SEASON = middayMidwayBetween(SEASON_START, SEASON_END);
 

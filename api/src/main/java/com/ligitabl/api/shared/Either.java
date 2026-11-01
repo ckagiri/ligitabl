@@ -10,6 +10,16 @@ import java.util.function.Supplier;
 
 /**
  * A value of one of two types. By convention Left is failure and Right is success.
+ *
+ * <p>Wrapping code that throws — pick by what you want caught:
+ * <ul>
+ *   <li>{@code catching}: Exception, checked or runtime, but not Error. The default.
+ *   <li>{@code catchingChecked}: checked exceptions only, so a bug (a RuntimeException) still
+ *       crashes immediately. Use it to fail fast.
+ *   <li>{@code catchingAll}: everything, Error included. Only at process boundaries.
+ * </ul>
+ * Each has a supplier form and a function form for {@code flatMap}, taking an error mapper, a
+ * fixed Left value, or neither (Left is the exception itself).
  */
 public sealed interface Either<L, R> permits Either.Left, Either.Right {
 
@@ -285,7 +295,8 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     // ========== Unified Catching API (RECOMMENDED DEFAULT) ==========
 
     /**
-     * Maps a thrown Exception (checked or runtime, not Error) to Left. The default choice.
+     * Catches Exception (checked and runtime) but NOT Error, mapping it to Left. The default for
+     * most code.
      *
      * Usage: Either.catching(() -> operation(), UseCaseErrors::catching)
      */
@@ -309,7 +320,7 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     }
 
     /**
-     * {@link #catching(CheckedSupplier, Function)} for flatMap chains.
+     * Catches Exception but NOT Error, for use in flatMap.
      *
      * Usage: either.flatMap(Either.catching(value -> operation(value), UseCaseErrors::catching))
      */
@@ -397,6 +408,8 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     /**
      * Catches ALL exceptions including Error.
      * ⚠️ Only at process boundaries where you truly want to catch everything.
+     *
+     * Usage: Either.catchingAll(() -> untrustedOperation(), err -> "Failed")
      */
     static <L, T> Either<L, T> catchingAll(CheckedSupplier<T> supplier, Function<Throwable, L> errorMapper) {
         Objects.requireNonNull(supplier, "supplier");
@@ -411,7 +424,7 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
         }
     }
 
-    /** {@link #catchingAll(CheckedSupplier, Function)} for flatMap chains. ⚠️ Use sparingly. */
+    /** Catches ALL exceptions including Error, for use in flatMap. ⚠️ Use sparingly. */
     static <L, R, T> Function<R, Either<L, T>> catchingAll(
             CheckedFunction<R, T> operation, Function<Throwable, L> errorMapper) {
         Objects.requireNonNull(operation, "operation");
@@ -445,7 +458,12 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
 
     // ========== Fail-Fast API (Only Checked Exceptions) ==========
 
-    /** Catches ONLY checked exceptions, so bugs still crash immediately. */
+    /**
+     * Catches ONLY checked exceptions (not RuntimeException or Error), so bugs still crash
+     * immediately. Use it to fail fast.
+     *
+     * Usage: Either.catchingChecked(() -> readFile(), err -> "IO failed")
+     */
     static <T> Either<Exception, T> catchingChecked(CheckedOnlySupplier<T> supplier) {
         Objects.requireNonNull(supplier, "supplier");
         try {
@@ -473,6 +491,9 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
         };
     }
 
+    /**
+     * Catches ONLY checked exceptions with custom error mapper.
+     */
     static <L, T> Either<L, T> catchingChecked(CheckedOnlySupplier<T> supplier, Function<Exception, L> errorMapper) {
         Objects.requireNonNull(supplier, "supplier");
         Objects.requireNonNull(errorMapper, "errorMapper");

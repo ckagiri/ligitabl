@@ -23,6 +23,12 @@ A comment moves with its code and is cut to fit the new place. Near-identical
 comments in sibling files use identical words. File headers and record `@param`
 Javadoc may run longer.
 
+**The public API of a shared utility may run longer too** (`Either`, test support such
+as `TestCalendar`). Its Javadoc is read in IDE hover at every call site, so keep usage
+examples and when-to-use guidance, especially where similar overloads differ in what
+they do. Say the choice once in the class header rather than on every overload.
+`@param` lines that only rename the argument are still noise.
+
 **No incident history in code.** No dates, PR numbers or `.art/` paths: `.art` is
 gitignored, so those links reach nobody else. A test pinning a past bug says what it
 pins, not "Regression:" or "this used to".
