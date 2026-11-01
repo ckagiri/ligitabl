@@ -6,12 +6,9 @@ set -euo pipefail
 # 1) Seeds a fresh local dev DB (DESTRUCTIVE)
 # 2) Runs the auth endpoint smoke tests (JWT + Basic auth) against a running API
 #
-# If START_API=1, this script will start the API via Maven using the current env
-# (typically .env.test), wait for /actuator/health, run auth tests, then stop the API.
-#
-# Note: this script does NOT start the API for you. Start it separately:
-# - make run-api
-# - or: make compose-up-app
+# With START_API=1 it starts the API via Maven using the current env (typically .env.test),
+# waits for /actuator/health, runs the auth tests, then stops it. Otherwise start the API
+# yourself first (make run-api, or make compose-up-app).
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
