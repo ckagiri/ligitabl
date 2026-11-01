@@ -2,14 +2,9 @@
 <html xmlns:th="http://www.thymeleaf.org">
   <body>
     <!--
-      One button, two shapes — inline (rounded-lg) and the floating pill (rounded-full shadow-lg),
-      mirroring fragments/prediction-actions.html :: submit-button, down to the indigo palette and
-      the spinner. Both render inside the finalTablePage scope, so they share
-      saveEnabled()/inFlight and cannot disagree.
-
-      The label is static: enablement carries the whole rule. The first save may be empty (that is
-      how a player accepts the baseline); afterwards a clean table means there is nothing to save,
-      so the button goes flat rather than earning a NothingToSave 400.
+      One button, two shapes: inline (rounded-lg) and the floating pill, as in
+      fragments/prediction-actions.html :: submit-button. Both share saveEnabled()/inFlight in the
+      finalTablePage scope. The label is static; enablement carries the rule (see saveEnabled()).
     -->
     <button
       th:fragment="save-button(shapeClasses)"

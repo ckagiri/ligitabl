@@ -121,11 +121,9 @@
             >
               <li class="flex items-center justify-between gap-3 px-4 py-2.5">
                 <span class="min-w-0 text-sm text-gray-700 font-mono truncate">
-                  <!-- The shareable full list uses codes throughout and is numbered to match the
-                       copied text. A single bucket has room for names and nothing to number
-                       against — except on mobile, where codes still fit better. Visibility is
-                       driven by :class, never x-show, so the sm: breakpoint can win (x-show's
-                       inline display:none would override it). -->
+                  <!-- The full list uses codes, numbered to match the copied text; one bucket has
+                       room for names except on mobile. :class, not x-show, so the sm: breakpoint
+                       can win over an inline display:none. -->
                   <span
                     x-show="whatIfRecapPopup && whatIfRecapPopup.bucket === 'all'"
                     class="text-gray-300 mr-1 select-none"

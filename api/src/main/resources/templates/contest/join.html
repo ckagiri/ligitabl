@@ -45,7 +45,6 @@
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
             <h1 class="text-2xl font-bold text-gray-900 mb-6">Join a Private Contest</h1>
 
-            <!-- NOT_FOUND error -->
             <th:block th:if="${errorCode == 'NOT_FOUND'}">
               <div class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
                 <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,7 +62,6 @@
               </div>
             </th:block>
 
-            <!-- CLOSED error -->
             <th:block th:if="${errorCode == 'CLOSED'}">
               <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
                 <svg class="h-5 w-5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -192,7 +190,6 @@
             </div>
           </div>
 
-          <!-- Confirm form -->
           <form method="post" th:action="@{/contests/join/confirm}">
             <input type="hidden" name="code" th:value="${code}" />
             <div class="flex gap-3">
@@ -217,7 +214,6 @@
 
     <!-- ── HTMX preview fragment (used by /contests page inline join form) ── -->
     <th:block th:fragment="preview-fragment">
-      <!-- Error state -->
       <th:block th:if="${errorCode != null}">
         <div class="flex items-center gap-2 text-sm text-red-600 py-2">
           <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

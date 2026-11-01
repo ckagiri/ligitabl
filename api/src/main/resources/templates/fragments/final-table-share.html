@@ -2,17 +2,10 @@
 <html xmlns:th="http://www.thymeleaf.org">
   <body>
     <!--
-      Share controls, mounted separately from finalTablePage so the read-only public view can carry
-      them without the editing component.
-
-      Same shape as fragments/share-prediction.html on the main prediction page: the share text is
-      visible and copyable rather than hidden behind a native share sheet that not every browser
-      offers. Copy icons over labelled buttons, for the same reason — it is the pattern the app
-      already uses.
-
-      Two deliberate departures from that fragment, both because the card is this game's point
-      rather than an afterthought: it opens expanded, and the image leads. Text and link follow as
-      the fallbacks for the places an image won't go.
+      Share controls, separate from finalTablePage so the read-only public view can carry them.
+      Shaped like fragments/share-prediction.html: visible, copyable text rather than a native share
+      sheet some browsers lack. Unlike it, this opens expanded and the image leads, since the card
+      is this game's point.
     -->
     <div
       th:fragment="card"

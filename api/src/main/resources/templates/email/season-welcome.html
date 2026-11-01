@@ -64,9 +64,8 @@
             your own order, we've started you off with the standings as they finished last time.</p>
 
         <!--
-          "Gameweek 1" is safe to hardcode: EnqueueSeasonInPlayUseCase only fires this chain while the
-          current round is position 1 AND reads OPEN. If that guard is ever relaxed, this copy
-          becomes a lie — update it alongside.
+          "Gameweek 1" is safe to hardcode only while EnqueueSeasonInPlayUseCase fires this chain
+          with the current round at position 1 and OPEN.
         -->
         <div class="swaps">
             <p style="margin: 0;">
@@ -84,13 +83,9 @@
         </div>
 
         <!--
-          The Final Table is a separate, optional game, so it sits below the swaps ask rather than
-          competing with it. Same deadline as everything else in this email, which is the reason it
-          can be mentioned at all — see seasonWelcomeTemplateData().
-
-          "Change it before kickoff" rather than "one call, made now": the same reassurance the
-          page itself leads with, and the lower barrier is the honest one — nothing is committed
-          until kickoff.
+          The Final Table is a separate, optional game, so it sits below the swaps ask. It shares
+          this email's deadline, which is why it can be mentioned (see seasonWelcomeTemplateData()).
+          "Change it before kickoff" because nothing is committed until then.
         -->
         <div class="finaltable">
             <p style="margin: 0;">

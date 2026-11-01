@@ -10,7 +10,6 @@
         class="flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
       >
         <div class="max-w-md w-full space-y-8">
-          <!-- Success -->
           <th:block th:if="${state == 'success'}">
             <div class="text-center">
               <div
@@ -60,7 +59,6 @@
             </div>
           </th:block>
 
-          <!-- Already used -->
           <th:block th:if="${state == 'already-used'}">
             <div class="text-center">
               <div
@@ -99,7 +97,6 @@
             </div>
           </th:block>
 
-          <!-- Expired -->
           <th:block th:if="${state == 'expired'}">
             <div class="text-center">
               <div
@@ -137,7 +134,6 @@
             </div>
           </th:block>
 
-          <!-- Invalid -->
           <th:block th:if="${state == 'invalid'}">
             <div class="text-center">
               <div

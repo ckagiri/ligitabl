@@ -1,13 +1,10 @@
 <!--
-  Swap history — the swaps made in the round being viewed, oldest first. Shared by the owner's own
-  table and the public shared view.
-
-  The isGuest check for guarding this lives at the call site.
+  Swap history: the swaps made in the round being viewed, oldest first, for the owner's table and
+  the public view. The call site guards isGuest.
 
   Parameters:
     open:     'true' to start expanded, 'false' to start collapsed
-    dateOnly: true to drop the clock time from each entry's timestamp, keeping the date.
-              The public view of someone else's table only needs the day a swap was made.
+    dateOnly: true to drop the clock time from each entry, as the public view does
 -->
 <div
   th:fragment="history(open, dateOnly)"
@@ -54,9 +51,7 @@
         th:each="entry, iterStat : ${swapHistory}"
         class="px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1"
       >
-        <!-- One swap is one line, so the A→B ↔ B→A symmetry survives instead of orphaning the
-           last "#17". Kept on one line by shrinking the type on narrow screens rather than by
-           scrolling — a scrollbar per row is worse than a slightly smaller row. -->
+        <!-- One swap per line, so the A→B ↔ B→A symmetry survives; narrow screens shrink the type rather than scroll. -->
         <span
           class="text-xs sm:text-sm font-mono text-gray-700 whitespace-nowrap max-w-full"
         >
@@ -87,10 +82,8 @@
           <span class="text-gray-400">#</span
           ><span th:text="${entry.teamBTo}">1</span>
         </span>
-        <!-- Deliberately empty: formatTimestamps() fills it on DOMContentLoaded /
-             htmx:afterSettle. Rendering the raw ISO instant as a fallback would flash
-             "2026-02-12T14:23:00Z" — and the wrong precision, where dateOnly applies —
-             before the script replaces it. Empty degrades to no timestamp instead. -->
+        <!-- Empty on purpose: formatTimestamps() fills it on DOMContentLoaded / htmx:afterSettle,
+             and an ISO fallback would flash, at the wrong precision under dateOnly. -->
         <span
           class="text-xs text-gray-400 whitespace-nowrap"
           th:attr="data-timestamp=${entry.formattedTime},

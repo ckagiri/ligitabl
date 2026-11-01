@@ -2,12 +2,9 @@
 <html xmlns:th="http://www.thymeleaf.org">
   <body>
     <!--
-      Dismissable "verify your email" nudge shown to unverified logged-in users.
-      Dismissal is client-side only (localStorage timestamp) and expires after
-      7 days — permanent dismissal would hide it from exactly the users who
-      still need it. Server-side gating (logged-in + unverified + not
-      impersonating) happens via the emailUnverified model attribute in
-      NavbarControllerAdvice.
+      Dismissable "verify your email" nudge for unverified logged-in users. Dismissal is
+      client-side (a localStorage timestamp) and expires, so it never hides from users who still
+      need it. The server gates it via emailUnverified (NavbarControllerAdvice).
     -->
     <div
       th:fragment="banner"

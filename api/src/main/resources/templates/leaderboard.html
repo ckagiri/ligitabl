@@ -62,11 +62,9 @@
           </h1>
 
           <div class="space-y-2">
-            <!-- Top-level group tabs.
-                 :class uses object syntax, not a ternary string: the server pre-applies the active
+            <!-- Top-level group tabs. :class uses object syntax: the server pre-applies active
                  classes via th:classappend so the tab is styled before Alpine boots, and only the
-                 object form can then *remove* them again on click. A ternary string appends without
-                 removing, which left every server-active tab stuck looking selected. -->
+                 object form can remove them on click. -->
             <div class="flex gap-1.5">
               <button
                 type="button"
@@ -114,10 +112,8 @@
               </button>
             </div>
 
-            <!-- Quarter sub-tabs.
-                 The inactive panel is hidden by an inline style the server writes, not x-cloak:
-                 cloaking would hide BOTH panels until Alpine boots, which is the flash this is
-                 meant to remove. x-show takes over on boot and overwrites display. -->
+            <!-- Quarter sub-tabs. The inactive panel is hidden by a server-written inline style,
+                 not x-cloak, which would hide both panels until Alpine boots. -->
             <div
               x-show="activeGroup === 'quarters'"
               data-group="quarters"
@@ -233,11 +229,7 @@
           Loading...
         </div>
 
-        <!--
-          Stable wrapper — stays in the DOM, never swapped.
-          x-show toggles visibility while loading.
-          #leaderboard-content inside is the HTMX swap target.
-        -->
+        <!-- Stays in the DOM, never swapped; #leaderboard-content inside is the HTMX target. -->
         <div x-show="!loading">
           <div
             id="leaderboard-content"
@@ -360,12 +352,9 @@
                       >
                     </td>
 
-                    <!-- max-sm:pr-0: the next column is right-aligned and carries its own left
-                         padding, so the gap survives — this just hands the spare space to the
-                         name, which is the column actually short of room on a phone.
-                         Below 340px the reclaimed width is given back (w-32 / 7rem cap): at that
-                         size the score columns have no slack left to lend. Same cut-off as the
-                         what-if score rows and the compare-options labels. -->
+                    <!-- max-sm:pr-0 hands the spare space to the name, the column short of room on a
+                         phone; the right-aligned next column keeps its own padding. Below 340px the
+                         w-32 cap gives it back. Same cut-off as the what-if score rows. -->
                     <td
                       class="sticky left-[56px] z-10 px-3 max-sm:pr-0 py-4 whitespace-nowrap w-36 max-[340px]:w-32 sm:w-32 lg:w-44"
                       th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'bg-indigo-50' : 'bg-white group-hover:bg-gray-50'}"
@@ -686,7 +675,6 @@
           ></path>
         </svg>
       </div>
-      <!-- Modal -->
       <div id="user-detail-modal"></div>
     </div>
   </body>

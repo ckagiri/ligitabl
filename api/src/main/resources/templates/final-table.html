@@ -5,11 +5,7 @@
   layout:decorate="~{layout/base}"
 >
   <body>
-    <!--
-      No px/py wrapper here: layout/base.html's <main> already supplies
-      `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8`. Adding another py-8 is what put a large empty
-      band above the title.
-    -->
+    <!-- No px/py wrapper: layout/base.html's <main> already supplies the padding. -->
     <div layout:fragment="content">
       <div
         class="mx-auto max-w-5xl"
@@ -44,11 +40,7 @@
                 </p>
               </div>
 
-              <!--
-                Who you called for the title, phrased as a claim rather than a stat — it is the one
-                line people screenshot, so it reads as a sentence: "I predict that / Arsenal / will
-                win the league".
-              -->
+              <!-- The title pick as a claim, "I predict that / Arsenal / will win the league": the line people screenshot. -->
               <div
                 class="w-full max-w-xs rounded-lg border border-indigo-400/40 bg-white/5 px-5 py-4 text-center sm:w-auto"
                 x-show="teams.length > 0"
@@ -87,10 +79,8 @@
             >
 
             <!--
-              The way back. A player arrives here from the pill on their prediction page, and
-              without this the only route home is the navbar — which is the one place the Final
-              Table is deliberately understated. Mirrors that pill's shape so the pair reads as one
-              round trip. Not shown to guests: they have no table to go back to.
+              The way back for a player who came from the pill on their prediction page; the navbar
+              keeps the Final Table understated. Mirrors that pill. Not for guests.
             -->
             <a
               th:if="${isGuest == false}"
@@ -130,10 +120,8 @@
           </th:block>
 
           <!--
-            th:if picks the state at render; x-show retires it the moment the first save lands.
-            Both are needed: the server decides whether this player has ever entered, but saving is
-            a fetch that does not re-render, so without x-show the "everyone starts from this
-            table" copy outlives the table becoming theirs.
+            th:if picks the state at render; x-show retires it when the first save lands, since a
+            save doesn't re-render the page.
           -->
           <th:block
             th:if="${isGuest == false and hasEntry == false and entryOpen == true}"
@@ -191,11 +179,7 @@
             </div>
           </th:block>
 
-          <!--
-            Locked, not yet scored, but the season has produced standings. Says plainly that the
-            score is still sealed — the numbers on the rows are a position comparison, not a
-            running total, and the copy has to stop anyone reading them as one.
-          -->
+          <!-- Locked, not yet scored, standings exist: the row numbers compare positions, and the copy must say the score is still sealed. -->
           <th:block th:if="${liveProgress == true}">
             <div class="border-b border-indigo-100 bg-indigo-50 px-6 py-3">
               <p class="text-sm text-indigo-900">
@@ -206,15 +190,9 @@
           </th:block>
 
           <!--
-            Revealed: the score, out of the season's own maximum.
-
-            Each tile carries a caption saying where its number came from. Bare numbers —
-            110 / 90 / 2 / 20 — leave a reader guessing which is the score, what it is out of, and
-            how the parts relate; "90 of 200" and "2 × 10" make the arithmetic visible without a
-            legend. Denominators come from the season, so they never assume 20 clubs.
-
-            Champion is its own tile rather than folded into Bonus: they are two different rules,
-            and merging them would make the Bonus caption stop being "zeroes × 10".
+            Revealed: the score, out of the season's own maximum. Each tile's caption says where its
+            number comes from ("90 of 200", "2 × 10"); denominators come from the season. Champion
+            is its own tile so the Bonus caption stays "zeroes × 10".
           -->
           <th:block th:if="${revealed == true}">
             <div class="grid grid-cols-2 gap-px border-b border-gray-200 bg-gray-200 sm:grid-cols-5">
@@ -326,11 +304,7 @@
                 class="ml-auto flex items-center gap-3 text-gray-500"
               >
                 <span>Tap two teams to swap them</span>
-                <!--
-                  A second Reset, at the top of the table. The actions row sits below twenty rows, so
-                  after a mis-tap near the top the undo is otherwise a scroll away. Same reset() —
-                  two affordances, one behaviour.
-                -->
+                <!-- A second Reset at the top, so undoing a mis-tap near the top needs no scroll. Same reset(). -->
                 <button
                   type="button"
                   x-show="getDirtyCount() > 0"
@@ -347,10 +321,8 @@
 
           <div class="px-6 py-4">
             <!--
-              th:insert on the th:block itself, not th:replace on an inner div. A th:block with only
-              a th:if still renders its children, so the two branches were both appearing — the
-              result table's empty header showed above the editable grid. Putting the insert on the
-              same th:block as the condition is what actually makes them exclusive.
+              th:insert on the same th:block as the th:if, not th:replace on an inner div: a
+              th:block with only a th:if still renders its children, so both branches showed.
             -->
             <th:block
               th:if="${revealed == true}"
@@ -364,11 +336,7 @@
 
           <!-- Save: shown only while the table can still be changed and the viewer owns it. -->
           <th:block th:if="${entryOpen == true and isGuest == false}">
-            <!--
-              No floating pill here, unlike predictions.html: two columns of ten keep the whole
-              table on one screen, so the actions row is never scrolled out of reach and a teleported
-              duplicate would just be another thing to keep in sync.
-            -->
+            <!-- No floating pill, unlike predictions.html: two columns keep the table and actions on one screen. -->
             <div
               class="flex flex-col items-center gap-3 border-t border-gray-200 px-6 py-5"
             >
@@ -377,10 +345,8 @@
                   th:replace="~{fragments/final-table-actions :: save-button('rounded-full')}"
                 ></div>
                 <!--
-                  Reset returns the table to originalTeams — the last save, or the starting table
-                  for a player who has not saved yet. Client-side only, so it never touches the
-                  stored table or the settle time. Restoring that order also restores the row
-                  tints, since dirty rows fall back to their zone colour.
+                  Back to originalTeams (the last save, or the starting table). Client-side only, so
+                  it never touches the stored table or the settle time.
                 -->
                 <button
                   type="button"
@@ -439,11 +405,9 @@
         </div>
 
         <!--
-          Hidden until a table exists, and driven by Alpine rather than the server: saving is a
-          fetch that never re-renders this page, so a th:if on hasEntry would leave the card absent
-          until a manual refresh. finalTablePage flips hasEntry on a successful save and this
-          appears with it. The URL itself is always rendered — it is knowable before the first save,
-          it just should not be offered yet.
+          Alpine-driven, not th:if on hasEntry: saving is a fetch that never re-renders, so the card
+          appears when finalTablePage flips hasEntry. The URL is rendered before the first save but
+          not offered until then.
         -->
         <div x-show="hasEntry" x-cloak>
           <div th:replace="~{fragments/final-table-share :: card}"></div>
@@ -455,12 +419,7 @@
             class="text-indigo-600 hover:underline"
             >Leaderboard</a
           >
-          <!--
-            x-show on hasEntry, not th:if on shareUrl: the URL is now rendered for every signed-in
-            player so the share card can appear the instant a first save lands, which means it is
-            no longer a proxy for "has a table". Without the Alpine gate this offers a link that
-            404s ("This player has no final table for that season") until they save.
-          -->
+          <!-- x-show on hasEntry, not th:if on shareUrl: the URL is rendered before a table exists, and 404s until the first save. -->
           <a
             th:if="${shareUrl != null}"
             th:href="${shareUrl}"
@@ -470,11 +429,8 @@
             >Public link</a
           >
           <!--
-            Scoring is four numbers and a formula nobody can infer from the page. Small, and last:
-            the FAQ is a reference, not part of playing.
-
-            The Final Table page of the FAQ, not /faq: this link answers one question, and the
-            full FAQ opens on a different game's rules with the answer collapsed further down.
+            Scoring can't be inferred from the page. Links the Final Table FAQ page, not /faq,
+            which opens on the main game's rules.
           -->
           <a
             th:href="@{/faq/final-table}"

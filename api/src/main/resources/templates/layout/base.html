@@ -1,7 +1,6 @@
 <!doctype html>
-<!-- Background set inline on <html>, not just via body's bg-gray-50: that class arrives with the
-     external stylesheet, so until it lands the browser paints its own canvas — the white flash on
-     slow connections, and the dark canvas behind over-scroll on phones in dark mode. -->
+<!-- Background set inline on <html>: body's bg-gray-50 arrives with the stylesheet, so until then
+     the browser paints its own canvas (white flash, dark over-scroll in dark mode). -->
 <html
   xmlns:th="http://www.thymeleaf.org"
   xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
@@ -20,7 +19,6 @@
       LigiPredictor
     </title>
 
-    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}" />
     <link rel="alternate icon" th:href="@{/favicon.ico}" />
     <link rel="apple-touch-icon" th:href="@{/apple-touch-icon.png}" />
@@ -40,13 +38,10 @@
     <!-- <script src="https://cdn.tailwindcss.com"></script> -->
     <link rel="stylesheet" th:href="@{/dist/css/main.css}" />
 
-    <!-- htmx, app bundle and Alpine are all self-hosted (npm run copy:vendor) rather than loaded
-         from unpkg/jsdelivr: Alpine booting is what un-cloaks page content, so third-party
-         handshakes sat directly in front of first paint on slow connections.
-
-         All three are `defer`, which runs them in document order — app.js registers the Alpine.data
-         components that x-data names, so it must precede Alpine. Never use `async` here: it drops
-         that ordering and breaks component registration intermittently. -->
+    <!-- htmx, the app bundle and Alpine are self-hosted (npm run copy:vendor): Alpine booting
+         un-cloaks the page, so third-party handshakes delayed first paint. All `defer`, in document
+         order: app.js registers the Alpine.data components, so it must precede Alpine. Never
+         `async`, which drops that order. -->
     <script defer th:src="@{/vendor/htmx.min.js}"></script>
     <script defer th:src="@{/dist/js/app.js}"></script>
     <script defer th:src="@{/vendor/alpine.min.js}"></script>
@@ -369,11 +364,7 @@
                 >LigiPredictor</span
               >
             </a>
-            <!--
-              Desktop nav switches in at lg (1024px), not md (768px): phone landscape sits
-              at roughly 740-930px, wide enough to clear md but too narrow for the full bar,
-              which wrapped "My Table" onto two lines and pushed the user chip off the edge.
-            -->
+            <!-- Desktop nav from lg, not md: phone landscape clears md but is too narrow for the full bar. -->
             <div class="hidden lg:flex ml-10 space-x-4">
               <!-- activeNav is a section key, not a URL: the round pager pushes
                    /rounds/{n}/standings via hx-push-url, so comparing against the href above
@@ -1138,7 +1129,6 @@
       <div th:replace="~{fragments/verify-email-banner :: banner}"></div>
     </th:block>
 
-    <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Flash Messages -->
       <div
@@ -1231,7 +1221,6 @@
       </div>
     </main>
 
-    <!-- Footer -->
     <footer class="bg-white border-t mt-16">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="text-center text-gray-500 text-sm">

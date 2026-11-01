@@ -133,17 +133,12 @@
   </div>
 </div>
 
-<!-- Public Rich Table Fragment (current/live round — comparison-options: standings/points/GD/
-     fixtures/form). Entirely Alpine-rendered (x-for over `displayTeams()`, populated client-side
-     from data-predictions), same as the owner's own interactive-table — but read-only: no click/
-     select/drag, and Actual/Delta stay plain colored numbers (no arrows), unlike interactive-table.
-     Carries the same My Table / Actual Table switch, which `_predictionBase` already backs via
-     positionsReversed + toggleStandingsView. -->
+<!-- Public Rich Table Fragment for the current round (standings/points/GD/fixtures/form toggles).
+     Alpine-rendered from data-predictions like interactive-table, but read-only, with plain
+     numbers for Actual/Delta. The My Table / Actual Table switch is backed by `_predictionBase`. -->
 <div th:fragment="public-rich-table" class="px-6 py-4 max-sm:pt-1">
-  <!-- Switches between the viewed user's prediction and the real standings. Mirrors the owner's
-       interactive-table toolbar, minus the read-only badge and the move-up/down arrow key: this
-       whole table is already read-only and its deltas are plain numbers, so neither would be
-       telling the visitor anything new. -->
+  <!-- Switches between the viewed user's prediction and the real standings, like the owner's
+       toolbar minus the read-only badge and the arrow key, which tell a read-only view nothing. -->
   <div
     x-show="showStandings"
     class="flex flex-wrap items-center justify-end gap-x-2 gap-y-2 mb-3"

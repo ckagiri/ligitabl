@@ -56,14 +56,10 @@
           </div>
 
           <!--
-            No pinned columns: the table simply scrolls sideways, and alternating row bands are
-            what keep your eye on the right row once the email has scrolled out of view.
-
-            Scoped CSS rather than Tailwind utilities because dist/css/main.css is a BUILT
-            artifact — Tailwind only emits a class that already appears in a scanned template, so
-            a newly introduced utility is silently inert until someone runs `npm run build`.
-            `overscroll-x-contain` is absent from the current build; leaderboard.html ships its
-            table CSS the same way.
+            No pinned columns: the table scrolls sideways, and alternating row bands keep your eye
+            on the row once the email has scrolled out of view. Scoped CSS, not Tailwind utilities:
+            dist/css/main.css only has classes a scanned template already used, so a new utility is
+            inert until `npm run build`.
           -->
           <style>
             /* A checkbox needs no more, and a narrow first column shortens the scroll. */
@@ -102,11 +98,7 @@
 
           <div class="overflow-x-auto au-table-scroll">
             <table class="min-w-full divide-y divide-gray-200">
-              <!--
-                All nine columns stay at every width; the table scrolls horizontally on narrow
-                screens. Padding is tight below sm so the scroll distance is as short as it can be
-                without dropping anything.
-              -->
+              <!-- Every column stays at every width; tight padding below sm keeps the scroll short. -->
               <thead>
                 <tr class="bg-gray-50">
                   <th class="au-check-col px-2 sm:px-4 py-3 text-left">

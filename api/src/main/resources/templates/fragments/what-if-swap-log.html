@@ -1,15 +1,9 @@
-<!-- What-If Swap Log: same visual format as predictions.html's "Swap History" section
-     (predictions.html:455-515), but populated live from the sandbox instead of a
-     server-rendered list.
+<!-- What-If Swap Log: formatted like the "Swap History" section on predictions.html, but filled
+     live from the sandbox. Reads displayedSwapLog(), not the raw swapLog, which keeps every tap;
+     the derived list matches getSwapCount().
 
-     Reads displayedSwapLog(), not the raw swapLog: the latter keeps every tap, including ones
-     re-swapped away. The derived list matches getSwapCount() in the Undo/Reset row above.
-
-     Titled "Sandbox swaps", deliberately not "Swap history": that name belongs to the real,
-     permanent record on My Table, where swaps cost allowance. These are scratch moves that cost
-     nothing and are thrown away, and two identically-titled lists of swaps invited exactly that
-     confusion.
- -->
+     Titled "Sandbox swaps", not "Swap history": that is the permanent record on My Table, where
+     swaps cost allowance; these cost nothing. -->
 <div
   th:fragment="swap-log"
   x-show="hasComputed && displayedSwapLog().length > 0"
@@ -39,10 +33,7 @@
     </svg>
   </button>
   <div x-show="open" x-transition class="border-t border-gray-100">
-    <!-- These positions were recomputed against a table that moved under them (a submitted swap
-         landed on the real table), so they read differently than when the user left. Said here,
-         quietly, next to the numbers themselves rather than in the submit notice — it explains
-         the list, not the submission. -->
+    <!-- Positions recomputed against a table that moved underneath (a submitted swap). Said beside the numbers, not in the submit notice. -->
     <p
       x-show="swapsRebased"
       x-cloak
@@ -51,9 +42,7 @@
       Positions updated for your new table.
     </p>
     <ul class="divide-y divide-gray-100">
-      <!-- One swap reads as one line: wrapping "#17" onto its own row breaks the
-           A→B ↔ B→A symmetry that makes the entry scannable. Smaller type on narrow
-           screens instead of a scrollbar. -->
+      <!-- One swap per line, so the A→B ↔ B→A symmetry survives; narrow screens shrink the type rather than scroll. -->
       <template x-for="(entry, index) in displayedSwapLog()" :key="index">
         <li class="px-6 py-3 text-xs sm:text-sm font-mono text-gray-700 whitespace-nowrap">
           <span class="text-gray-300 mr-1 select-none" x-text="(index + 1) + '.'"></span>

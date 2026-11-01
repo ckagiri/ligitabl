@@ -1,26 +1,14 @@
 <!--
-  What-If swaps — the swaps the user tried out in the what-if sandbox for the round being viewed,
-  shown on their own table as a read-only reminder of what they were planning.
+  What-If swaps: the swaps tried in the sandbox for this round, a read-only reminder on the user's
+  own table. Read-only because the real allowance is far smaller than a sandbox holds; the user
+  re-applies what they want by tapping, so the allowance is accounted in one place.
 
-  Read-only on purpose: these are speculative, and a round's real swap allowance is far smaller
-  than what a what-if session can hold. The user re-applies whichever they want by tapping teams
-  in the table above, which is what keeps the allowance accounted for in one place.
+  Client-side only (localStorage ligitabl.whatif.<userId>.<roundId>), loaded by
+  Ligitabl.predictionPage, so it must sit in that x-data scope. Swaps a submission carried are
+  dropped and the rest replayed onto the new table.
 
-  Entirely client-side — what-if swaps live only in the browser (localStorage key
-  ligitabl.whatif.<userId>.<roundId>), never on the server. `whatIfSwaps` is loaded by
-  Ligitabl.predictionPage, so this fragment must sit inside that x-data scope. That component
-  records which swaps a successful submission carried; the what-if page then drops those entries
-  and replays the rest onto the updated table, so a swap already acted on stops being offered
-  while the others survive with positions recomputed against the new table.
-
-  Two states, driven by whatIfSwaps.length:
-    - swaps saved  → the list, expanded, as a prompt to act on while the table is still editable
-    - none saved   → a short pitch for the feature and a link to it, so the card doubles as the
-                     discovery route for users who have never opened What-If
-  The empty state is why this renders unconditionally rather than hiding when the log is empty.
-  Its call site still gates it to the current round, since What-If only runs there.
-
-  The round's own swap history is collapsed at its call site to balance this one being open.
+  With swaps saved it shows the list, expanded; with none, a pitch and a link to What-If. The empty
+  state is why it always renders; the call site limits it to the current round.
 -->
 <div
   th:fragment="swaps"
@@ -66,7 +54,6 @@
   </button>
 
   <div x-show="open" x-transition class="border-t border-gray-100">
-    <!-- Saved swaps -->
     <template x-if="whatIfSwaps.length > 0">
       <div>
         <ul class="divide-y divide-gray-100">
@@ -91,17 +78,13 @@
             </li>
           </template>
         </ul>
-        <!-- The closing verb tracks the action button's own label (see
-             fragments/prediction-actions.html), using the same expression swap-instructions.html
-             uses, so the two never drift apart. Pre-season reads "update" rather than the
-             button's zero-swap "Confirm": acting on this advice means a swap has been made, and
-             the button relabels itself to Update at that point. -->
+        <!-- The closing verb follows the action button's label (fragments/prediction-actions.html),
+             with the same expression swap-instructions.html uses. Pre-season reads "update": acting
+             on this means a swap was made, and the button relabels to Update then. -->
         <p class="px-6 py-3 text-[11px] text-gray-400 leading-relaxed border-t border-gray-100">
           Tried out in your What-If sandbox — nothing here has been applied to your table.
-          <!-- canSwap, not canInteract: during cooldown the table still rearranges (to plan the
-               next swap) but nothing can be saved, so the call to save would be a promise the
-               page can't keep. This is the same line swap-instructions.html draws when it
-               switches to its "changes are local only" wording. -->
+          <!-- canSwap, not canInteract: in cooldown the table rearranges but can't save, so "save"
+               would be a promise the page can't keep. The same line swap-instructions.html draws. -->
           <span x-show="canSwap || isInitialPrediction">
             Tap two teams above to make a swap for real, then
             <span x-text="(isInitialPrediction || isPreSeasonRegistration) ? 'submit' : 'update'"

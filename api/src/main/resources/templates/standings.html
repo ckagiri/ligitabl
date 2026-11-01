@@ -66,11 +66,9 @@
                       >
                         Team
                       </th>
-                      <!-- Pts and GD lead on mobile: they're what the table is read for, and
-                           at their desktop position (9th, 10th) they sit off-screen. Duplicated
-                           rather than reordered — CSS order needs display:flex on the row, which
-                           would drop the cells out of the table's column model and break the
-                           sticky Pos/Team pinning. -->
+                      <!-- Pts and GD lead on mobile, where their desktop columns are off-screen.
+                           Duplicated rather than reordered: CSS order needs display:flex on the
+                           row, which breaks the table columns and sticky Pos/Team pinning. -->
                       <th
                         scope="col"
                         class="sm:hidden sticky top-0 z-30 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20"

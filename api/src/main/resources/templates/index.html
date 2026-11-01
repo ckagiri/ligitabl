@@ -39,10 +39,9 @@
       <div
         class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 sm:p-12 mb-12 text-white"
       >
-        <!-- Three grid children rather than two, so the preview card can sit between the pitch
-             and the buttons on a phone: the demo is what sells the game, and stacked full-width
-             CTAs pushed it below the fold. Desktop is unchanged — md:col-start-1 puts the CTA
-             block back under the text in the left column instead of wrapping to a new row. -->
+        <!-- Three grid children so the preview card sits between the pitch and the buttons on a
+             phone, where full-width CTAs pushed the demo below the fold. md:col-start-1 keeps
+             desktop's CTA under the text. -->
         <div
           class="max-w-5xl mx-auto grid md:grid-cols-2 gap-x-10 gap-y-6 md:gap-y-10 items-center"
         >
@@ -416,7 +415,6 @@
         </div>
       </div>
 
-      <!-- Logged-in CTA -->
       <div th:if="${isLoggedIn && showLoggedInCta}" class="text-center py-12">
         <div class="text-4xl mb-4">🎯</div>
         <h2 class="text-2xl font-bold mb-3 text-gray-900">

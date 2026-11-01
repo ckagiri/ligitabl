@@ -40,7 +40,6 @@
             </nav>
           </div>
 
-          <!-- Active tab -->
           <div x-show="tab === 'active'" class="p-4 sm:p-6">
             <th:block th:if="${activeTotal > 0}">
               <table class="min-w-full divide-y divide-gray-200">
@@ -116,7 +115,6 @@
             </th:block>
           </div>
 
-          <!-- Past tab -->
           <div x-show="tab === 'past'" style="display:none" class="p-4 sm:p-6">
             <th:block th:if="${pastTotal > 0}">
               <table class="min-w-full divide-y divide-gray-200">

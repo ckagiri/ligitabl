@@ -41,13 +41,9 @@
       </div>
 
       <!--/*
-        CTA only while entry is open, matching final-table-public.html and the navbar: "before a
-        ball is kicked" is a promise the app cannot keep once the season has started, and the
-        table locks at kickoff. Dropped rather than reworded when closed — there is nothing to
-        offer until next season, and the page still works as reference reading.
-
-        finalTableEntryOpen comes from NavbarControllerAdvice, so it is on every page's model
-        without this route having to resolve a season itself.
+        CTA only while entry is open, as on final-table-public.html and the navbar: "before a ball
+        is kicked" can't be kept once the season starts. finalTableEntryOpen comes from
+        NavbarControllerAdvice, so it is on every page's model.
       */-->
       <th:block th:if="${finalTableEntryOpen == true}">
         <div

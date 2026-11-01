@@ -1,12 +1,9 @@
 <div xmlns:th="http://www.thymeleaf.org">
   <!-- Comparison Options (Show standings, fixtures, points checkboxes) -->
-  <!-- Parameters (both required — every caller passes explicit booleans):
-       hasFormData: Boolean - hides the "Show form" checkbox + legend when there's no form data
-         yet to compare (e.g. no matches played this season)
-       showMoveHelperText: Boolean - shows the arrow-key legend paragraph ("move up"/"move
-         down", or "climb up"/"drop down" when the delta is inverted), which only makes sense
-         next to the arrow-based Actual/Delta rendering in interactive-table;
-         pass false for callers using a plain-number Actual/Delta rendering instead
+  <!-- Parameters (both required):
+       hasFormData: Boolean - hides the "Show form" checkbox and legend when there is no form data
+       showMoveHelperText: Boolean - shows the arrow-key legend, which only fits the arrow-based
+         Actual/Delta of interactive-table; false for plain-number callers
   -->
   <!-- compareOptionsOpen comes from the page's prediction component (_predictionBase) rather
        than a local x-data island: the table toolbar needs to read it as well, to hide its short
@@ -119,10 +116,7 @@
               autocomplete="off"
               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5"
             />
-            <!-- Longest label in the 2-col grid, so it is the one that wraps and makes its
-                 row taller than the rest. Held on one line down to 340px; below that the
-                 column is too narrow and nowrap would overrun into the next one, so the
-                 wrap is allowed back. Same 340px cut-off as the what-if score rows. -->
+            <!-- The longest label, kept on one line down to 340px; narrower, nowrap would overrun the next column. Same cut-off as the what-if score rows. -->
             <span class="whitespace-nowrap max-[340px]:whitespace-normal">Show fixtures</span>
           </label>
           <label
@@ -265,13 +259,9 @@
           </label>
         </div>
 
-        <!-- Shown in both views so the toggle's flipped arrows don't go unexplained.
-             The two vocabularies mark which frame the delta is being read in, and differ in
-             their subject: "move" is the editing frame, naming the gesture on this row —
-             move it to match reality. "climb"/"drop" are the forecast frame, describing the
-             team itself — predicted 1st but actually 8th reads as a team expected to climb
-             toward the prediction. Per-direction verbs there, since climb and drop each
-             carry a direction of their own. -->
+        <!-- Shown in both views so flipped arrows are explained. "move" is the editing frame (move
+             this row to match reality); "climb"/"drop" the forecast frame, about the team itself
+             (predicted 1st, actually 8th: expected to climb). -->
         <p
           th:if="${showMoveHelperText}"
           x-show="showStandings && deltaMode !== 'off'"
@@ -579,7 +569,6 @@
                       x-show="showFixtures || showStandings || showPoints || showGD || showForm"
                       class="sm:hidden flex items-center gap-1.5 mt-1 flex-wrap"
                     >
-                      <!-- Fixtures -->
                       <template x-if="showFixtures && hasFixtures(team.code)">
                         <template
                           x-for="fixture in getFixtures(team.code)"

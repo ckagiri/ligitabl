@@ -37,11 +37,8 @@
       <div>
         <p class="text-sm font-medium text-yellow-800">Guest Preview</p>
 
-        <!-- The sign-up call is its own paragraph in each variant below: it is a separate
-             action from the instruction above it, and running them together buried the one
-             thing we actually want a guest to do. -->
+        <!-- The sign-up call is its own paragraph in each variant: it is the one action we want from a guest. -->
 
-        <!-- Current round + open (editable state) -->
         <th:block th:if="${isCurrentRound && roundState == 'open'}">
           <p class="text-sm text-yellow-700 mt-1">
             Tap teams to swap and build your prediction — up to 5 swaps.
@@ -52,7 +49,6 @@
           </p>
         </th:block>
 
-        <!-- Current round + locked/completed/finalized (not last round) -->
         <th:block th:if="${isCurrentRound && isRoundLockedOrBeyond && notLastRound}">
           <p class="text-sm text-yellow-700 mt-1">
             <strong>👋 Matches In Progress</strong> - Tap teams to swap and build your prediction — up to 5 swaps.
@@ -63,7 +59,6 @@
           </p>
         </th:block>
 
-        <!-- Current round + last round + locked/completed/finalized -->
         <th:block th:if="${isCurrentRoundLast && isRoundLockedOrBeyond}">
           <p class="text-sm text-yellow-700 mt-1">
             This is the final round. Matches are in progress and the season is
@@ -75,7 +70,6 @@
           </p>
         </th:block>
 
-        <!-- Current round + season completed -->
         <th:block th:if="${isCurrentRound && seasonCompleted}">
           <p class="text-sm text-yellow-700 mt-1">
             This season has completed. You can browse the results.
@@ -160,9 +154,8 @@
   </div>
 
   <!--
-    Cooldown Expired Banner. Same actionable moment as the opening-round card above, so it gets
-    the same weight rather than the inline dot it used to get. Conditioned as the complement of
-    the other swap-availability banners, so only one is ever on screen.
+    Cooldown Expired Banner. The same actionable moment as the opening-round card above, so the
+    same weight. The complement of the other swap-availability banners, so only one shows.
   -->
   <div th:if="${!isGuest && !canCreateEntry && canSwap
                  && isCurrentRound && isRoundOpenForPrediction
@@ -310,10 +303,9 @@
   </div>
 
   <!--
-    Status Indicator, cooldown-active only — every "you can swap now" state has its own card
-    above. !openingRoundAvailable matters: in the opening window canSwap can still be false (last
-    swap under 24h old) while the table is interactive, which showed the amber "Opening Swap
-    Available" card and a yellow "Cooldown active" pill at once.
+    Status Indicator, cooldown-active only: every "you can swap now" state has its own card above.
+    !openingRoundAvailable matters: in the opening window canSwap can be false while the table is
+    interactive.
   -->
   <div
     th:if="${!isGuest && !canCreateEntry && !swapStatus.firstSwapBonus && seasonEditingAllowed}"

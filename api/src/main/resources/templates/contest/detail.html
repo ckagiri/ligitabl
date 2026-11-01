@@ -240,7 +240,6 @@
           </div>
         </th:block>
 
-        <!-- Delete error banner -->
         <th:block th:if="${param.deleteError != null}">
           <div class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
             <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -348,11 +347,7 @@
             Loading...
           </div>
 
-          <!--
-            Stable wrapper — stays in the DOM, never swapped.
-            x-show toggles visibility while loading.
-            #leaderboard-content inside is the HTMX swap target.
-          -->
+          <!-- Stays in the DOM, never swapped; #leaderboard-content inside is the HTMX target. -->
           <div x-show="!loading">
           <!-- ── Leaderboard content (HTMX swap target) ── -->
           <div id="leaderboard-content" th:fragment="leaderboard-content">
@@ -383,12 +378,10 @@
                  th:text="${leaderboard.totalParticipants} + (${leaderboard.totalParticipants} == 1 ? ' member' : ' members')">8 members</p>
             </div>
 
-            <!-- Empty state -->
             <th:block th:if="${leaderboard == null or #lists.isEmpty(leaderboard.entries)}">
               <div class="px-4 py-10 text-center text-sm text-gray-500">No scores yet for this segment.</div>
             </th:block>
 
-            <!-- Leaderboard table -->
             <th:block th:if="${leaderboard != null and not #lists.isEmpty(leaderboard.entries)}">
 
               <style>
@@ -436,10 +429,8 @@
                       th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'bg-indigo-50' : (entry.isFormerMember ? 'opacity-60 bg-gray-50' : '')}"
                       class="group hover:bg-gray-50 transition"
                     >
-                      <!-- Pos — the own-row marker is a left border on this sticky cell rather
-                           than an inline icon: an icon pushed the position number to the right,
-                           and a row-level border is never painted under border-collapse (and
-                           would be covered by this cell's opaque background regardless). -->
+                      <!-- The own-row marker is a left border on this sticky cell: an icon pushed
+                           the number right, and a row border isn't painted under border-collapse. -->
                       <td
                         class="cb-pos-col sticky left-0 z-10 pl-2 pr-3 py-4 whitespace-nowrap text-sm font-bold"
                         th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'bg-indigo-50 text-indigo-900 border-l-4 border-indigo-500' : 'bg-white group-hover:bg-gray-50 text-gray-900'}"

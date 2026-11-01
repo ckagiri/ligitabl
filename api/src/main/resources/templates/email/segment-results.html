@@ -79,9 +79,8 @@
         </th:block>
 
         <!--
-          One block per CLOSED window the reader placed in. There is deliberately no "so far"
-          block for a segment still running: a partial-window rank reflects when someone joined
-          as much as how they played, and this email must not present that as a standing.
+          One block per CLOSED window the reader placed in. No "so far" block: a partial-window rank
+          reflects when someone joined as much as how they played.
         -->
         <div class="placement" th:each="p : ${placements}">
             <div class="rank">
@@ -89,9 +88,8 @@
                 <span th:text="${p.rank == 1 ? 'winner' : (p.rank == 2 ? 'runner-up' : 'third')}">runner-up</span>
             </div>
             <!--
-              Literal characters, not HTML entities: EmailContent's textBody is the html body with
-              tags stripped and nothing else, so "&middot;" would reach the plain-text part as the
-              seven characters "&middot;" rather than a separator.
+              Literal characters, not entities: the text part is this body with tags stripped, so
+              "&middot;" would arrive as those seven characters.
             -->
             <div class="detail">
                 <span th:text="${p.rank}">2</span> of <span th:text="${p.totalParticipants}">40</span>

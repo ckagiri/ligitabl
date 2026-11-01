@@ -18,11 +18,7 @@
     <!-- No px/py here: layout/base.html's <main> already supplies them. -->
     <div layout:fragment="content" class="mx-auto max-w-5xl">
       <header class="mb-6">
-        <!--
-          Only when we were sent here from somewhere inside the app (a `from` marker the controller
-          recognised). A visitor arriving from a shared link has nowhere here to go back to, so
-          they get no dead offer.
-        -->
+        <!-- Only when a recognised `from` marker sent us here; a shared link has nothing to go back to. -->
         <a
           th:if="${backHref != null}"
           th:href="${backHref}"
@@ -45,11 +41,7 @@
         <h1 class="text-2xl font-semibold text-gray-900">
           <span th:text="${ownerPossessive}">Player's</span> Final Table
         </h1>
-        <!--
-          A visitor here usually arrives from a shared image or link with no idea what they are
-          looking at. The season alone did not say — this states the game in one line, and whether
-          the numbers below are final or still pending.
-        -->
+        <!-- States the game in one line, and whether the numbers are final, for visitors from a shared link. -->
         <p class="mt-1 text-sm text-gray-500">
           <span th:text="${seasonName}">Season</span> · how they called the whole
           table before a ball was kicked
@@ -143,24 +135,15 @@
       </th:block>
 
       <!--
-        Two unrevealed states, not one. "Locked in before a ball was kicked" is a claim about the
-        past, and while entry is still open it is not true of anyone — the table can still change,
-        so saying it is locked would be wrong on every shared link opened before kickoff. Before
-        kickoff the honest thing is when they settled; after it, the original wording holds.
-
-        Same shape as the navbar rule: entry-open and already-locked are different situations and
-        get different copy.
+        Two unrevealed states. While entry is open the table can still change, so "locked in
+        before a ball was kicked" would be false; say when they settled instead.
       -->
       <th:block th:if="${revealed == false and finalTableEntryOpen == true}">
         <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
           <!--
-            The raw ISO instant, formatted into the viewer's zone by Ligitabl.formatTimestamps.
-
-            Not #temporals.format over systemDefault(): that is the *server's* zone, so every
-            viewer outside it was shown a time wrong by their offset. The share card below already
-            formats this same field client-side for exactly that reason — 'settled' is its preset.
-
-            th:text keeps the ISO string in place as the no-JS fallback.
+            The raw ISO instant, formatted into the viewer's zone by Ligitabl.formatTimestamps
+            ('settled' preset, as on the share card). th:text keeps the ISO string as the no-JS
+            fallback.
           -->
           <p class="text-sm text-gray-700">
             <th:block th:if="${settledAt != null}">
@@ -206,13 +189,8 @@
       </div>
 
       <!--
-        The offer, above the share controls rather than below them. A visitor arrives from a link
-        with no account and no table; making one is the thing to put in front of them, and sharing
-        someone else's page is the lesser action.
-
-        Gated on entry still being open, matching the navbar rule: inviting someone into a game that
-        closed at kickoff is a promise the app cannot keep. Once closed the CTA is dropped rather
-        than reworded — there is nothing to offer until next season.
+        The offer, above the share controls: a visitor from a link has no table, and making one
+        matters more than sharing someone else's. Only while entry is open, as in the navbar.
       -->
       <th:block th:if="${finalTableEntryOpen == true}">
         <div
