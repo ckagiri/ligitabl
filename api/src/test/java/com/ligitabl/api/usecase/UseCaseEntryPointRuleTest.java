@@ -1,15 +1,21 @@
 package com.ligitabl.api.usecase;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
+import static com.ligitabl.api.testsupport.ApiClasses.MAIN;
+import static com.ligitabl.api.testsupport.ApiClasses.pkg;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.simpleNameEndingWith;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 import org.junit.jupiter.api.Test;
+
+import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaModifier;
+import com.tngtech.archunit.lang.ArchCondition;
+import com.tngtech.archunit.lang.ConditionEvents;
+import com.tngtech.archunit.lang.SimpleConditionEvent;
 
 /**
  * Every {@code *UseCase} is entered through {@code execute}, overloaded by input type when one use
@@ -17,66 +23,57 @@ import org.junit.jupiter.api.Test;
  */
 class UseCaseEntryPointRuleTest {
 
-    private static final Path USECASE_SRC = Path.of("src/main/java/com/ligitabl/api/usecase");
-    private static final Pattern EXECUTE = Pattern.compile("^\\s+public\\s[^=;(]*\\bexecute\\(", Pattern.MULTILINE);
+    private static final DescribedPredicate<JavaClass> USE_CASES = resideInAPackage(pkg("usecase"))
+            .and(simpleNameEndingWith("UseCase"))
+            .and(JavaClass.Predicates.TOP_LEVEL_CLASSES)
+            .as("use cases");
 
-    private static final String MODIFIERS = "^    public\\s+(?:static\\s+)?(?:final\\s+)?(?:sealed\\s+)?";
-    private static final String TYPE_KEYWORD = "(?:record|class|interface|enum)\\b";
-
-    /** A public member method of the use case class: one return type, then the name. */
-    private static final Pattern PUBLIC_METHOD = Pattern.compile(
-            MODIFIERS + "(?!" + TYPE_KEYWORD + ")(?:<[^>]+>\\s+)?[\\w<>\\[\\], ?.]+\\s+(\\w+)\\s*\\(",
-            Pattern.MULTILINE);
-
-    private static final Pattern PUBLIC_NESTED_TYPE =
-            Pattern.compile(MODIFIERS + TYPE_KEYWORD + "\\s+(\\w+)", Pattern.MULTILINE);
+    private static final ArchCondition<JavaClass> HAVE_EXECUTE = new ArchCondition<>("have a public execute method") {
+        @Override
+        public void check(JavaClass useCase, ConditionEvents events) {
+            boolean found = useCase.getMethods().stream()
+                    .anyMatch(m ->
+                            m.getName().equals("execute") && m.getModifiers().contains(JavaModifier.PUBLIC));
+            if (!found) {
+                events.add(SimpleConditionEvent.violated(useCase, useCase.getName() + " has no public execute method"));
+            }
+        }
+    };
 
     @Test
-    void everyUseCaseHasAnExecuteMethod() throws IOException {
-        List<String> missing = useCaseFiles()
-                .filter(p -> !EXECUTE.matcher(read(p)).find())
-                .map(p -> USECASE_SRC.relativize(p).toString())
-                .toList();
-        assertThat(missing)
-                .as("name the entry point execute; see docs/architecture.md")
-                .isEmpty();
+    void everyUseCaseHasAnExecuteMethod() {
+        classes()
+                .that(USE_CASES)
+                .should(HAVE_EXECUTE)
+                .because("the entry point is named execute; see docs/architecture.md")
+                .check(MAIN);
     }
 
     @Test
-    void useCasesExposeNothingButExecute() throws IOException {
-        List<String> extra = useCaseFiles()
-                .flatMap(p -> {
-                    String src = read(p);
-                    String file = USECASE_SRC.relativize(p).toString();
-                    Stream<String> methods = PUBLIC_METHOD
-                            .matcher(src)
-                            .results()
-                            .map(m -> m.group(1))
-                            .filter(name -> !name.equals("execute"))
-                            .map(name -> file + ": method " + name);
-                    Stream<String> types =
-                            PUBLIC_NESTED_TYPE.matcher(src).results().map(m -> file + ": nested type " + m.group(1));
-                    return Stream.concat(methods, types);
-                })
-                .toList();
-        assertThat(extra)
-                .as("a second trigger is another execute overload; contract types are top-level files."
-                        + " See docs/architecture.md")
-                .isEmpty();
+    void useCasesExposeNothingButExecute() {
+        methods()
+                .that()
+                .areDeclaredInClassesThat(USE_CASES)
+                .and()
+                .arePublic()
+                .should()
+                .haveName("execute")
+                .because("a second trigger is another execute overload; see docs/architecture.md")
+                .check(MAIN);
     }
 
-    private static Stream<Path> useCaseFiles() throws IOException {
-        assertThat(USECASE_SRC).isDirectory();
-        try (Stream<Path> files = Files.walk(USECASE_SRC)) {
-            return files.filter(p -> p.getFileName().toString().endsWith("UseCase.java")).toList().stream();
-        }
-    }
-
-    private static String read(Path file) {
-        try {
-            return Files.readString(file);
-        } catch (IOException e) {
-            throw new java.io.UncheckedIOException(e);
-        }
+    @Test
+    void useCasesHaveNoPublicNestedTypes() {
+        noClasses()
+                .that()
+                .areMemberClasses()
+                .and(DescribedPredicate.describe(
+                        "are declared in a use case",
+                        c -> c.getEnclosingClass().map(USE_CASES::test).orElse(false)))
+                .should()
+                .bePublic()
+                .because("contract types are top-level files; see docs/architecture.md")
+                .allowEmptyShould(true)
+                .check(MAIN);
     }
 }
