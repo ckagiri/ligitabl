@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,6 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GetLeaderboardController {
     private static final int PAGE_SIZE = 10;
+    // Set by leaderboard.html when a group tab or chip is picked; read only when no phase is asked for.
+    static final String GROUP_COOKIE = "lt_lb_group";
 
     private final GetLeaderboardUseCase getLeaderboardUseCase;
 
@@ -38,6 +41,7 @@ public class GetLeaderboardController {
     public String getLeaderboard(
             @RequestParam(required = false) String phase,
             @RequestParam(required = false, defaultValue = "1") int page,
+            @CookieValue(name = GROUP_COOKIE, required = false) String preferredGroup,
             Principal principal,
             Model model,
             HttpServletResponse response,
@@ -48,7 +52,8 @@ public class GetLeaderboardController {
         CurrentUserContext currentUser = resolveCurrentUser(principal);
 
         int offset = Math.max(0, (page - 1) * PAGE_SIZE);
-        var query = new GetLeaderboardQuery(phase, offset, PAGE_SIZE, currentUser.userId());
+        var query =
+                new GetLeaderboardQuery(phase, offset, PAGE_SIZE, currentUser.userId(), parsePhaseType(preferredGroup));
 
         return getLeaderboardUseCase
                 .execute(query)
@@ -161,4 +166,14 @@ public class GetLeaderboardController {
     }
 
     private record ErrorResponse(int status, String message) {}
+
+    // A stale or hand-edited cookie falls back to the default view rather than failing the page.
+    private static PhaseType parsePhaseType(String value) {
+        if (value == null) return null;
+        try {
+            return PhaseType.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
 }

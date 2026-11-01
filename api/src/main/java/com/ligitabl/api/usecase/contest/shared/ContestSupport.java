@@ -93,23 +93,34 @@ public class ContestSupport {
      * upcoming/most recent one if the contest hasn't started or has finished.
      */
     public RoundSpan findCurrentSprint(Contest contest, Competition competition, int currentPos) {
-        List<RoundSpan> contestSprints = (competition != null && competition.getPhases() != null
+        return findCurrentPhase(contest, competition, PhaseType.SPRINT, currentPos)
+                .orElseThrow();
+    }
+
+    /**
+     * The contest's current phase of {@code type}, chosen as {@link #findCurrentSprint} chooses a
+     * sprint. Empty when no phase of that type lies wholly inside the contest window.
+     */
+    public Optional<RoundSpan> findCurrentPhase(
+            Contest contest, Competition competition, PhaseType type, int currentPos) {
+        List<RoundSpan> contestPhases = (competition != null && competition.getPhases() != null
                         ? competition.getPhases()
                         : List.<RoundSpan>of())
                 .stream()
-                        .filter(p -> p.getType() == PhaseType.SPRINT)
+                        .filter(p -> p.getType() == type)
                         .filter(p -> p.getFrom() >= contest.getFromRoundPosition()
                                 && p.getTo() <= contest.getToRoundPosition())
                         .sorted(Comparator.comparingInt(RoundSpan::getFrom))
                         .toList();
+        if (contestPhases.isEmpty()) return Optional.empty();
 
-        return contestSprints.stream()
-                .filter(s -> currentPos >= s.getFrom() && currentPos <= s.getTo())
+        return contestPhases.stream()
+                .filter(p -> currentPos >= p.getFrom() && currentPos <= p.getTo())
                 .findFirst()
                 .or(() -> currentPos < contest.getFromRoundPosition()
-                        ? contestSprints.stream().findFirst()
+                        ? contestPhases.stream().findFirst()
                         : Optional.empty())
-                .orElse(contestSprints.getLast());
+                .or(() -> Optional.of(contestPhases.getLast()));
     }
 
     public List<QuarterOption> resolveQuarterOptions() {

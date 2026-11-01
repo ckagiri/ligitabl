@@ -279,6 +279,14 @@ window.contestDetail = function () {
       this.activeSegment = id;
       this.loading = true;
 
+      // Remembers the level, not the segment, so the next visit opens on whichever quarter or
+      // sprint is current then. ContestDetailController reads it.
+      const node = this.currentNode;
+      if (node) {
+        document.cookie = 'lt_contest_level=' + node.nodeType + '; Path=/contests/' + this.contestId
+          + '; Max-Age=31536000; SameSite=Lax';
+      }
+
       // Preserve other query params (e.g. `from`, used for back-nav) while
       // switching segment; a segment change resets pagination, so drop `page`.
       const params = new URLSearchParams(window.location.search);

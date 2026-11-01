@@ -33,6 +33,7 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.contest.getprivatecontest.GetPrivateContestError;
 import com.ligitabl.api.usecase.contest.getprivatecontest.GetPrivateContestQuery;
 import com.ligitabl.api.usecase.contest.getprivatecontest.GetPrivateContestUseCase;
+import com.ligitabl.api.usecase.contest.getprivatecontest.SegmentLevel;
 import com.ligitabl.api.usecase.contest.renewcontest.GetContestRenewalOptionsUseCase;
 import com.ligitabl.api.usecase.contest.shared.ContestSeasonSupport;
 import com.ligitabl.api.usecase.contest.shared.ContestSupport;
@@ -94,7 +95,7 @@ class ContestDetailControllerTest {
         bindRequest(ImpersonationContext.impersonating(admin, target));
         stubUseCase();
 
-        controller.contestDetail(contestId, null, 0, null, null, model, principal);
+        controller.contestDetail(contestId, null, 0, null, null, null, model, principal);
 
         assertEquals(target.id(), capturedQuery().userId());
     }
@@ -106,7 +107,7 @@ class ContestDetailControllerTest {
         bindRequest(ImpersonationContext.notImpersonating(admin));
         stubUseCase();
 
-        controller.contestDetail(contestId, null, 0, null, null, model, principal);
+        controller.contestDetail(contestId, null, 0, null, null, null, model, principal);
 
         assertEquals(admin.id(), capturedQuery().userId());
     }
@@ -114,10 +115,34 @@ class ContestDetailControllerTest {
     @Test
     @DisplayName("an anonymous request is sent to login")
     void anonymousRedirectsToLogin() {
-        String view = controller.contestDetail(contestId, null, 0, null, null, model, null);
+        String view = controller.contestDetail(contestId, null, 0, null, null, null, model, null);
 
         assertEquals("redirect:/auth/login", view);
         verifyNoInteractions(getPrivateContestUseCase);
+    }
+
+    @Test
+    @DisplayName("the level cookie becomes the query's preferred level")
+    void passesPreferredLevelFromCookie() {
+        authenticateAs(admin);
+        bindRequest(ImpersonationContext.notImpersonating(admin));
+        stubUseCase();
+
+        controller.contestDetail(contestId, null, 0, null, "QUARTER", null, model, principal);
+
+        assertEquals(SegmentLevel.QUARTER, capturedQuery().preferredLevel());
+    }
+
+    @Test
+    @DisplayName("an unrecognised level cookie is ignored")
+    void ignoresUnrecognisedLevelCookie() {
+        authenticateAs(admin);
+        bindRequest(ImpersonationContext.notImpersonating(admin));
+        stubUseCase();
+
+        controller.contestDetail(contestId, null, 0, null, "MONTH", null, model, principal);
+
+        assertNull(capturedQuery().preferredLevel());
     }
 
     private GetPrivateContestQuery capturedQuery() {

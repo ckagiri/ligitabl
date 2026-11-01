@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -18,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.usecase.contest.getprivatecontest.GetPrivateContestQuery;
 import com.ligitabl.api.usecase.contest.getprivatecontest.GetPrivateContestUseCase;
+import com.ligitabl.api.usecase.contest.getprivatecontest.SegmentLevel;
 import com.ligitabl.api.usecase.contest.renewcontest.GetContestRenewalOptionsResult;
 import com.ligitabl.api.usecase.contest.renewcontest.GetContestRenewalOptionsUseCase;
 import com.ligitabl.api.usecase.contest.shared.ContestSeasonSupport;
@@ -37,6 +39,9 @@ import lombok.extern.slf4j.Slf4j;
 public class ContestDetailController {
 
     private static final int PAGE_SIZE = 10;
+    // Set by contests.js on Path=/contests/{id}, so each contest gets only its own; read only when no
+    // segment is asked for.
+    static final String LEVEL_COOKIE = "lt_contest_level";
 
     private final GetPrivateContestUseCase getPrivateContestUseCase;
     private final GetContestRenewalOptionsUseCase getContestRenewalOptionsUseCase;
@@ -59,6 +64,7 @@ public class ContestDetailController {
             @RequestParam(required = false) String segment,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(required = false) String from,
+            @CookieValue(name = LEVEL_COOKIE, required = false) String preferredLevel,
             @RequestHeader(value = "HX-Request", required = false) String hxRequest,
             Model model,
             Principal principal) {
@@ -69,7 +75,8 @@ public class ContestDetailController {
         model.addAttribute("backHref", "profile".equals(from) ? "/profile/my-contests" : "/contests");
 
         String segmentCode = (segment != null && !segment.isBlank()) ? segment : null;
-        var query = new GetPrivateContestQuery(id, user.getUserId(), segmentCode, page);
+        var query =
+                new GetPrivateContestQuery(id, user.getUserId(), segmentCode, page, parseSegmentLevel(preferredLevel));
 
         return getPrivateContestUseCase
                 .execute(query)
@@ -181,5 +188,15 @@ public class ContestDetailController {
                             uid.equals(ownerId));
                 })
                 .toList();
+    }
+
+    // A stale or hand-edited cookie falls back to the default view rather than failing the page.
+    private static SegmentLevel parseSegmentLevel(String value) {
+        if (value == null) return null;
+        try {
+            return SegmentLevel.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }
