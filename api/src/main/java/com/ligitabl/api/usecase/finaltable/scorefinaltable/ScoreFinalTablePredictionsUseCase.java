@@ -19,10 +19,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Scores every Final Table prediction for a season, once, against the final standings.
- *
- * <p>Scoring is per-row fault-isolated: a single malformed prediction cannot fail the
- * rest of the season.
+ * Scores every Final Table prediction for a season, once, against the final standings. Faults are
+ * isolated per row, so one malformed prediction cannot fail the rest.
  */
 @Component
 @RequiredArgsConstructor

@@ -26,8 +26,8 @@ public class MatchUpdateHelper {
     public boolean applyUpdate(Match existing, FeedMatch feedMatch) {
         var newStatus = feedMatch.status();
 
-        // football-data has reported results as FINISHED and then flipped them back to TIMED with null
-        // scores (2026-10-24). A finished match never legitimately restarts, so treat it as stale data.
+        // football-data can report a result FINISHED, then flip it back to TIMED with null scores.
+        // A finished match never legitimately restarts, so treat that as stale data.
         if (existing.getStatus() == MatchStatus.FINISHED
                 && (newStatus == MatchStatus.SCHEDULED || newStatus == MatchStatus.LIVE)) {
             if (existing.getClientId() != null && regressionsReported.add(existing.getClientId())) {

@@ -17,12 +17,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Logs inbound HTTP requests with method, path, status and duration.
- *
- * - Adds/propagates a correlation id from X-Request-Id header (or generates one),
- *   exposes it via MDC as "requestId" and echoes it on the response.
- * - Skips noisy INFO logs for health checks by logging them at DEBUG level.
- * - Does not log request/response bodies to avoid leaking PII.
+ * Logs inbound requests with method, path, status and duration, never bodies (PII). Propagates
+ * X-Request-Id (or generates one) as MDC "requestId" and on the response; health checks log at DEBUG.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)

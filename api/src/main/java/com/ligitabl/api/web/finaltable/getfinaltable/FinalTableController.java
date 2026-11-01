@@ -17,10 +17,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * GET /final-table — the Final Table Predictor page.
- *
- * <p>A guest gets the same table read-only with a sign-up CTA: the game doubles as an on-ramp, so
- * showing the baseline is more useful than an empty state.
+ * GET /final-table — the Final Table Predictor page. A guest gets the table read-only with a
+ * sign-up CTA.
  */
 @Controller
 @RequiredArgsConstructor
@@ -69,9 +67,8 @@ public class FinalTableController {
         model.addAttribute("shareText", data.shareText());
         model.addAttribute("shareRowsJson", data.shareRowsJson());
         model.addAttribute("shareCardTitle", (data.competitionName() + " " + data.seasonLabel()).trim());
-        // "Foobar's final table prediction" beats "My …" on an image whose whole purpose is being
-        // posted somewhere the author is not obvious. Falls back to the generic wording rather than
-        // to any identifier — a blank display name must never surface an email here.
+        // A named title suits an image posted where the author isn't obvious. A blank display name
+        // falls back to generic wording, never to an email.
         model.addAttribute(
                 "shareCardKicker",
                 data.ownerName() == null

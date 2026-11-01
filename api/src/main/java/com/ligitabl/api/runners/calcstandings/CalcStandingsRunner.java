@@ -42,7 +42,6 @@ public class CalcStandingsRunner implements ApplicationRunner {
         log.info("║  Calculate Standings Workflow - {}", String.format("%-25s", competitionSlug) + "║");
         log.info("╚══════════════════════════════════════════════════════════╝");
 
-        // Validate competition and get active season
         var competitionResult = hierarchyValidator.validateCompetition(competitionSlug);
         if (competitionResult.isLeft()) {
             handleError("Competition validation failed", competitionResult.getLeft());
@@ -70,7 +69,6 @@ public class CalcStandingsRunner implements ApplicationRunner {
 
         Season season = seasonResult.get();
 
-        // Get all rounds for the season, ordered by position
         List<Round> rounds = roundRepo.findBySeasonIdOrderByPosition(season.getId());
 
         if (rounds.isEmpty()) {
@@ -152,7 +150,6 @@ public class CalcStandingsRunner implements ApplicationRunner {
         log.error("║  Calculation FAILED                                      ║");
         log.error("╚══════════════════════════════════════════════════════════╝");
         log.error("Context:       {}", context);
-        // log.error("Error Code:    {}", error.code());
         log.error("Error Message: {}", error.logMessage());
 
         if (config.isExitAfter()) {

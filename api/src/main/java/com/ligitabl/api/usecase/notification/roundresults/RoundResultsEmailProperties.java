@@ -6,11 +6,8 @@ import org.springframework.stereotype.Component;
 import lombok.Data;
 
 /**
- * Recipient scoping for round-results emails.
- *
- * <p>{@code topN} caps recipients per round
- * {@code mode=test} sends only to ignore-list accounts so the full pipeline
- * can run locally without emailing real users.
+ * Recipient scoping for round-results emails. {@code topN} caps recipients per round;
+ * {@code mode=test} sends only to ignore-list accounts, so the pipeline can run locally.
  */
 @Data
 @Component

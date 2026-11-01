@@ -108,9 +108,8 @@ public class AdminSeasonController {
                 "formerSeasonState",
                 formerSeason != null ? formerSeason.getSeasonState(at).name() : null);
 
-        // Per-row states for the seasons table. Precomputed rather than called from the template:
-        // Thymeleaf can reach a no-arg predicate on the model object, which would read the wall
-        // clock at render time and disagree with the "now" above on a date boundary.
+        // Precomputed rather than called from the template: a no-arg predicate there reads the
+        // wall clock at render time and can disagree with "now" above on a date boundary.
         model.addAttribute(
                 "seasonStatesById",
                 allSeasons.stream().collect(Collectors.toMap(Season::getId, season -> season.getSeasonState(at)

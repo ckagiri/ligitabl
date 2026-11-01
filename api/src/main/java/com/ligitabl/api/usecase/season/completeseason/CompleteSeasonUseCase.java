@@ -69,10 +69,8 @@ public class CompleteSeasonUseCase {
 
         season.complete(OffsetDateTime.now(clock));
 
-        // Completing the season should land it on OFF_SEASON (predictions closed, pre-season not
-        // yet open), not INACTIVE — INACTIVE here means preSeasonOpensAt isn't configured/ordered
-        // correctly. Reject rather than leave the season in limbo; the
-        // admin needs to fix the season's dates first (see UpdateSeasonDatesUseCase).
+        // Completing should land on OFF_SEASON. INACTIVE means preSeasonOpensAt isn't configured
+        // or ordered correctly, so reject until the admin fixes the dates (UpdateSeasonDatesUseCase).
         if (season.getSeasonState(clock.instant()) == SeasonState.INACTIVE) {
             return new CompleteSeasonResult.SeasonNotEligible(
                     "Completing this season would leave it INACTIVE — check preSeasonOpensAt/season.endDate");
@@ -87,10 +85,8 @@ public class CompleteSeasonUseCase {
     }
 
     /**
-     * Scores the Final Table side game against the final standings, in this transaction so the result
-     * is there the moment the season is.
-     *
-     * <p> A side-game bug must not be able to fail an admin's completion.
+     * Scores the Final Table side game in this transaction, so the result exists the moment the
+     * season completes. A side-game bug must not fail the completion.
      */
     private void scoreFinalTable(Season season) {
         try {
@@ -101,11 +97,9 @@ public class CompleteSeasonUseCase {
     }
 
     /**
-     * Records the completion in the outbox in this transaction, so it commits atomically with the
-     * season's completed flag. The relay expands it into per-user SEGMENT_RESULTS events for the
-     * full-season podium.
-     *
-     * <p>Any failure here logs loudly but never blocks the completion itself.
+     * Records the completion in the outbox in this transaction, so it commits with the completed
+     * flag. The relay expands it into SEGMENT_RESULTS events for the full-season podium. A failure
+     * here logs but never blocks completion.
      */
     private void enqueueSeasonCompleted(Season season) {
         try {

@@ -79,9 +79,6 @@ public class AccessController {
                 });
     }
 
-    /**
-     * Admin-only endpoint.
-     */
     @GetMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AuthDto.MessageResponse> adminEndpoint(Authentication authentication) {
@@ -94,9 +91,6 @@ public class AccessController {
                         "authorities", authentication.getAuthorities())));
     }
 
-    /**
-     * Player-only endpoint.
-     */
     @GetMapping("/player")
     @PreAuthorize("hasRole('PLAYER')")
     public ResponseEntity<AuthDto.MessageResponse> playerEndpoint(Authentication authentication) {

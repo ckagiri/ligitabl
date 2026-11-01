@@ -116,10 +116,9 @@ public class TransitionMatchStatusUseCase
         }
     }
 
-    // Only fires in setup mode — a status correction on a match in a round at or before the
-    // season's current round means that round's (and everything since) finalized standings are
-    // now stale. Includes the current round itself: in setup mode the current round can already
-    // be finalized+advanced (via a refinalize cascade), so a status change there is just as stale.
+    // Setup mode only: a status change at or before the current round makes that round's finalized
+    // standings stale, and everything since. The current round counts too: a refinalize cascade
+    // can leave it finalized and advanced.
     private void markOutOfSyncIfPastRound(TransitionContext ctx) {
         if (!ctx.context().season().isInSetupMode()) {
             return;
@@ -142,9 +141,8 @@ public class TransitionMatchStatusUseCase
                 ctx.match().getSlug());
     }
 
-    // Outside setup mode nothing else recomputes standings for a manual result: the sync only does so
-    // when the API itself reports a change, which is exactly what is missing when an admin steps in.
-    // Recomputes every round from the match's up to the current one, since each includes earlier results.
+    // Outside setup mode nothing else recomputes standings for a manual result: the sync only does
+    // so when the API reports a change. Recomputes every round from the match's to the current one.
     private void recalculateStandingsIfAffected(TransitionContext ctx) {
         if (ctx.context().season().isInSetupMode()) {
             return;

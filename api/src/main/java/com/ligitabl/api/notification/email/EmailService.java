@@ -16,12 +16,6 @@ public class EmailService {
     // TODO: Move to application.yml
     private static final String ADMIN_EMAIL = "admin@ligitabl.com";
 
-    /**
-     * Send email to admin
-     *
-     * @param subject Email subject
-     * @param body Email body (plain text for now)
-     */
     public void sendAdminAlert(String subject, String body) {
         log.warn("========================================");
         log.warn("ADMIN ALERT EMAIL");

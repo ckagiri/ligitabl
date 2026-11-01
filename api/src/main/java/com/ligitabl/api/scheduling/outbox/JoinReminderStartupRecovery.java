@@ -12,13 +12,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Runs the join-reminder enqueuer once on startup, so a deploy that lands after the 9am cron
- * slot doesn't wait until the next day for that day's reminders to go out.
- *
- * <p>Safe to fire alongside the cron ({@link JoinReminderJob}): {@link EnqueueJoinRemindersUseCase}
- * skips its own run if a JOIN_REMINDER batch was already enqueued today, so whichever of the
- * two — this startup hook or the 9am cron — runs first "wins" for the day and the other is a
- * no-op.
+ * Runs the join-reminder enqueuer once on startup, so a deploy after the cron slot doesn't hold
+ * that day's reminders until tomorrow. Safe alongside {@link JoinReminderJob}:
+ * {@link EnqueueJoinRemindersUseCase} skips the run if a JOIN_REMINDER batch was already enqueued
+ * today.
  */
 @Component
 @RequiredArgsConstructor

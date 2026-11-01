@@ -25,12 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class GetLeaderboardController {
     private final GetLeaderboardUseCase getLeaderboardUseCase;
 
-    /**
-     * GET /leaderboard?phase=Q2
-     *
-     * Gets leaderboard for the default competition's main contest.
-     * Phase is optional, defaults to FS (Full Season).
-     */
+    /** The default competition's main contest. Phase defaults to FS (full season). */
     @GetMapping("/main/leaderboard")
     public ResponseEntity<?> getLeaderboard(
             @RequestParam(required = false) String phase,

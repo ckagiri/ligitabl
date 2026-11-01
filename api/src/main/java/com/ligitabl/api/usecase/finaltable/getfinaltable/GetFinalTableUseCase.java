@@ -30,10 +30,8 @@ import com.ligitabl.model.repo.TeamRepo;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Assembles the Final Table page for a signed-in user, or the read-only teaser for a guest.
- *
- * <p>A guest — and a signed-in user with no row yet — both see the season baseline, so the page
- * always shows a table rather than an empty state.
+ * Assembles the Final Table page for a signed-in user, or the read-only teaser for a guest. A guest,
+ * and a user with no row yet, see the season baseline rather than an empty state.
  */
 @Component
 @RequiredArgsConstructor
@@ -141,8 +139,8 @@ public class GetFinalTableUseCase {
     }
 
     private String shareUrl(String publicId, Season season) {
-        // toShorthand(), not getSlug(): the latter is a SeasonSlug record, so interpolating it
-        // yields "SeasonSlug[value=2026-27]" in the URL. Shorthand is also what the public route parses.
+        // toShorthand(), not getSlug(): interpolating the SeasonSlug record puts
+        // "SeasonSlug[value=…]" in the URL. Shorthand is also what the public route parses.
         return "%s/final-table/u/%s/%s"
                 .formatted(frontendShareUrl, publicId, season.getSlug().toShorthand());
     }

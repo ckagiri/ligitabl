@@ -47,9 +47,6 @@ public final class DisplayNames {
         return cleaned == null ? fallback : cleaned;
     }
 
-    /**
-     * The possessive form of a name.
-     */
     public static String possessive(String name) {
         return name == null ? null : name + "'s";
     }

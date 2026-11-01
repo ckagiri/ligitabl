@@ -63,9 +63,6 @@ public class SeedSeasonUseCase {
                 .flatMap(context -> seedAllData(context, config, warnings)));
     }
 
-    /**
-     * Phase 1: Load configuration file
-     */
     private Either<SeedingError, SeedingConfig> loadConfiguration() {
         try {
             return Either.right(configLoader.loadConfig());
@@ -74,9 +71,6 @@ public class SeedSeasonUseCase {
         }
     }
 
-    /**
-     * Phase 2: Validate all prerequisites exist
-     */
     private Either<SeedingError, ValidationContext> validatePrerequisites(SeedingConfig config) {
         return findCompetition(config.getCompetitionSlug())
                 .flatMap(competition -> validateWithCompetition(config, competition));
@@ -321,7 +315,6 @@ public class SeedSeasonUseCase {
                 continue;
             }
 
-            // Generate random rankings
             List<TeamRank> rankings = generateRandomRankings(teams);
 
             SeasonPrediction prediction = SeasonPrediction.builder()
@@ -365,7 +358,6 @@ public class SeedSeasonUseCase {
             for (int roundIndex = 0; roundIndex < config.getFinishedRounds(); roundIndex++) {
                 Round round = rounds.get(roundIndex);
 
-                // Get round's first match to find kickoff date
                 List<Match> roundMatches = matchRepo.findByRoundId(round.getId());
                 if (roundMatches.isEmpty()) continue;
 
@@ -377,7 +369,6 @@ public class SeedSeasonUseCase {
 
                 Instant firstKickoffInstant = firstKickoff.toInstant();
 
-                // Generate 1-5 swaps
                 int numSwaps = 1 + random.nextInt(5);
 
                 for (int swapIndex = 0; swapIndex < numSwaps; swapIndex++) {
@@ -405,7 +396,6 @@ public class SeedSeasonUseCase {
                     currentRankings.set(idx1, newTeam1);
                     currentRankings.set(idx2, newTeam2);
 
-                    // Record swap
                     SwapChange change = new SwapChange(
                             swapTime,
                             String.format("%s:%d→%d", team1.getCode(), team1.getPosition(), newTeam1.getPosition()),
@@ -435,7 +425,6 @@ public class SeedSeasonUseCase {
     }
 
     private Instant generateWeekdaySwapTime(Instant roundKickoff, Instant lastSwapAt, int swapIndex, int totalSwaps) {
-        // Calculate the week before kickoff
         Instant weekBefore = roundKickoff.minus(Duration.ofDays(7));
 
         // Distribute swaps evenly across weekdays
@@ -473,7 +462,6 @@ public class SeedSeasonUseCase {
                 warnings.add(errorMessage);
                 log.warn("Failed to finalize round {}: {}", i + 1, errorMessage);
 
-                // For critical errors, stop and return error
                 if (isCriticalFinalizeRoundError(error)) {
                     return Either.left(new SeedingError.FinalizationFailed(i + 1, errorMessage));
                 }

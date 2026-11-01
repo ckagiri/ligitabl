@@ -10,9 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
- * Canonical "My Table" routes.
- *
- * <p>These routes redirect/forward to the existing predictions pages:
+ * Canonical "My Table" routes, forwarding to the predictions pages:
  * <ul>
  *   <li>/my-table -> /predictions/user/me (authenticated) or /my-table/guest (guest)</li>
  *   <li>/my-table/guest -> /my-table (authenticated) or /predictions/user/guest (guest)</li>

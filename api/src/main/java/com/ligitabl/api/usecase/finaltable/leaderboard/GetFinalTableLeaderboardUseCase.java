@@ -70,9 +70,8 @@ public class GetFinalTableLeaderboardUseCase {
     }
 
     /**
-     * <p>⚠️ A tie spanning a page boundary cannot be detected from within the page: the first row of
-     * page 2 shows its own number even if it ties the last row of page 1. Accepted — the alternative
-     * is a window function whose positions no longer match the offsets.
+     * ⚠️ A tie spanning a page boundary goes undetected: page 2's first row shows its own number
+     * even if it ties page 1's last. A window function would fix it but break the match with offsets.
      */
     private List<String> displayPositions(List<FinalTableLeaderboardEntry> entries) {
         List<String> positions = new ArrayList<>(entries.size());

@@ -36,11 +36,8 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
     }
 
     /**
-     * The {@code text/plain} alternative, derived from the rendered HTML.
-     *
-     * <p>Deliberately still a regex rather than a parser: these are our own templates, not
-     * arbitrary input, and adding an HTML parser to send email is a poor trade. The tests assert
-     * the properties that matter ({@code no braces, no entities}) rather than exact output.
+     * The {@code text/plain} alternative, derived from the rendered HTML. A regex suffices because
+     * these are our own templates; the tests assert no braces and no entities, not exact output.
      */
     static String toPlainText(String html) {
         if (html == null) {
@@ -100,9 +97,8 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
     }
 
     /**
-     * Names the <em>largest</em> segment the reader placed in, so someone who took both a sprint
-     * and the quarter it closes reads the quarter — the bigger achievement — rather than whichever
-     * block happens to sort first. The enqueuer picks that headline; this only formats it.
+     * Names the largest segment the reader placed in, so taking a sprint and the quarter it closes
+     * reads as the quarter. The enqueuer picks that headline; this only formats it.
      */
     private String segmentResultsSubject(Map<String, Object> templateData) {
         String name = String.valueOf(templateData.get("headlineName"));
@@ -131,11 +127,7 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
                 };
     }
 
-    /**
-     * Escalating urgency as the reminder stage climbs — the exact stage-day thresholds are
-     * config (see {@code ligitabl.email.join-reminder.stage-days}), so this buckets by range
-     * rather than matching specific day counts, and stays sensible if that config changes.
-     */
+    /** Buckets by range, so it stays sensible if {@code ligitabl.email.join-reminder.stage-days} changes. */
     private String joinReminderSubject(Integer stage) {
         if (stage == null || stage <= 1) {
             return "Set your table for the season!";

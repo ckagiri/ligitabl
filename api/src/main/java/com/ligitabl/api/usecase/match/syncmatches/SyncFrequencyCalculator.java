@@ -28,19 +28,12 @@ public class SyncFrequencyCalculator {
     public static final Duration STALE_KICKOFF_THRESHOLD = Duration.ofHours(3);
 
     /**
-     * Calculate next sync schedule based on match state
-     *
-     * @param hasLiveMatches True if any matches are currently live
-     * @param hasScheduledMatches True if any matches are scheduled (not yet started)
-     * @param hasSuspendedMatches True if any matches are suspended (may resume any time)
-     * @param hasCancelledMatches True if any matches are cancelled
-     * @param nextKickoff Time of next scheduled kickoff (can be null)
-     * @param allMatchesComplete True if all matches are in terminal state
-     * @param matchCount Total number of matches (0 = no upcoming matches)
-     * @param seasonComplete True if season is complete (all rounds finalized)
-     * @param now The instant the kickoff distance is measured from — the caller's {@code Clock},
-     *     since this class is static and has none of its own
-     * @return Next sync schedule with delay and reason
+     * @param hasSuspendedMatches suspended matches may resume any time
+     * @param nextKickoff null when nothing is scheduled
+     * @param allMatchesComplete every match is in a terminal state
+     * @param matchCount 0 means no upcoming matches
+     * @param seasonComplete every round finalized
+     * @param now the caller's {@code Clock}; this class is static and has none
      */
     public static NextSyncSchedule calculateNextSync(
             boolean hasLiveMatches,
@@ -91,9 +84,7 @@ public class SyncFrequencyCalculator {
             return NextSyncSchedule.hours(6, "No scheduled matches", true);
         }
 
-        // PRIORITY 6: Calculate time until next kickoff
-        // Rounding partial minutes up is the right behaviour on its own: it never schedules a poll later than the
-        // bucket the kickoff actually falls in.
+        // Rounding partial minutes up never schedules a poll later than the kickoff's bucket.
         long secondsUntilKickoff = Duration.between(now, nextKickoff).getSeconds();
         long minutesUntilKickoff = secondsUntilKickoff < 0 ? -1 : ceilDiv(secondsUntilKickoff, 60);
 
@@ -111,19 +102,16 @@ public class SyncFrequencyCalculator {
                     .withPhase(NextSyncSchedule.Phase.OVERDUE);
         }
 
-        // Imminent kickoff (≤ 10 minutes)
         if (minutesUntilKickoff <= 10) {
             return NextSyncSchedule.minutes(1, String.format("Kickoff in %d minutes (imminent)", minutesUntilKickoff))
                     .withPhase(NextSyncSchedule.Phase.IMMINENT);
         }
 
-        // Soon kickoff (≤ 60 minutes)
         if (minutesUntilKickoff <= 60) {
             return NextSyncSchedule.minutes(10, String.format("Kickoff in %d minutes (soon)", minutesUntilKickoff))
                     .withPhase(NextSyncSchedule.Phase.SOON);
         }
 
-        // Later today (< 6 hours)
         if (minutesUntilKickoff < 360) {
             long hoursUntilKickoff = ceilDiv(minutesUntilKickoff, 60);
             return NextSyncSchedule.hours(
@@ -133,16 +121,11 @@ public class SyncFrequencyCalculator {
                     true);
         }
 
-        // Default: Later Today, Tomorrow or beyond (≥ 6 hours away)
         long hoursUntilKickoff = ceilDiv(minutesUntilKickoff, 60);
         return NextSyncSchedule.hours(6, String.format("Kickoff in %d hours (default check)", hoursUntilKickoff), true);
     }
 
-    /**
-     * Cap the delay when suspended/cancelled matches are present.
-     * Faster kickoff- or live-driven polling still wins; the sync just never
-     * waits longer than the cap while such matches exist.
-     */
+    /** Caps the delay while suspended/cancelled matches exist; faster polling still wins. */
     private static NextSyncSchedule applyBlockingMatchCap(
             NextSyncSchedule schedule, boolean hasSuspendedMatches, boolean hasCancelledMatches) {
 

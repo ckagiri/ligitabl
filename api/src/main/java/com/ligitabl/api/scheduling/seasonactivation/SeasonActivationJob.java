@@ -17,7 +17,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/** Checks every 15 minutes whether the default competition's upcoming season is due to go active. */
+/** Polls whether the default competition's upcoming season is due to go active. */
 @Component
 @Profile("prod")
 @RequiredArgsConstructor

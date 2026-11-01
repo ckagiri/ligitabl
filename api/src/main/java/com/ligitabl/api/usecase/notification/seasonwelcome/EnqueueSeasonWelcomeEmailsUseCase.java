@@ -17,10 +17,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Expands the season-welcome fan-out into one SEASON_WELCOME event per recipient.
- *
- * <p>Recipients are round-0 holders — auto-joined and genuinely pre-registered alike — because
- * that is exactly the set for whom "you still have up to 5 swaps" is true.
+ * Expands the season-welcome fan-out into one SEASON_WELCOME event per recipient. Recipients are
+ * round-0 holders, auto-joined and pre-registered alike: exactly those for whom "you still have up
+ * to 5 swaps" is true.
  */
 @Component
 @RequiredArgsConstructor

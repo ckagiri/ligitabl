@@ -17,13 +17,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Scans {@link JobHeartbeat} for jobs that have gone quiet and alerts an admin. The detection half
- * of the 2026-09-06 incident response (see {@code .art/task_89.md}).
+ * Scans {@link JobHeartbeat} for jobs that have gone quiet and alerts an admin.
  *
- * <p>⚠️ <strong>Must never implement {@code HealthIndicator}.</strong> Such beans are aggregated
- * into {@code /actuator/health}, which the container healthcheck polls — so a stalled background
- * job would restart-loop a container that is otherwise serving users fine. Alerting is the whole
- * job; recovery stays a human decision.
+ * <p>⚠️ <strong>Must never implement {@code HealthIndicator}.</strong> Those feed
+ * {@code /actuator/health}, which the container healthcheck polls, so a stalled job would
+ * restart-loop a container that is serving users fine. Recovery stays a human decision.
  */
 @Component
 @ConditionalOnProperty(

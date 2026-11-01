@@ -7,17 +7,13 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * Post-deploy sanity check for {@link RateLimitFilter}'s per-IP keying.
+ * Post-deploy check for {@link RateLimitFilter}'s per-IP keying. Behind the prod nginx-proxy,
+ * {@code getRemoteAddr()} is right only while Tomcat's RemoteIpValve resolves X-Forwarded-For
+ * (server.forward-headers-strategy=native); otherwise every user shares one bucket.
  *
- * The rate limiter keys buckets by {@code request.getRemoteAddr()}, which behind the prod
- * nginx-proxy is only correct if Tomcat's RemoteIpValve is resolving X-Forwarded-For
- * (server.forward-headers-strategy=native). If that wiring ever breaks, every client resolves
- * to the nginx container's address and all users silently share one bucket.
- *
- * Hitting this endpoint from any browser shows what the app resolved for YOU:
- * your public IP means forwarding works; a private address (172.x/10.x/192.168.x) means it
- * doesn't. It only echoes the caller's own connection data, so it is safe to expose publicly;
- * the path is deliberately unguessable to keep it out of casual scanner traffic.
+ * Shows what the app resolved for the caller: a public IP means forwarding works, a private
+ * address means it doesn't. It echoes only the caller's own connection data, so it is safe to
+ * expose; the path is unguessable to keep scanners off it.
  */
 @RestController
 public class ClientIpDiagnosticController {

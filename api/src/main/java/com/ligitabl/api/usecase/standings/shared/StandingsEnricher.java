@@ -31,9 +31,7 @@ public class StandingsEnricher {
     }
 
     /**
-     * Enriches standings with team info and form data.
-     * Returns empty list if standings has no rankings.
-     * Handles missing teams gracefully by logging a warning.
+     * Empty when standings have no rankings; a missing team logs a warning.
      *
      * @param formByTeamCode last-5 form entries keyed by team TLA; may be empty but not null
      */
@@ -46,7 +44,6 @@ public class StandingsEnricher {
 
             Map<String, List<FormEntry>> form = formByTeamCode != null ? formByTeamCode : Collections.emptyMap();
 
-            // Extract all team codes from rankings
             Set<String> teamCodes = standings.getRankings().stream()
                     .map(rank -> rank.getRanking().getCode())
                     .collect(Collectors.toSet());

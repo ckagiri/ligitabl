@@ -11,10 +11,7 @@ public sealed interface FinalTableError {
 
     record SeasonNotFound(UUID seasonId) implements FinalTableError {}
 
-    /**
-     * Round 1 is no longer OPEN, or the season is completed: the table is frozen for good.
-     *
-     */
+    /** Round 1 is no longer OPEN, or the season is completed: the table is frozen for good. */
     record EntryClosed(String roundStatus) implements FinalTableError {}
 
     record InvalidTeamCode(String code) implements FinalTableError {}
@@ -28,9 +25,8 @@ public sealed interface FinalTableError {
     record OutOfSync(List<String> expectedOrder, List<String> actualOrder) implements FinalTableError {}
 
     /**
-     * An empty batch against a row that already exists. Legal only as the baseline-accepting first
-     * save; afterwards there is nothing an empty batch can mean except a double-submit or a retry
-     * loop, so it is rejected rather than absorbed.
+     * An empty batch against an existing row. Legal only as the baseline-accepting first save;
+     * afterwards it can only be a double-submit or a retry loop, so it is rejected.
      */
     record NothingToSave() implements FinalTableError {}
 

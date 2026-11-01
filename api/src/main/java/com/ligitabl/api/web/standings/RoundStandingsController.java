@@ -24,18 +24,12 @@ public class RoundStandingsController {
 
     private final GetDefaultRoundStandingsUseCase getDefaultRoundStandingsUseCase;
 
-    /**
-     * GET /rounds/current/standings - View current round standings
-     */
     @GetMapping("/current/standings")
     public String getCurrentRoundStandings(Model model, HttpServletRequest request, HttpServletResponse response) {
         log.info("GET /rounds/current/standings");
         return executeUseCase(GetDefaultRoundStandingsQuery.currentRound(null), model, request, response);
     }
 
-    /**
-     * GET /rounds/{roundPosition}/standings - View specific round standings
-     */
     @GetMapping("/{roundPosition}/standings")
     public String getRoundStandingsByPosition(
             @PathVariable Integer roundPosition,
@@ -53,7 +47,6 @@ public class RoundStandingsController {
             HttpServletResponse response) {
         var result = getDefaultRoundStandingsUseCase.execute(query);
 
-        // Check if this is an HTMX request
         boolean isHtmxRequest = "true".equals(request.getHeader("HX-Request"));
 
         return result.fold(error -> handleStandingsError(error, model, response), payload -> {

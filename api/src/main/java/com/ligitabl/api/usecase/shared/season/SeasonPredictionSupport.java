@@ -25,9 +25,8 @@ import com.ligitabl.model.repo.TeamRepo;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Small shared facade over the season/round/prediction repos, for callers (public prediction
- * sharing, profile share widget) that only ever need "the active season", "its current round",
- * and "this user's prediction for it" — rather than each wiring up all three repos directly.
+ * The active season, its current round, and a user's prediction for it, for callers (public
+ * sharing, the profile share widget) that need nothing more.
  */
 @Component
 @RequiredArgsConstructor
@@ -64,11 +63,7 @@ public class SeasonPredictionSupport {
                 .orElse(false);
     }
 
-    /**
-     * Prediction sharing data for the profile settings widget — visible only when the user has
-     * something to share: pre-season registration (initialRankings) or an in-play prediction
-     * (currentRankings).
-     */
+    /** Visible only with something to share: a pre-season registration or an in-play prediction. */
     public record ShareData(boolean visible, String shareUrl, String shareText) {
         public static ShareData hidden() {
             return new ShareData(false, null, null);

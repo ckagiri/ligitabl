@@ -52,12 +52,6 @@ public class ImportMatchesUseCase {
     private final MatchRepo matchRepo;
     private final ImportEventPublisher eventPublisher;
 
-    /**
-     * Execute the import workflow for a competition.
-     *
-     * @param competitionCode The competition code (e.g., "PL", "SA")
-     * @return Either an ImportError or ImportSummary
-     */
     public Either<ImportError, ImportSummary> execute(CompetitionCode competitionCode) {
         log.info("Starting match import for competition: {}", competitionCode);
 
@@ -67,9 +61,6 @@ public class ImportMatchesUseCase {
                 .peek(eventPublisher::publishImportCompleted);
     }
 
-    /**
-     * Fetch competition and resolve the season
-     */
     private Either<ImportError, ImportContext> fetchAndResolveSeason(CompetitionCode code) {
         return footballDataClient
                 .getCompetition(code.getValue())
@@ -88,9 +79,6 @@ public class ImportMatchesUseCase {
                 });
     }
 
-    /**
-     * Fetch external matches for the competition
-     */
     private Either<ImportError, ImportContext> fetchMatches(ImportContext context) {
         return footballDataClient
                 .getMatchesForCompetition(context.competitionCode.getValue())
@@ -114,9 +102,6 @@ public class ImportMatchesUseCase {
         };
     }
 
-    /**
-     * Process all matches and collect results
-     */
     private ImportSummary processMatches(ImportContext context) {
         log.info("Processing {} matches...", context.matches.size());
 
@@ -212,9 +197,6 @@ public class ImportMatchesUseCase {
         return roundRepo.findById(currentRoundId).map(Round::getPosition).orElse(null);
     }
 
-    /**
-     * Process a single match
-     */
     private Either<ImportError, MatchImportResult> processMatch(MatchDto externalMatch, ImportContext context) {
 
         return mapToMatch(externalMatch, context)
@@ -232,9 +214,6 @@ public class ImportMatchesUseCase {
                 });
     }
 
-    /**
-     * Map external match to domain match
-     */
     private Either<ImportError, Match> mapToMatch(MatchDto dto, ImportContext context) {
         Season season = context.season;
 
@@ -275,9 +254,6 @@ public class ImportMatchesUseCase {
         return right(dto);
     }
 
-    /**
-     * Resolve round for the match
-     */
     private Either<ImportError, Round> resolveRound(ImportContext context, UUID seasonId, int matchday) {
         String cacheKey = seasonId + ":" + matchday;
         Optional<Round> cached = context.roundCacheBySeasonAndPosition.computeIfAbsent(
@@ -286,9 +262,6 @@ public class ImportMatchesUseCase {
                 cached, () -> DatabaseError.notFound("Round", "seasonId=" + seasonId + ", matchday=" + matchday));
     }
 
-    /**
-     * Resolve both teams
-     */
     private Either<ImportError, TeamPair> resolveTeams(MatchDto match, ImportContext context) {
         Integer homeClientId = match.homeTeam().id().intValue();
         Integer awayClientId = match.awayTeam().id().intValue();
@@ -354,9 +327,6 @@ public class ImportMatchesUseCase {
         return new ExternalId(dto.id() == null ? null : dto.id().intValue());
     }
 
-    /**
-     * Persist match (create or update)
-     */
     private Either<ImportError, MatchImportResult> persistMatch(Match match, ImportContext context) {
         try {
             var existing = matchRepo.findByClientId(match.getClientId());

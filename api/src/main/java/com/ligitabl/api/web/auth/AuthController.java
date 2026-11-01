@@ -94,11 +94,7 @@ public class AuthController {
         return userAgent != null && IN_APP_BROWSER_USER_AGENT.matcher(userAgent).find();
     }
 
-    /**
-     * Runs before every handler so a re-rendered form keeps its widget. Set only by
-     * showRegisterForm before, so the POST error paths dropped turnstileEnabled to null — th:if
-     * then removed the widget outright, leaving no checkbox to solve and no way to get a token.
-     */
+    /** Runs before every handler, so a re-rendered form keeps its Turnstile widget. */
     @ModelAttribute
     void registerPageAttributes(Model model, HttpServletRequest request) {
         model.addAttribute("turnstileEnabled", turnstileClient.isEnabled());
@@ -307,9 +303,8 @@ public class AuthController {
     @GetMapping("/logout")
     public String logout(RedirectAttributes redirectAttributes, HttpServletRequest request) {
         try {
-            // Must run while the authentication is still in the security context:
-            // the logout handlers include PersistentTokenBasedRememberMeServices, which
-            // needs the Authentication to revoke the DB token (not just cancel the cookie).
+            // While the authentication is still in the security context: the remember-me logout
+            // handler needs it to revoke the DB token, not just cancel the cookie.
             request.logout();
         } catch (Exception e) {
             log.warn("Failed to perform servlet logout", e);
@@ -522,7 +517,6 @@ public class AuthController {
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 new WebUserDetails(userId, publicId, email, displayName, "", authorities), null, authorities);
 
-        // Set authentication in security context
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         // Create session and store security context

@@ -8,9 +8,8 @@ import org.springframework.stereotype.Component;
 import com.ligitabl.model.domain.prediction.SwapChange;
 
 /**
- * Turns the stored {@code "CODE:from→to"} swap encoding into the fields the "Swap history" fragment
- * renders. Shared by the owner's own table and the public shared view, so both parse the encoding
- * the same way.
+ * Parses the stored {@code "CODE:from→to"} swap encoding into the fields the "Swap history"
+ * fragment renders, for both the owner's table and the public view.
  */
 @Component
 public class SwapHistoryFormatter {
@@ -33,9 +32,9 @@ public class SwapHistoryFormatter {
                 .sorted(Comparator.comparing(SwapChange::timestamp))
                 .map(swap -> {
                     String[] partsA = swap.teamA().split(":");
-                    String[] posA = partsA[1].split("→"); // →
+                    String[] posA = partsA[1].split("→");
                     String[] partsB = swap.teamB().split(":");
-                    String[] posB = partsB[1].split("→"); // →
+                    String[] posB = partsB[1].split("→");
                     return new Entry(
                             partsA[0],
                             Integer.parseInt(posA[0]),

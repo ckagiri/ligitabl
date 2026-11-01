@@ -110,7 +110,6 @@ public class CalculateRoundStandingsUseCase
     }
 
     private Either<UseCaseError, Standings> calcAndSaveStandings(Season season, Round round) {
-        // Check if round is already finalized
         if (round.isFinalized()) {
             return Either.left(UseCaseErrors.validation("Round already finalized"));
         }

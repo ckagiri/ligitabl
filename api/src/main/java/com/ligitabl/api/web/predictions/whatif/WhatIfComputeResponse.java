@@ -7,9 +7,8 @@ import com.ligitabl.api.usecase.prediction.whatif.WhatIfResult;
 import com.ligitabl.model.domain.league.StandingsTeamRank;
 
 /**
- * teamCode-keyed maps, deliberately the same shape as {@code UserPredictionViewData}'s
- * standingsMap/pointsMap/goalDifferenceMap, so the client can drop them straight into its
- * existing currentStandings/currentPoints/currentGoalDifference state with no reshaping.
+ * teamCode-keyed maps in the same shape as {@code UserPredictionViewData}'s
+ * standingsMap/pointsMap/goalDifferenceMap, so the client drops them into its existing state as is.
  */
 public record WhatIfComputeResponse(
         boolean success,

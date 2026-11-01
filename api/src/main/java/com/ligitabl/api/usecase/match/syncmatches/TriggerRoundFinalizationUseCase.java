@@ -30,7 +30,6 @@ public class TriggerRoundFinalizationUseCase {
 
     private Either<TriggerRoundFinalizationError, RoundContext> getActiveSeasonAndRound(String competitionCode) {
 
-        // Get active season
         var seasonOpt = seasonRepo.findActiveSeason(competitionCode);
         if (seasonOpt.isEmpty()) {
             return Either.left(new TriggerRoundFinalizationError.SeasonNotFound(competitionCode));
@@ -38,7 +37,6 @@ public class TriggerRoundFinalizationUseCase {
 
         var season = seasonOpt.get();
 
-        // Get current round
         var roundOpt = roundRepo.findById(season.getCurrentRoundId());
         if (roundOpt.isEmpty()) {
             return Either.left(new TriggerRoundFinalizationError.RoundNotFound(season.getCurrentRoundId()));

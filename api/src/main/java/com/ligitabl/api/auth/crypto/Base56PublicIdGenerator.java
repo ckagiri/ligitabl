@@ -28,7 +28,6 @@ public class Base56PublicIdGenerator implements PublicIdGenerator {
             // Truncate to 10 characters
             String truncated = encoded.substring(0, 10);
 
-            // PublicId.create() validates the format
             return Either.catching(() -> PublicId.create(truncated))
                     .getOrElseThrow(error ->
                             new IllegalStateException("Generated invalid public ID: " + error.getMessage(), error));

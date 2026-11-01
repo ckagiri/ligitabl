@@ -20,20 +20,16 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Drains the transactional outbox: claims batches of due PENDING/FAILED events
- * (FOR UPDATE SKIP LOCKED — multi-instance safe) and hands each to
- * {@link OutboxEventProcessor}. A second schedule sweeps PROCESSING rows
- * orphaned by a crash back into the retry cycle.
+ * Drains the transactional outbox: claims batches of due PENDING/FAILED events (FOR UPDATE SKIP
+ * LOCKED, so multi-instance safe) and hands each to {@link OutboxEventProcessor}. A second schedule
+ * sweeps PROCESSING rows orphaned by a crash back into the retry cycle.
  *
- * <p>Each event is isolated: one that throws past the processor is logged,
- * marked failed out of band, and the batch continues. The batch is a unit of
- * claiming, not of failure.
+ * <p>An event that throws past the processor is logged and marked failed out of band, and the
+ * batch continues.
  */
 @Component
-// Both flags must be true (or absent): ligitabl.scheduling.enabled is the global
-// scheduler switch, ligitabl.outbox.enabled the outbox-specific kill-switch —
-// flip OUTBOX_ENABLED=false to pause draining (events queue up as PENDING and
-// are delivered once re-enabled; nothing is lost).
+// ligitabl.scheduling.enabled is the global switch; ligitabl.outbox.enabled (OUTBOX_ENABLED=false)
+// pauses draining, and events wait as PENDING until it is re-enabled.
 @ConditionalOnProperty(
         name = {"ligitabl.scheduling.enabled", "ligitabl.outbox.enabled"},
         havingValue = "true",
@@ -87,11 +83,9 @@ public class OutboxRelayJob {
                 try {
                     processor.processOne(event);
                 } catch (Exception e) {
-                    // processOne swallows almost everything, but not a database error that
-                    // aborted its transaction — that also defeats its own markFailed write.
-                    // Without this guard the escaping exception abandons the rest of the
-                    // claimed batch, leaving up to batchSize-1 untouched events PROCESSING
-                    // until the stuck sweep.
+                    // processOne swallows everything but a database error that aborted its
+                    // transaction. Without this guard that error abandons the rest of the claimed
+                    // batch in PROCESSING until the stuck sweep.
                     log.error("[OUTBOX_RELAY_EVENT_FAILED] id={}, type={}", event.getId(), event.getEventType(), e);
                     Sentry.captureException(e);
                     recordFailureOutOfBand(event, e);
@@ -101,11 +95,9 @@ public class OutboxRelayJob {
     }
 
     /**
-     * Retries the failure bookkeeping now that the exception has crossed the processor's
-     * transactional proxy: Spring has rolled back, so this write runs on a clean
-     * connection and commits, and the event re-enters the retry cycle with normal backoff
-     * instead of waiting for {@link #recoverStuckProcessing}. Guarded in turn — a failure
-     * to record a failure must not cost the remaining events their turn.
+     * Retries the failure bookkeeping outside the rolled-back transaction, so the event re-enters
+     * the retry cycle now rather than at {@link #recoverStuckProcessing}. Guarded: failing to record
+     * a failure must not cost the remaining events their turn.
      */
     private void recordFailureOutOfBand(OutboxEvent event, Exception cause) {
         try {

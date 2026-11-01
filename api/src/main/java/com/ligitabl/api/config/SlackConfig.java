@@ -16,9 +16,8 @@ import reactor.netty.http.client.HttpClient;
 /**
  * WebClient for Slack incoming-webhook notifications.
  *
- * No retry filter, unlike {@link WebClientConfig}'s football-data client: notifications are
- * fire-and-forget and a dropped message is acceptable; a retry storm against Slack is not.
- * No baseUrl — the full webhook URL is supplied per-request by SlackNotificationService.
+ * No retry filter, unlike {@link WebClientConfig}: a dropped notification is acceptable, a retry
+ * storm against Slack is not. No baseUrl; SlackNotificationService supplies the full webhook URL.
  */
 @Configuration
 public class SlackConfig {

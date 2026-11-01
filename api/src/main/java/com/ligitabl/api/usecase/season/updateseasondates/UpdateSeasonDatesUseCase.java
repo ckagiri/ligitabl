@@ -58,10 +58,8 @@ public class UpdateSeasonDatesUseCase {
             upcoming = resolvedUpcoming;
         }
 
-        // Propagate the outgoing season's preSeasonOpensAt onto the competition's actual upcoming
-        // season, which may differ from (or be absent vs.) the request's own upcomingSeasonId —
-        // the idea being that the outgoing season's pre-season-opens date becomes the incoming
-        // season's pre-season-opens date too, ready for when it becomes outgoing in turn.
+        // The outgoing season's preSeasonOpensAt becomes the competition's actual upcoming
+        // season's too, which may differ from the request's upcomingSeasonId.
         if (outgoing != null) {
             var competition =
                     competitionRepo.findById(outgoing.getCompetitionId()).orElse(null);

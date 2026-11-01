@@ -31,14 +31,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Handles both normal in-season joining and pre-season registration (the "easter egg" — a
- * one-time 0-5 swap allowance available before predictions officially open).
+ * Handles both normal in-season joining and pre-season registration (a one-time 0-5 swap
+ * allowance before predictions open).
  *
- * <p>Pre-season registrations are stored as a SeasonPrediction with atRoundNumber=0 and
- * initialRankings populated (the permanent marker that this user pre-registered). Once
- * predictions open, a later call to execute() for that same user finds the round-0 row and
- * updates it in place with the real atRoundNumber, rather than creating a duplicate or
- * rejecting with AlreadyJoined.
+ * <p>A pre-season registration is a SeasonPrediction with atRoundNumber=0 and initialRankings
+ * populated, the permanent marker. Once predictions open, execute() for that user updates the
+ * round-0 row in place with the real atRoundNumber instead of duplicating or rejecting it.
  */
 @Component
 @RequiredArgsConstructor
@@ -108,8 +106,7 @@ public class CreatePredictionUseCase {
                         () -> determineAtRoundNumber(ctx.season())));
     }
 
-    // Step 1: resolve the active season, and reject unless it's genuinely joinable
-    // (not completed, not in setup mode).
+    // Rejects unless the active season is joinable: not completed, not in setup mode.
     private Either<CreatePredictionError, Season> getCurrentSeason() {
         return seasonRepo
                 .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
@@ -126,8 +123,6 @@ public class CreatePredictionUseCase {
                 });
     }
 
-    // Step 2: Decide whether this is a fresh join, a fresh pre-season registration,
-    // or a merge of an existing pre-season registration into a real entry.
     private sealed interface JoinPlan {
         record NewJoin() implements JoinPlan {}
 
@@ -157,7 +152,6 @@ public class CreatePredictionUseCase {
         return Either.left(new CreatePredictionError.AlreadyJoined(existing.getId()));
     }
 
-    // Step 3: Validate the swap team codes (0-5 pairs allowed)
     private Either<CreatePredictionError, Void> validateSwapTeams(CreatePredictionCommand cmd, Season season) {
         List<CreatePredictionCommand.SwapPair> swaps = cmd.swaps();
 
@@ -189,7 +183,6 @@ public class CreatePredictionUseCase {
         return Either.right(null);
     }
 
-    // Step 4: Resolve the main contest once, shared by every join plan branch
     private Either<CreatePredictionError, Contest> findMainContest(Season season) {
         return contestRepo
                 .findById(season.getMainContestId())
@@ -198,9 +191,8 @@ public class CreatePredictionUseCase {
     }
 
     /**
-     * <p>A {@link Supplier} rather than a resolved value on purpose: the pre-season branch must
-     * never touch {@code roundRepo}, and must not run the Ended / last-round-must-be-OPEN checks
-     * that resolution performs.
+     * A {@link Supplier} rather than a resolved value: the pre-season branch must never touch
+     * {@code roundRepo}, nor run the Ended / last-round-must-be-OPEN checks that resolution performs.
      */
     private Either<CreatePredictionError, CreatePredictionResult> executeJoinPlan(
             UUID userId,
@@ -222,7 +214,6 @@ public class CreatePredictionUseCase {
         };
     }
 
-    // Step 5: Determine at_round_number
     private record RoundInfo(int atRoundNumber, int currentRoundPosition) {}
 
     private Either<CreatePredictionError, RoundInfo> determineAtRoundNumber(Season season) {
@@ -279,7 +270,6 @@ public class CreatePredictionUseCase {
                 .orElseThrow();
     }
 
-    // Step 6a: Create prediction and entry for a normal (in-season) join
     private Either<CreatePredictionError, CreatePredictionResult> createPredictionAndEntry(
             UUID userId,
             Season season,
@@ -299,10 +289,9 @@ public class CreatePredictionUseCase {
                     .swaps(new ArrayList<>(List.of(new RoundSwap(atRoundNumber, swapResult.changes()))))
                     .lastSwapAt(request.swaps().isEmpty() ? null : now) // bonus only if no swaps used at signup
                     .atRoundNumber(atRoundNumber)
-                    // The commitment belongs to the round the user actually starts playing. Joining
-                    // while the round is locked places them at the next round, and joining consumes
-                    // that round's opening window — so they get cooldown there, not an opening swap.
-                    // Opening swaps belong to those who committed while the previous round was open.
+                    // The commitment belongs to the round the user starts playing. Joining a locked
+                    // round places them at the next one and consumes its opening window, so they get
+                    // cooldown there, not an opening swap.
                     .openingCommittedRound(atRoundNumber)
                     .build();
 
@@ -335,10 +324,9 @@ public class CreatePredictionUseCase {
         }
     }
 
-    // Step 6b: Pre-season registration — the "easter egg". One-time 0-5 swap shot stored at
-    // atRoundNumber=0. The prediction itself is fully scored once rounds finalize; only the swap
-    // cost is excluded — swaps are recorded under round 0, which countSwapsInRound (matching
-    // round == roundPosition, always >= 1) never counts into any RoundResult.swapCount.
+    // The one-time 0-5 swap shot, stored at atRoundNumber=0. The prediction is scored once rounds
+    // finalize, but its swaps are recorded under round 0, which countSwapsInRound (round >= 1)
+    // never counts into a RoundResult.swapCount.
     private Either<CreatePredictionError, CreatePredictionResult> registerPreSeason(
             UUID userId, Season season, Contest mainContest, CreatePredictionCommand request) {
         try {
@@ -383,8 +371,7 @@ public class CreatePredictionUseCase {
         }
     }
 
-    // Step 6c: Merge an existing pre-season registration into a real entry once predictions open.
-    // Updates the existing SeasonPrediction/Entry in place rather than creating duplicates.
+    // Updates the existing SeasonPrediction and Entry in place rather than creating duplicates.
     private Either<CreatePredictionError, CreatePredictionResult> mergePreSeasonRegistration(
             UUID userId,
             Contest mainContest,

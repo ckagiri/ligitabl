@@ -31,7 +31,6 @@ public class MatchEnricher {
                 return Either.right(List.of());
             }
 
-            // Get all unique team IDs
             Set<UUID> teamIds = matches.stream()
                     .flatMap(m -> Stream.of(m.getHomeTeamId(), m.getAwayTeamId()))
                     .collect(Collectors.toSet());

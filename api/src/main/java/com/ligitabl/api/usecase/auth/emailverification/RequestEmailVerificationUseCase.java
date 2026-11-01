@@ -49,9 +49,8 @@ public class RequestEmailVerificationUseCase {
                 return Either.left(new RequestEmailVerificationError.AlreadyVerified());
             }
 
-            // One read, shared by the throttle test and the token minted just below: two reads mean
-            // the new token's createdAt is not the instant the throttle was evaluated at, so the
-            // next resend's window is measured from an instant this call never checked.
+            // One read for the throttle test and the new token, so the next resend's window is
+            // measured from the instant this call checked.
             Instant now = clock.instant();
 
             var latest = tokenRepo.findLatestForUser(userId);

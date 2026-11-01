@@ -55,7 +55,6 @@ public class GetUserDetailUseCase {
 
     public Either<Exception, UserPredictions> execute(String publicId, Integer effectiveToRound, UUID seasonId) {
         return Either.catching(() -> {
-            // Resolve competition
             Competition competition = competitionRepo
                     .findBySlug(competitionDefaults.defaultCompetitionSlug())
                     .orElseThrow(() -> new GetUserDetailNotFoundException("Default competition not found"));
@@ -67,17 +66,14 @@ public class GetUserDetailUseCase {
                             : seasonRepo.findActiveSeason(competition.getId()))
                     .orElseThrow(() -> new GetUserDetailNotFoundException("Season not found"));
 
-            // Resolve current round
             Round currentRound = roundRepo
                     .findById(season.getCurrentRoundId())
                     .orElseThrow(() -> new GetUserDetailNotFoundException("Current round not found"));
 
-            // Resolve user by publicId
             User user = userRepo.findByPublicId(PublicId.create(publicId))
                     .orElseThrow(() -> new GetUserDetailNotFoundException("User not found: " + publicId));
 
-            // Only used to build the "View full prediction" deep link; a season without a slug
-            // simply yields no link rather than failing the whole modal.
+            // Only for the "View full prediction" link; a season without a slug just yields no link.
             String seasonSlug = season.getSlug() != null ? season.getSlug().toShorthand() : null;
 
             // If a finalized round result exists for the effective round, prefer that.
@@ -139,9 +135,8 @@ public class GetUserDetailUseCase {
         return sortedRanks.stream()
                 .map(tr -> {
                     Team team = teamsByCode.get(tr.getCode());
-                    // shorterName over shortName: the modal lists 20 rows in a narrow column and
-                    // truncates, so the tightest name that still reads is the useful one. Falls
-                    // back through shortName to the code when a team has no shorter form.
+                    // shorterName: the modal truncates a narrow column, so the tightest readable
+                    // name wins. Falls back through shortName to the code.
                     String name = team != null
                             ? firstNonBlank(team.getShorterName(), team.getShortName(), tr.getCode())
                             : tr.getCode();

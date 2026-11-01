@@ -17,10 +17,8 @@ import reactor.netty.http.client.HttpClient;
 /**
  * WebClient for Cloudflare Turnstile's siteverify endpoint.
  *
- * No retry filter, unlike {@link WebClientConfig}'s football-data client: this call sits in the
- * critical path of an interactive signup request, so a single failed/timed-out attempt goes
- * straight to fail-closed (see TurnstileClient) rather than retrying and blowing the perceived
- * latency budget.
+ * No retry filter, unlike {@link WebClientConfig}: the call sits in an interactive signup
+ * request, so one failed attempt goes straight to fail-closed (see TurnstileClient).
  */
 @Configuration
 public class TurnstileConfig {

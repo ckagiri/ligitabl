@@ -20,14 +20,8 @@ import io.sentry.Sentry;
 import jakarta.annotation.PostConstruct;
 
 /**
- * Matchday Advancement Scheduler
- *
- * Checks if the API's current matchday has advanced.
- * Updates season.currentMatchDay accordingly.
- *
- * Runs:
- * - Immediately on application startup
- * - Daily at 6:00 AM
+ * Moves season.currentMatchDay forward when the API's current matchday advances. Runs on startup
+ * and daily.
  */
 @Component
 @ConditionalOnProperty(name = "ligitabl.scheduling.enabled", havingValue = "true", matchIfMissing = true)
@@ -111,9 +105,6 @@ public class MatchdayAdvancementScheduler {
         }
     }
 
-    /**
-     * For testing/manual trigger
-     */
     public void triggerManualCheck() {
         log.info("Manual matchday advancement check triggered");
         checkAndAdvanceMatchday();

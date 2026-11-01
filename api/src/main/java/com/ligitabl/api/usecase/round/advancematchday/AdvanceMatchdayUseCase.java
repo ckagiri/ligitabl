@@ -80,7 +80,6 @@ public class AdvanceMatchdayUseCase {
                     "API matchday is behind current matchday - no action taken"));
         }
 
-        // API matchday is ahead - advance
         log.info("Advancing matchday from {} to {}", currentMatchday, apiMatchday);
 
         var season = context.season();

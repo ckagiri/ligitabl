@@ -32,21 +32,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Controller advice to provide navbar context across all views.
- *
- * <p>Provides:
- * <ul>
- *   <li>hasContestEntry - true if logged-in user has joined the main contest</li>
- *   <li>isLoggedIn - true if user is authenticated</li>
- *   <li>showFinalTableNav - whether to offer the Final Table link (see below)</li>
- *   <li>finalTableEntryOpen - whether the Final Table still accepts entries (see below)</li>
- * </ul>
- *
- * <p>Navbar label logic:
- * <ul>
- *   <li>Not logged in → "My Table" (links to /my-table/guest)</li>
- *   <li>Logged in → "My Table" (links to /my-table)</li>
- * </ul>
+ * Navbar context for every view: hasContestEntry, isLoggedIn, showFinalTableNav and
+ * finalTableEntryOpen. "My Table" links to /my-table, or /my-table/guest when signed out.
  */
 @ControllerAdvice
 @ConditionalOnBean({ContestRepo.class, SeasonRepo.class, UserRepo.class})
@@ -159,12 +146,8 @@ public class NavbarControllerAdvice {
     }
 
     /**
-     * Which navbar section the current request belongs to, or {@code null} for pages with no nav
-     * item.
-     *
-     * <p>Matched by prefix, not equality: a section spans several URLs, and the round pager pushes
-     * {@code /rounds/{n}/standings} without a reload. Request is a parameter, not a field, to keep
-     * the constructor signature tests build against.
+     * The navbar section the request belongs to, or {@code null}. Matched by prefix: a section spans
+     * several URLs, and the round pager pushes {@code /rounds/{n}/standings} without a reload.
      */
     @ModelAttribute("activeNav")
     public String activeNav(HttpServletRequest request) {
@@ -293,16 +276,9 @@ public class NavbarControllerAdvice {
     }
 
     /**
-     * Whether the verify-email banner should offer its "Resend email" action.
-     *
-     * <p>Suppressed while the most recent verification email is still fresh — right after signup the
-     * mail is already in flight, so resend invites a duplicate, and inside
-     * {@code email-verification-resend-cooldown-minutes} the server would reject the attempt with
-     * {@code ResendTooSoon} anyway. The quiet window is deliberately its own setting, and longer than
-     * that cooldown: the cooldown is anti-abuse throttling, this is "don't ask yet".
-     *
-     * <p>Only consulted when {@code emailUnverified} is already true, so the extra token read costs
-     * nothing for verified users — the common case.
+     * Whether the verify-email banner offers "Resend email". Suppressed while the latest email is
+     * fresh: right after signup it is already in flight. The quiet window is its own setting, longer
+     * than {@code email-verification-resend-cooldown-minutes}, which is anti-abuse throttling.
      */
     @ModelAttribute("verificationResendAvailable")
     public boolean verificationResendAvailable(Principal principal) {

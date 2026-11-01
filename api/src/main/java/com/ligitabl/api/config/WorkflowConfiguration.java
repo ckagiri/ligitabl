@@ -6,10 +6,7 @@ import org.springframework.stereotype.Component;
 import lombok.Data;
 
 /**
- * Workflow runner configuration.
- *
- * Used by the importer & calc-standings workflow runner to decide whether to run on startup
- * and which competition to import.
+ * Whether the importer and calc-standings runner run on startup, and which competition they import.
  */
 @Data
 @Component

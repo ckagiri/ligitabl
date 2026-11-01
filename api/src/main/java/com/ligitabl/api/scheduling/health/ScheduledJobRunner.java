@@ -7,9 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Runs a scheduled job's body with uniform failure handling, optionally pinging its heartbeat. The
- * try/catch + log + Sentry trio was copy-pasted across seven jobs and the copies had drifted —
- * some omitted Sentry, some the try/catch entirely.
+ * Runs a scheduled job's body with uniform failure handling, optionally pinging its heartbeat.
  *
  * <p>Sentry is captured explicitly because {@code additivity="false"} on
  * {@code com.ligitabl.api.scheduling} (logback-spring.xml) keeps {@code log.error} out of it.

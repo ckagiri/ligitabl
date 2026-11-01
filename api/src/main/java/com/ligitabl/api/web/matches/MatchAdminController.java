@@ -113,9 +113,8 @@ public class MatchAdminController {
                     .validateCurrentRound(ctx.season())
                     .fold(__ -> round, currentRound -> currentRound.getPosition());
 
-            // In setup mode any round is a valid target, and moves are typically retroactive
-            // corrections (e.g. GW 34 -> GW 32), so list those newest-first. Outside setup mode
-            // reschedules only ever move forward to a future round, so keep ascending order.
+            // Setup-mode moves are usually retroactive corrections, so list rounds newest-first;
+            // otherwise reschedules only move forward, so ascending.
             var roundsStream = roundRepo
                     .findBySeasonIdOrderByPosition(ctx.season().getId())
                     .stream()
@@ -277,10 +276,9 @@ public class MatchAdminController {
     }
 
     /**
-     * Signals a successful admin mutation. When the mutated match can be loaded, it rides along as JSON event
-     * detail so listeners (the admin matches page) can patch their in-memory copy without
-     * refetching; listeners without that need (the round matches page) just see the event
-     * name. Falls back to the bare event on any serialization hiccup.
+     * Signals a successful admin mutation. The mutated match rides along as JSON detail when it
+     * loads, so the admin matches page can patch its copy without refetching; on any serialization
+     * failure the bare event fires.
      */
     private void setMatchUpdatedTrigger(HttpServletResponse response, Optional<Match> match) {
         String header = "matchUpdated";

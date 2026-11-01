@@ -41,18 +41,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * <p>Recipients are the top {@code topN} of the main contest's sprint
- * leaderboard for the sprint containing the finalized round — recipient
- * selection stays sprint-scoped. Ignore-list accounts (test users),
- * unverified emails and opted-out users are skipped — the next-ranked user
- * takes the freed slot. In {@code test} mode the rule inverts: only
- * ignore-list accounts receive, so the pipeline can run locally against test
- * users. Both modes scan the same {@code topN + ignoreList.size()} window —
- * a test account outside it simply gets no email.
+ * <p>Recipients are the top {@code topN} of the main contest's leaderboard for the sprint holding
+ * the finalized round. Ignore-list (test) accounts, unverified emails and opted-out users are
+ * skipped, and the next-ranked user takes the slot. {@code test} mode inverts this: only ignore-list
+ * accounts receive. Both scan the same {@code topN + ignoreList.size()} window.
  *
- * <p>Duplicate fan-outs (relay retry, refinalization) are no-ops via the
- * per-user idempotency keys. Missing contest or phase configuration logs and
- * no-ops rather than failing the event.
+ * <p>Duplicate fan-outs (relay retry, refinalization) are no-ops via the per-user idempotency keys.
+ * Missing contest or phase configuration logs and no-ops rather than failing the event.
  */
 @Component
 @RequiredArgsConstructor

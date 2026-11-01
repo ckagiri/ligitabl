@@ -25,24 +25,17 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Per-client rate limiting filter using Bucket4j (token bucket algorithm).
+ * Per-client-IP rate limiting with Bucket4j; requests past the per-minute limit get an immediate 429.
  *
- * Each client IP gets its own bucket allowing the configured number of requests per minute,
- * so one abusive client can't exhaust the budget for everyone else. Requests beyond the
- * limit receive a 429 response immediately.
+ * Buckets live in a bounded Caffeine cache: an unbounded map keyed by remote IP grows forever under
+ * scanners rotating source addresses.
  *
- * Buckets live in a bounded Caffeine cache rather than a plain map: an unbounded map keyed
- * by remote IP is a memory-DoS vector (scanners rotating source addresses grow it forever).
+ * In prod the client IP comes from X-Forwarded-For via Tomcat's RemoteIpValve
+ * (server.forward-headers-strategy=native); without it all clients share the nginx container's
+ * bucket. Actuator health checks are exempt.
  *
- * In prod the real client IP is resolved from X-Forwarded-For by Tomcat's RemoteIpValve
- * (server.forward-headers-strategy=native in application-prod.yml) — without it every request
- * would arrive from the nginx container's IP and all clients would share one bucket.
- *
- * Actuator health checks are exempt to avoid interfering with monitoring.
- *
- * Ordering: runs after {@link RequestLoggingFilter} (+10) so that 429 responses are still
- * captured in the request log. This is far before the Spring Security chain, so no
- * authenticated principal is available — IP is the only viable key at this position.
+ * Runs after {@link RequestLoggingFilter} so 429s are logged, and before Spring Security, so IP
+ * is the only key available.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 20)
