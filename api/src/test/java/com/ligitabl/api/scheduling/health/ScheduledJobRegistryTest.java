@@ -14,9 +14,8 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.type.classreading.CachingMetadataReaderFactory;
 
 /**
- * Fails when a {@code @Scheduled} method is neither heartbeat-monitored nor listed below, so
- * "added a background job and forgot to decide how we'd notice it breaking" is a build failure
- * rather than a five-day outage (.art/task_89.md).
+ * Fails when a {@code @Scheduled} method is neither heartbeat-monitored nor listed below, so a new
+ * background job can't ship without deciding how a silent stop would be noticed.
  *
  * <p>Scans class metadata rather than the Spring context: tests run with
  * {@code ligitabl.scheduling.enabled=false}, so most job beans do not exist.

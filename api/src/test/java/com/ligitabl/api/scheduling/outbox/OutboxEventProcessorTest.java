@@ -171,9 +171,8 @@ class OutboxEventProcessorTest {
     }
 
     /**
-     * ROUND_ADVANCED drives two fan-outs. The segment one no-ops on most rounds, but it must be
-     * <em>called</em> on every one — deciding whether the round closes a segment is the enqueuer's
-     * job, not the processor's.
+     * The segment fan-out no-ops on most rounds but must be called on every one: whether a round
+     * closes a segment is the enqueuer's call.
      */
     @Test
     void roundAdvancedAlsoFansOutSegmentResults() throws Exception {
@@ -293,9 +292,8 @@ class OutboxEventProcessorTest {
     }
 
     /**
-     * Placements arrive smallest-window-first, so the headline is the <em>last</em>. A user who
-     * took both the sprint and the quarter it closes must be told about the quarter — the bigger
-     * achievement — not whichever block sorts first.
+     * Placements arrive smallest-window-first, so the headline is the last: a user who took the
+     * sprint and the quarter it closes hears about the quarter.
      */
     @Test
     void segmentResultsHeadlinesTheLargestSegment() throws Exception {
@@ -429,9 +427,8 @@ class OutboxEventProcessorTest {
 
     @Test
     void showsDetailedResultsLinkForSecondToLastRoundEvenThoughSeasonNowSitsOnTheLastRound() throws Exception {
-        // Round 37 (of 38) just finalized, so the season's currentRound has already advanced to
-        // 38 (the last round) — but this email is about round 37, which isn't the season finale,
-        // so the CTA must still show.
+        // Round 37 finalized, so the season's current round is already the last, but this email
+        // is about round 37, not the finale, so the CTA must still show.
         OutboxEvent event = claimedEvent(OutboxEventTypes.ROUND_RESULTS, roundResultsJson(37, 38, 38), 1);
 
         processor.processOne(event);

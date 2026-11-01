@@ -204,11 +204,7 @@ class CompleteSeasonUseCaseTest {
         verify(finalTableScoringHook).onSeasonCompleted(season);
     }
 
-    /**
-     * The Final Table is a side game; completing the season is the admin's action. A failure in
-     * scoring it must not make a successful completion report as a failure — same contract as the
-     * outbox above.
-     */
+    /** A Final Table scoring failure must not turn a successful completion into a failure, as with the outbox. */
     @Test
     void finalTableScoringFailure_doesNotBlockCompletion() {
         Season season = buildSeason(3);
@@ -286,9 +282,8 @@ class CompleteSeasonUseCaseTest {
 
     @Test
     void wouldBecomeInactive_rejectsWithoutSaving() {
-        // endDate still in the future: once completed=true, pastActualEnd stays false and (with
-        // preSeasonOpensAt/predictionsOpenAt both null) the season lands on INACTIVE, not
-        // OFF_SEASON — the "outgoing season needs its pre-season dates configured" case.
+        // endDate still in the future and both window dates null: completing lands on INACTIVE, not
+        // OFF_SEASON, the "outgoing season needs its pre-season dates" case.
         Season season = Season.builder()
                 .id(seasonId)
                 .clientId(1)
@@ -314,9 +309,8 @@ class CompleteSeasonUseCaseTest {
     }
 
     private Season buildSeason(int maxRounds) {
-        // endDate in the past: once completed=true, this makes pastActualEnd true and
-        // preSeasonOpensAt/predictionsOpenAt null lands the season on OFF_SEASON, not INACTIVE —
-        // the realistic "season just ended, pre-season dates not configured yet" case.
+        // endDate in the past and both window dates null: completing lands on OFF_SEASON, the
+        // "season just ended, pre-season dates not configured yet" case.
         return Season.builder()
                 .id(seasonId)
                 .clientId(1)

@@ -16,27 +16,15 @@ import org.springframework.test.context.DynamicPropertySource;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 
 /**
- * Integration test: verifies the {@link RateLimitFilter} is registered in the
- * running Spring context and blocks requests once the bucket is exhausted.
+ * {@link RateLimitFilter} is registered in the running context and blocks requests once the bucket
+ * is exhausted, through the full filter chain on a real server.
  *
- * Uses a real server (RANDOM_PORT) so the full filter chain executes.
- * Relies on {@link AbstractPostgresIT} for the Testcontainers Postgres setup.
+ * Pins the limit to {@link #LIMIT} rather than the ambient RATE_LIMIT_REQUESTS_PER_MINUTE, which
+ * dev and test envs often set very high.
  *
- * Pins the configured limit to {@link #LIMIT} via {@link DynamicPropertySource} rather than
- * relying on the ambient RATE_LIMIT_REQUESTS_PER_MINUTE env var (dev/test envs commonly set this
- * very high to disable throttling during manual testing, which would make this test impractically
- * slow or flaky otherwise).
- *
- * NOTE: Spring caches the test application context, so all test methods share
- * the same {@link RateLimitFilter} bean — and since every request originates
- * from the same loopback address, the same per-IP bucket. Tests
- * that exhaust the bucket must run in isolation — see {@link DirtiesContext} if
- * that becomes necessary. Currently the two tests here are ordered so that the
- * within-limit check runs first.
- *
- * The actuator health exemption is tested at the unit level in
- * {@link RateLimitFilterTest} where there is no redirect interference from
- * Spring Security.
+ * ⚠️ The cached context shares one filter bean, and every request comes from loopback, so all tests
+ * share one bucket: the within-limit test is ordered first. The actuator exemption is covered in
+ * {@link RateLimitFilterTest}, clear of Spring Security's redirects.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class RateLimitFilterIT extends AbstractPostgresIT {

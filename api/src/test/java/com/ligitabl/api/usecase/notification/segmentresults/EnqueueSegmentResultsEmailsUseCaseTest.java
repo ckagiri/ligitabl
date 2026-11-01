@@ -295,9 +295,8 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
         }
 
         /**
-         * The quarter must be read over its own window (1–9), not the boundary sprint's (5–9).
-         * Wiring boards by exact window means a wrong window would yield an empty board and no
-         * quarter block at all.
+         * The quarter must be read over its own window (1–9), not the sprint's (5–9). Boards are
+         * wired by exact window, so the wrong one yields no quarter block.
          */
         @Test
         @DisplayName("a sprint+quarter boundary reports both, over their own windows")
@@ -479,9 +478,8 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
         }
 
         /**
-         * The collision this key exists to prevent: at round 38 the sprint/quarter boundary and the
-         * later season completion share season, round and user, so a key without the scope would
-         * make the second insert a no-op and the champion would never be told.
+         * At round 38 the sprint/quarter boundary and the season completion share season, round and
+         * user; without the scope in the key the second insert no-ops and the champion is never told.
          */
         @Test
         @DisplayName("round and season scopes produce different idempotency keys")

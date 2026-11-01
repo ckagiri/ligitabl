@@ -137,9 +137,8 @@ class ContestSeasonSupportTest {
 
     @Test
     void isJoinWindowClosed_singleSprintContest_staysOpenWhileOpeningRoundIsOpen() {
-        // Regression: a contest whose entire window is one sprint (its final sprint IS its own
-        // opening round) must not be locked out from round 1 — only once that round stops being
-        // OPEN, matching the same boundary joining itself uses (ContestJoinWindow).
+        // A one-sprint contest's final sprint is its own opening round: it locks once that round
+        // stops being OPEN, not from round 1, the same boundary joining uses (ContestJoinWindow).
         Contest singleSprintContest = Contest.builder()
                 .id(UUID.randomUUID())
                 .seasonId(seasonId)

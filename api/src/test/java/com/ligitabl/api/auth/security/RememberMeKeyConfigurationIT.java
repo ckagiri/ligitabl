@@ -21,19 +21,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 
 /**
- * Guards the remember-me key wiring in {@code SecurityConfig}.
+ * Guards the remember-me key wiring in {@code SecurityConfig}. Without an explicit
+ * {@code .key(...)}, {@code RememberMeConfigurer} can't infer the key through
+ * {@link QuietRememberMeServices} and picks a random one per startup, so every auto-login fails
+ * the provider's key-hash check and the cookie is cancelled, with no error anywhere.
  *
- * <p><b>The bug this exists to catch.</b> {@code RememberMeConfigurer} can only infer the
- * key from the services bean when that bean is an {@code AbstractRememberMeServices}. Ours
- * is wrapped in {@link QuietRememberMeServices}, so without an explicit {@code .key(...)}
- * the configurer silently falls back to {@code UUID.randomUUID()} — a different key on
- * every startup. Auto-login then always fails {@code RememberMeAuthenticationProvider}'s
- * key-hash check, and {@code RememberMeAuthenticationFilter} responds by calling
- * {@code loginFail()}, cancelling the user's cookie. The symptom is remember-me never
- * working on any device, with no error surfaced anywhere.
- *
- * <p>Nothing else in the suite catches it: the services themselves behave correctly in
- * isolation, and the breakage only exists in the assembled filter chain.
+ * <p>Only the assembled filter chain shows this; the services behave correctly in isolation.
  */
 @SpringBootTest
 class RememberMeKeyConfigurationIT extends AbstractPostgresIT {

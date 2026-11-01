@@ -39,10 +39,8 @@ import com.ligitabl.model.repo.UserRepo;
 /**
  * Full-stack coverage of the email-verification web flow: GET /auth/verify-email page states and
  * POST /profile/resend-verification. Registration goes through the real web form (Turnstile
- * mocked, same rationale as AuthControllerRegisterFormIT), so tokens are created by the real
- * post-registration hook. The impersonation-blocked path (403) is exercised live
- *  — wiring an admin + impersonation session through TestRestTemplate isn't worth the
- * plumbing here given the guard is the handler's first line, identical to set-password.
+ * mocked), so the real post-registration hook creates the tokens. The impersonation-blocked 403 is
+ * not covered here: the guard is the handler's first line, as in set-password.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class EmailVerificationFlowIT extends AbstractPostgresIT {
@@ -50,9 +48,8 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
     private static final Pattern CSRF_PATTERN = Pattern.compile("name=\"_csrf\"\\s+value=\"([^\"]+)\"");
 
     /**
-     * Session-sensitive calls need this client: the injected TestRestTemplate auto-follows
-     * redirects, which both swallows the login response's Set-Cookie headers (the followed
-     * request gets a fresh anonymous session) and hides the 302s these tests assert on.
+     * Session-sensitive calls need this client: the injected TestRestTemplate follows redirects,
+     * which drops the login response's Set-Cookie and hides the 302s these tests assert on.
      */
     private final org.springframework.web.client.RestTemplate web = buildNoRedirectTemplate();
 
@@ -93,11 +90,7 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
     @Autowired
     org.jooq.DSLContext dsl;
 
-    /**
-     * The application's own {@code Clock} bean (systemUTC), not a frozen one: this test drives the
-     * real registration flow end to end, so the token it reads back was minted from this same bean
-     * milliseconds earlier.
-     */
+    /** The application's own {@code Clock} bean, not a frozen one: the real registration flow mints the token from it. */
     @Autowired
     Clock clock;
 
@@ -120,13 +113,9 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
         var competition = com.ligitabl.model.db.tables.TCompetition.T_COMPETITION;
         var season = com.ligitabl.model.db.tables.TSeason.T_SEASON;
 
-        // The competition is resolved by SLUG, not assumed to be at COMPETITION_ID.
-        //
-        // Every IT shares one Testcontainers Postgres, and several seed their own
-        // "premier-league" competition under a random PK (InPlaySeasonFixture, SegmentResultsChainIT)
-        // without cleaning up. c_slug is unique, so an insert pinned to COMPETITION_ID then
-        // conflicts on the slug and onConflictDoNothing() silently does nothing — leaving no row at
-        // COMPETITION_ID for the season's FK to reference.
+        // Resolve the competition by slug, not COMPETITION_ID. Other ITs seed "premier-league" under
+        // random PKs in the shared container and c_slug is unique, so an insert pinned to
+        // COMPETITION_ID silently does nothing via onConflictDoNothing().
         UUID competitionId = dsl.select(competition.PK_ID)
                 .from(competition)
                 .where(competition.C_SLUG.eq("premier-league"))
@@ -141,11 +130,8 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
                 .onConflictDoNothing()
                 .execute();
 
-        // Same trap as the competition above, one level down. Every IT that seeds a season now takes
-        // its slug from TestCalendar, so they all seed the *same* slug — and c_slug is unique, so an
-        // insert pinned to SEASON_ID conflicts with whichever IT got there first and
-        // onConflictDoNothing() silently does nothing, leaving no row at SEASON_ID for the
-        // active-season pointer below. Resolve by slug first, exactly as the competition does.
+        // Same trap one level down: every IT takes its season slug from TestCalendar, so resolve the
+        // season by slug too.
         UUID seasonId = dsl.select(season.PK_ID)
                 .from(season)
                 .where(season.C_SLUG.eq(TestCalendar.SEASON_SLUG))
@@ -166,9 +152,8 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
                 .onConflictDoNothing()
                 .execute();
 
-        // Point the competition at this class's season regardless of which one it already had:
-        // NavbarControllerAdvice resolves the active season on every authenticated render, and a
-        // leftover season from another IT may since have been truncated away.
+        // Point the competition at this class's season regardless: NavbarControllerAdvice resolves
+        // the active season on every authenticated render, and another IT's may be truncated away.
         dsl.update(competition)
                 .set(competition.FK_ACTIVE_SEASON_ID, seasonId)
                 .where(competition.PK_ID.eq(competitionId))
@@ -348,16 +333,9 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
                 .as("login must redirect on success")
                 .isEqualTo(302);
 
-        // The login response sets several cookies (remember-me among them); only the session
-        // cookie carries the authenticated session. Last one wins if fixation protection
-        // reissues it.
-        //
-        // Both names are accepted deliberately. Sessions live in Postgres via Spring Session
-        // (spring.session.store-type=jdbc), whose cookie is SESSION — not the servlet
-        // container's JSESSIONID. This test matched only JSESSIONID and so failed on every
-        // login from the moment Spring Session was introduced. The failure message lists what
-        // actually arrived, so the next rename is a one-run diagnosis rather than an
-        // investigation.
+        // Of the login response's cookies only the session cookie carries the session; last one wins
+        // if fixation protection reissues it. Spring Session (store-type=jdbc) names it SESSION, not
+        // JSESSIONID, so accept both; the failure message lists what arrived.
         List<String> setCookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
         assertThat(setCookies).as("login must set cookies").isNotNull();
         String sessionCookie = setCookies.stream()

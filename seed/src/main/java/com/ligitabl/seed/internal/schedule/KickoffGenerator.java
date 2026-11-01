@@ -31,20 +31,12 @@ public class KickoffGenerator {
         this.random = new Random(seed);
     }
 
-    /**
-     * Generates kickoff times for a round of matches.
-     *
-     * @param roundPosition Round number (1-based)
-     * @param totalMatches Number of matches in the round
-     * @param seasonStartDate Season start date
-     * @return List of kickoff times
-     */
+    /** @param roundPosition 1-based */
     public List<LocalDateTime> generateKickoffs(
             int roundPosition,
             int totalMatches,
             LocalDate seasonStartDate) {
 
-        // Find the weekend for this round
         LocalDate weekendStart = findWeekendForRound(roundPosition, seasonStartDate);
         LocalDate saturday = weekendStart;
         LocalDate sunday = weekendStart.plusDays(1);

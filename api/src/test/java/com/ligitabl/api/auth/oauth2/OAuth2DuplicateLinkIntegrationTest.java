@@ -32,15 +32,8 @@ import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.UserRepo;
 
 /**
- * Integration tests for the duplicate Google account linking scenario in
- * {@link OAuth2AuthenticationSuccessHandler}.
- *
- * <p>Verifies that when a user tries to link a Google account already belonging to another user:
- * <ul>
- *   <li>the original user's session auth is restored (not left as OAuth2/null),</li>
- *   <li>an error feedback message is stored in session,</li>
- *   <li>the response redirects to /settings/connected-accounts.</li>
- * </ul>
+ * Linking a Google account that already belongs to another user restores the original session
+ * auth, stores an error message in session, and redirects to the connected-accounts page.
  */
 class OAuth2DuplicateLinkIntegrationTest {
 
@@ -79,10 +72,8 @@ class OAuth2DuplicateLinkIntegrationTest {
 
         handler.onAuthenticationSuccess(request, response, oauthToken);
 
-        // Redirected to connected accounts
         assertThat(response.getRedirectedUrl()).isEqualTo("/profile/connected-accounts");
 
-        // Error feedback stored in session
         assertThat(session.getAttribute(OAuth2AuthenticationSuccessHandler.LINKING_FEEDBACK_MESSAGE_SESSION_KEY))
                 .isEqualTo("That Google account is already linked to another LigiPredictor account.");
         assertThat(session.getAttribute(OAuth2AuthenticationSuccessHandler.LINKING_FEEDBACK_TYPE_SESSION_KEY))

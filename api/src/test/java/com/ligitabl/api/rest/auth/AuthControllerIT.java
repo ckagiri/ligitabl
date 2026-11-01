@@ -55,10 +55,8 @@ class AuthControllerIT extends AbstractPostgresIT {
     @Autowired
     PublicIdGenerator publicIdGenerator;
 
-    // Mocked so these tests never make a real network call to Cloudflare — TurnstileClient's own
-    // HTTP behavior is covered by TurnstileClientTest (WireMock). Defaults to "verification
-    // passes" so every existing test keeps working; individual tests override this to simulate a
-    // rejected/failed verification.
+    // Mocked so no test calls Cloudflare (TurnstileClientTest covers the HTTP side). Defaults to
+    // "verification passes"; tests override it to simulate a rejection.
     @MockBean
     TurnstileClient turnstileClient;
 
@@ -229,9 +227,7 @@ class AuthControllerIT extends AbstractPostgresIT {
 
     @Test
     void shouldRegisterSuccessfullyWhenTurnstileDisabledEvenWithAnUnverifiedToken() {
-        // The kill-switch skips the *verify* call entirely — it doesn't change the DTO's @NotBlank
-        // requirement, so some non-blank string must still be sent, but its content is never
-        // checked against Cloudflare in this state.
+        // The kill-switch skips the verify call, not the DTO's @NotBlank, so some token is still sent.
         given(turnstileClient.isEnabled()).willReturn(false);
         given(turnstileClient.verify(any(), any()))
                 .willReturn(Either.left(new TurnstileError.VerificationFailed(List.of("would-have-failed"))));

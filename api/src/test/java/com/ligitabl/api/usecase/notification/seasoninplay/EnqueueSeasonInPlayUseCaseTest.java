@@ -35,16 +35,12 @@ import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 /**
- * Almost every case here asserts that nothing is written. That is the point: this enqueuer runs
- * every 15 minutes and spends nearly all of its life legitimately skipping, so the guards are
- * the behaviour worth pinning — a regression that makes it fire early is far more damaging than
- * one that makes it fire late, since ROUND_LOCKED is the designed catch-up path.
+ * Almost every case asserts that nothing is written: the enqueuer polls and nearly always skips,
+ * so the guards are the behaviour. Firing early is far worse than firing late, since ROUND_LOCKED
+ * is the catch-up path.
  *
- * <p>Fixtures are built relative to {@code OffsetDateTime.now()} rather than a frozen instant.
- * That is now a choice rather than a constraint: {@link Season#isInPlay(java.time.Instant)} takes
- * the instant, and the enqueuer passes {@code clock.instant()}. Nothing here asserts a specific
- * instant — every case is "far enough inside/outside the window" — so converting the fixtures would
- * buy nothing. A case that wants a boundary should declare its own anchor and pin the clock to it.
+ * <p>Fixtures are relative to {@code OffsetDateTime.now()}: no case needs a specific instant. One
+ * that wants a boundary should declare its own anchor and pin the clock to it.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -207,8 +203,8 @@ class EnqueueSeasonInPlayUseCaseTest {
 
     @Test
     void skips_whenRoundOneIsAlreadyLocked() {
-        // The late-fire guard: round-0 rows are scored from round 1, so creating them now would
-        // leave these users a wrong result for it.
+        // Round-0 rows are scored from round 1, so creating them once it has locked would leave a
+        // wrong result.
         when(roundSupport.resolveJoinEligibilityStatus(any())).thenReturn(RoundStatus.LOCKED);
 
         enqueuer.execute();

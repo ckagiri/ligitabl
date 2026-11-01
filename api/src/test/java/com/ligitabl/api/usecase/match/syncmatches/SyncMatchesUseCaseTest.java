@@ -40,9 +40,6 @@ import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.domain.league.SeasonSlug;
 import com.ligitabl.model.repo.MatchRepo;
 
-/**
- * Ported from .art/testing/SyncMatchesUseCaseTest.java.
- */
 @ExtendWith(MockitoExtension.class)
 class SyncMatchesUseCaseTest {
 

@@ -96,11 +96,7 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
         savePrediction(OPENING_UNUSED, null);
     }
 
-    /**
-     * {@code openingCommittedRound} is a primitive with no explicit "unused" value — 0 works
-     * here only because round positions start at 1. Named here so the fixtures do not read as
-     * arbitrary zeroes.
-     */
+    /** {@code openingCommittedRound} has no "unused" value; 0 works because round positions start at 1. */
     private static final int OPENING_UNUSED = 0;
 
     private static final int ROUND_ZERO = 0;
@@ -345,10 +341,8 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("a legacy row with openingCommittedRound 0 is still rejected at its join round")
         void legacyRowWithoutCommittedRoundIsStillRejected() {
-            // Rows predating the openingCommittedRound column (backfilled to 0) can have
-            // atRoundNumber == this round while the field says 0 — which is why that field alone
-            // cannot decide this: only the atRoundNumber check rejects here. Fresh joins stamp
-            // openingCommittedRound = atRoundNumber and so trip either half of the OR.
+            // Rows predating openingCommittedRound (backfilled to 0) can have atRoundNumber == this
+            // round, so only the atRoundNumber half of the OR rejects here. Fresh joins stamp both.
             savePrediction(OPENING_UNUSED, MID_SEASON, CURRENT_ROUND);
 
             assertThat(swap("MCI", "ARS").getLeft()).isInstanceOf(SwapError.OpeningAlreadyUsed.class);
@@ -357,9 +351,8 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("an unmerged pre-season registration must merge before using the window")
         void unmergedPreSeasonRegistrationMustMergeFirst() {
-            // Round-0 row: the shape auto-registration writes. Allowing the swap would set
-            // atRoundNumber and silently convert it to in-play, after which resolveJoinPlan
-            // reports AlreadyJoined.
+            // The round-0 shape auto-registration writes. Allowing the swap would set atRoundNumber
+            // and quietly make it in-play, after which resolveJoinPlan reports AlreadyJoined.
             savePrediction(OPENING_UNUSED, null, ROUND_ZERO);
 
             assertThat(swap("MCI", "ARS").getLeft()).isInstanceOf(SwapError.PreSeasonMergeRequired.class);

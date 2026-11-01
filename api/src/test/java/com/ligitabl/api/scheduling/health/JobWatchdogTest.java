@@ -84,7 +84,7 @@ class JobWatchdogTest {
         clock.advance(Duration.ofHours(3));
 
         watchdog.checkHeartbeats();
-        clock.advance(Duration.ofHours(7)); // past the 6h cooldown
+        clock.advance(Duration.ofHours(7)); // past the alert cooldown
         watchdog.checkHeartbeats();
 
         verify(adminNotificationService, times(2)).notifyJobStalled(any(), any(), any(), any(), anyLong());

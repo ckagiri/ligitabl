@@ -15,12 +15,8 @@ import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.domain.league.SeasonSlug;
 
 /**
- * {@link SeasonPhase} drives the season-phase banners on the homepage and the predictions page —
- * which phase is shown, and the "opens in N days" countdowns — and had no test of any kind.
- *
- * <p>It was written when the class was given an explicit instant to resolve against. The gap was
- * found by mutation: shifting that instant 400 days into the future changed nothing anywhere in the
- * suite, so every countdown and every phase flag this produces was unverified.
+ * {@link SeasonPhase} drives the season-phase banners on the homepage and the predictions page:
+ * which phase is shown, and the "opens in N days" countdowns.
  */
 @DisplayName("SeasonPhase.resolve")
 class SeasonPhaseTest {
@@ -87,9 +83,8 @@ class SeasonPhaseTest {
     }
 
     /**
-     * The reason {@code resolve} takes an instant rather than reading the clock six times: every
-     * field has to describe the same moment. Resolving the same season a day apart must move the
-     * countdown by exactly one day — and, at the boundary, must move the phase itself.
+     * Every field describes the one instant passed in: a day later moves the countdown by exactly
+     * one day and, at the boundary, the phase itself.
      */
     @Test
     void everyFieldIsDerivedFromTheOneInstantPassedIn() {

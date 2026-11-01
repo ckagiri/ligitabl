@@ -234,8 +234,8 @@ class GetFinalTableUseCaseTest {
 
         var data = useCase.execute(userId, "abc123", "Foobar").get();
 
-        // Shorthand, and specifically not the SeasonSlug record's toString: interpolating that
-        // yields ".../SeasonSlug[value=2026-27]" and every share link is broken.
+        // Shorthand, not the SeasonSlug record's toString, which would put
+        // ".../SeasonSlug[value=…]" in every share link.
         assertThat(data.shareUrl())
                 .isEqualTo("https://ligipredictor.test/final-table/u/abc123/"
                         + SeasonSlug.of(TestCalendar.SEASON_SLUG).toShorthand());
@@ -247,9 +247,8 @@ class GetFinalTableUseCaseTest {
 
     @Test
     void buildsAShareUrlBeforeTheFirstSaveSoTheCardCanAppearWithoutAReload() {
-        // The URL is knowable before a row exists, and saving is a client-side POST that never
-        // re-renders the page — so it has to be on hand for the moment the first save lands.
-        // Whether the card is *shown* is the client's call, gated on hasEntry.
+        // Known before a row exists: the first save is a client-side POST that never re-renders, so
+        // the URL must already be on hand. Showing the card is the client's call, gated on hasEntry.
         UUID userId = UUID.randomUUID();
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.empty());
 
@@ -288,9 +287,8 @@ class GetFinalTableUseCaseTest {
 
     @Test
     void cleansMarkupOutOfTheOwnersName() {
-        // Stored names are validated for length only, so markup is already in the data. It is inert
-        // in every render path (Thymeleaf escapes), but it would be painted verbatim onto the card.
-        // Legible text is salvaged rather than blanked, so the card can still be personalised.
+        // Stored names are validated for length only. Markup is inert in every render path, but would
+        // be painted verbatim onto the card, so legible text is salvaged rather than blanked.
         UUID userId = UUID.randomUUID();
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
 

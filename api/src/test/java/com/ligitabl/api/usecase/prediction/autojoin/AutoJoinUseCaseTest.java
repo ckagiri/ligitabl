@@ -185,9 +185,8 @@ class AutoJoinUseCaseTest {
 
     @Test
     void roundLockedDatabaseFailure_abortsLoopImmediatelyInsteadOfBlamingTheRemainingUsers() {
-        // A DataAccessException aborts the shared transaction, so every later user would fail
-        // too and be logged as if at fault. The loop must stop at the real culprit and let the
-        // whole batch retry.
+        // A DataAccessException aborts the shared transaction, so the loop must stop at the real
+        // culprit and let the whole batch retry.
         givenLockedRound(1);
         UUID firstUser = UUID.randomUUID();
         UUID laterUser = UUID.randomUUID();
@@ -314,9 +313,8 @@ class AutoJoinUseCaseTest {
 
     @Test
     void seasonInPlayWritesTheWelcomeFanoutEvenWhenNobodyNeededAutoJoining() throws Exception {
-        // The trap: the ROUND_LOCKED path returns early on an empty candidate list. Doing that
-        // here would silently skip welcoming genuine pre-season registrants, who exist regardless
-        // of whether anyone needed auto-joining.
+        // Unlike the ROUND_LOCKED path, an empty candidate list must not return early: genuine
+        // pre-season registrants still need welcoming.
         givenInPlaySeason();
         givenEligible();
 

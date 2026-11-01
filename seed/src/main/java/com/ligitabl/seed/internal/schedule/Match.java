@@ -1,12 +1,6 @@
 package com.ligitabl.seed.internal.schedule;
 
-/**
- * Represents a single match between two teams.
- *
- * @param home the home team
- * @param away the away team
- * @param <T> the type of team identifier (String, Integer, custom Team object, etc.)
- */
+/** @param <T> the team identifier type */
 public record Match<T>(T home, T away) {
 
     /**

@@ -19,11 +19,8 @@ import com.ligitabl.model.repo.OutboxRepo;
 
 /**
  * Deliberately delayed delivery: {@link OutboxEvent#createAvailableAt} parks a row in PENDING until
- * a chosen time, so a fan-out can be computed now and delivered later.
- *
- * <p>Real Postgres because every claim here is decided by the <em>database</em> clock —
- * {@code available_at <= now()} inside the claim statement — so a mocked repo or an injected
- * {@link java.time.Clock} would be asserting against the wrong clock entirely.
+ * a chosen time. Real Postgres, because the claim compares {@code available_at <= now()} on the
+ * database clock, which neither a mocked repo nor an injected {@link java.time.Clock} sees.
  */
 @SpringBootTest
 @DisplayName("Outbox delayed delivery (real Postgres)")
@@ -69,7 +66,7 @@ class OutboxDelayedDeliveryIT extends AbstractPostgresIT {
                 .orElseThrow()
                 .getAvailableAt();
 
-        // The whole feature rests on save() no longer leaving this column to its DB default.
+        // save() must write this column rather than leave it to the DB default.
         assertThat(stored).isAfter(before.plus(Duration.ofHours(23)));
     }
 
@@ -109,9 +106,8 @@ class OutboxDelayedDeliveryIT extends AbstractPostgresIT {
     void stuckSweepIgnoresDelayedPendingRows() {
         OutboxEvent delayed = saveDelayed(Duration.ofDays(1));
 
-        // The sweep's predicate is available_at < olderThan; a cutoff in the far future satisfies
-        // it for every row, so only the status filter can save this one. If resetStuckProcessing
-        // ever drops that filter, a delayed event would be silently reaped as "stuck".
+        // A far-future cutoff satisfies available_at < olderThan for every row, so only the status
+        // filter keeps a delayed event from being reaped as "stuck".
         outboxRepo.resetStuckProcessing(Instant.now().plus(Duration.ofDays(365)));
 
         assertThat(statusOf(delayed)).isEqualTo(OutboxEvent.Status.PENDING.name());

@@ -277,9 +277,8 @@ class WhatIfControllerTest {
     }
 
     /**
-     * Refresh resyncs the round itself, not just the scores — the client judges its saved scores and
-     * swaps against these fixtures, so a stale set would have it reasoning about the round as it was
-     * when the page was rendered.
+     * Refresh resyncs the round, not just the scores: the client judges its saved scores and swaps
+     * against these fixtures, which must not be the page-render snapshot.
      */
     @Test
     void savedScores_shouldReturnRoundFixturesAndOpenState() {
@@ -369,9 +368,8 @@ class WhatIfControllerTest {
 
         String view = controller.page(principal, model, response, null);
 
-        // A locked round still renders the page (read-only) instead of bouncing away, so a user
-        // can revisit what they'd entered until the round advances — only isCurrentRound still
-        // gates access (see the two tests below).
+        // A locked round still renders read-only, so a user can revisit their entries until the
+        // round advances; only isCurrentRound gates access.
         assertEquals("what-if", view);
         assertEquals(false, model.asMap().get("roundOpen"));
     }

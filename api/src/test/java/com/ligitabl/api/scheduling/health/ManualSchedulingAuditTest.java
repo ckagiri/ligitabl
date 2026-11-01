@@ -15,19 +15,17 @@ import org.junit.jupiter.api.Test;
 /**
  * Pins the set of classes that arm their own next run via {@code taskScheduler.schedule(...)}.
  *
- * <p>⚠️ This cannot verify that such a class re-arms on every code path — that needs control-flow
- * analysis. All it does is force a human to read the 2026-09-06 incident note before adding a
- * third site, because the failure mode is not obvious and cost five days of silent downtime.
- * {@code MatchSyncSchedulerTest#reentrantSkip_stillSchedulesNextSync} is the real behavioural guard.
+ * <p>⚠️ This cannot verify that a class re-arms on every code path. It only makes adding a third
+ * site a deliberate act, because a chain that fails to re-arm stops silently.
+ * {@code MatchSyncSchedulerTest#reentrantSkip_stillSchedulesNextSync} is the behavioural guard.
  */
 class ManualSchedulingAuditTest {
 
     private static final String PATTERN = "taskScheduler.schedule(";
 
     /**
-     * MatchSyncScheduler re-arms a chain (the thing that broke). RoundAdvancementService fires a
-     * one-shot but persists advance_at and has RoundAdvancementRecovery sweep it on startup — the
-     * pattern to copy if a third site is ever needed.
+     * MatchSyncScheduler re-arms a chain. RoundAdvancementService fires a one-shot but persists
+     * advance_at, and RoundAdvancementRecovery sweeps it on startup: the pattern to copy.
      */
     private static final Set<String> ALLOWED = Set.of("MatchSyncScheduler.java", "RoundAdvancementService.java");
 

@@ -139,8 +139,7 @@ class NavbarFinalTableNavTest {
 
     @Test
     void aGuestDoesNotSeeTheLinkOnceEntryIsClosed() {
-        // Round 1 is locked or the season is done: pointing a guest at a game they can no longer
-        // join is worse than staying quiet.
+        // Round 1 is locked or the season is done: don't point a guest at a game they can't join.
         signOut();
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(finalTableSupport.isEntryOpen(season)).thenReturn(false);
@@ -189,9 +188,8 @@ class NavbarFinalTableNavTest {
 
     @Test
     void entryOpenIsFalseForAPlayerWhoseTableIsLockedEvenThoughTheLinkStays() {
-        // The distinction between the two: a player with a locked table keeps the nav link, because
-        // visiting it is still worth it — but the "go predict the final table" prompt must not
-        // appear, because there is nothing left to enter.
+        // A player with a locked table keeps the nav link, which is still worth visiting, but not the
+        // "go predict the final table" prompt: there is nothing left to enter.
         UUID userId = signInWithId();
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(finalTableSupport.isEntryOpen(season)).thenReturn(false);

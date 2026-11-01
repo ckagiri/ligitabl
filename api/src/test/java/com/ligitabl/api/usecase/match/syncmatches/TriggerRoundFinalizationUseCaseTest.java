@@ -21,9 +21,6 @@ import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
-/**
- * Ported from .art/testing/TriggerRoundFinalizationUseCaseTest.java.
- */
 @ExtendWith(MockitoExtension.class)
 class TriggerRoundFinalizationUseCaseTest {
 

@@ -14,9 +14,9 @@ import com.ligitabl.model.repo.FinalTablePredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 /**
- * The dev trigger overwrites real scores with provisional ones, so it is guarded twice. This pins
- * both guards — and specifically that the profile is the load-bearing one, since a flag alone is one
- * application.yml mistake away from being reachable in production.
+ * The dev trigger overwrites real scores with provisional ones, so it is guarded by a flag and a
+ * profile. The profile is the guard that must hold: a flag is one application.yml mistake from
+ * production.
  */
 class DevFinalTableControllerGuardTest {
 
@@ -46,10 +46,9 @@ class DevFinalTableControllerGuardTest {
     }
 
     /**
-     * Profiles are set through {@code spring.profiles.active} rather than by swapping in a
-     * MockEnvironment: replacing the environment discards the property sources
-     * {@code withPropertyValues} writes into, so the flag would never reach the condition and the
-     * "absent" cases would pass for the wrong reason.
+     * Profiles go through {@code spring.profiles.active}, not a MockEnvironment: replacing the
+     * environment discards what {@code withPropertyValues} writes, so the "absent" cases would pass
+     * for the wrong reason.
      */
     private ApplicationContextRunner runnerWithProfiles(String... profiles) {
         return new ApplicationContextRunner()
@@ -65,7 +64,7 @@ class DevFinalTableControllerGuardTest {
 
     @Test
     void isAbsentUnderTheProdProfileEvenWithTheFlagOn() {
-        // The load-bearing guard: unreachable rather than merely disabled.
+        // The profile guard: unreachable in prod, not merely disabled.
         runnerWithProfiles("prod").withPropertyValues(FLAG + "=true").run(context -> assertThat(context)
                 .doesNotHaveBean(DevFinalTableController.class));
     }

@@ -57,12 +57,7 @@ class RoundOpeningSwapUseCaseTest {
     @Mock
     private HierarchyValidator hierarchyValidator;
 
-    /**
-     * A real frozen clock, not a mock. Every stub this replaced returned the same instant and
-     * nothing verified interactions on it, so the mock bought nothing — while costing a
-     * {@code lenient()} default, because the season-phase predicates consult the clock on paths
-     * that return before reaching the rest of the use case. A real clock cannot be unstubbed.
-     */
+    /** A real frozen clock, not a mock: a mock needs {@code lenient()} stubbing for paths that return early. */
     private final Instant now = TestCalendar.MID_SEASON;
 
     private final Clock clock = Clock.fixed(now, ZoneOffset.UTC);

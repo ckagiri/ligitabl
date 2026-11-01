@@ -183,9 +183,8 @@ class SaveFinalTablePredictionUseCaseTest {
 
         @Test
         void rejectsAFinalizedRoundOneEvenWithNoMatchesLoaded() {
-            // resolveStatus short-circuits to OPEN when a round has no match rows, before
-            // computeStatus can report FINALIZED. Entry must follow join-eligibility semantics
-            // instead, or a finalized round 1 would accept entries into an already-scored game.
+            // resolveStatus returns OPEN for a round with no matches before checking FINALIZED. Entry
+            // follows join eligibility, or a finalized round 1 would accept entries.
             roundOne = roundOne.toBuilder().finalized(true).build();
             when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
             when(roundRepo.findBySeasonIdOrderByPosition(seasonId)).thenReturn(List.of(roundOne));
@@ -281,8 +280,7 @@ class SaveFinalTablePredictionUseCaseTest {
 
         @Test
         void anEmptyBatchNeverRewindsSettledAtOnASwappedRow() {
-            // The regression that would silently corrupt the tiebreak: a player who swapped in
-            // August and reopens the page must keep their August commitment time.
+            // The tiebreak: a player who swapped in August and reopens the page keeps their August time.
             stubOpenSeason();
             Instant august = now.minusSeconds(86_400 * 30);
             FinalTablePrediction row = existingRow(august.minusSeconds(3600));

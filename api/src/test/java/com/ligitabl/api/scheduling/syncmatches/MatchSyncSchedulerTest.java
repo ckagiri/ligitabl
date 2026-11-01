@@ -300,9 +300,8 @@ class MatchSyncSchedulerTest {
 
     @Test
     void repeatedLockedTicks_writeIdempotentEventEveryTime_relyingOnRepoToDedupe() {
-        // MatchSyncScheduler itself has no in-memory "already saw LOCKED" tracking — it attempts
-        // the write every tick while LOCKED, and relies entirely on OutboxRepo's ON CONFLICT DO
-        // NOTHING (simulated here by the mock always accepting the call) for idempotency.
+        // The scheduler keeps no "already saw LOCKED" state: it writes every tick and relies on
+        // OutboxRepo's ON CONFLICT DO NOTHING (the mock accepting every call) for idempotency.
         when(syncMatchesUseCase.execute(any()))
                 .thenReturn(Either.right(resultWithReason("Kickoff in 45 minutes (soon)", false)))
                 .thenReturn(Either.right(resultWithReason("Kickoff in 40 minutes (soon)", false)));
@@ -368,10 +367,9 @@ class MatchSyncSchedulerTest {
     }
 
     /**
-     * The 2026-09-06 regression. A zero delay scheduled the next run at the same instant, it fired
-     * while the previous one was still inside result.fold(), hit the `running` guard, and returned
-     * without re-arming — orphaning the chain permanently. The schedule() verify is the assertion
-     * that fails against the pre-fix code. See .art/task_89.md.
+     * A zero delay fires the next run while the previous one is still inside result.fold(); it
+     * hits the `running` guard and must still re-arm, or the chain is orphaned for good. The
+     * schedule() verify is the assertion.
      */
     @Test
     void reentrantSkip_stillSchedulesNextSync() throws Exception {

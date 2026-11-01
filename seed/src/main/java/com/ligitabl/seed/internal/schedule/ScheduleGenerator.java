@@ -4,25 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Generates soccer league schedules using the round-robin algorithm.
+ * Double round-robin league schedules: each team plays every other twice, home and away.
  *
- * Designed for leagues where each team plays every other team twice - once at
- * home and once away (double round-robin).
- *
- * @param <T> the type of team identifier (String, Integer, custom Team
- *            object, etc.)
+ * @param <T> the team identifier type
  */
 public class ScheduleGenerator<T> {
 
-    /**
-     * Generates a complete soccer league schedule (double round-robin).
-     * Each team plays every other team twice - once at home and once away.
-     *
-     * @param teams the list of teams in the league (must be even number)
-     * @return complete schedule with home and away matches
-     * @throws IllegalArgumentException if teams list is null, has fewer than 2
-     *                                  teams, or has an odd number of teams
-     */
+    /** @throws IllegalArgumentException if teams is null, has fewer than 2, or an odd number of teams */
     public List<Round<T>> generateSchedule(List<T> teams) {
         validateTeams(teams);
 

@@ -24,13 +24,9 @@ public abstract class AbstractPostgresIT {
         registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
         registry.add("spring.liquibase.enabled", () -> true);
 
-        // Every distinct Spring test context opens its own pool against this one container, and the
-        // contexts are cached rather than closed — so total connections grow with the number of
-        // *distinct* context configurations, not with the number of tests running. At Hikari's
-        // default of 10 the suite reached "FATAL: sorry, too many clients already" against
-        // postgres's default max_connections of 100. Tests run single-threaded within a context, so
-        // a pool this size is ample; capping it is what keeps adding a test configuration from
-        // being a suite-wide hazard.
+        // Spring caches a context per distinct configuration, each with its own pool against this
+        // one container, so connections grow with configurations, not tests. Hikari's default
+        // exhausts postgres's max_connections; tests run single-threaded per context, so this is ample.
         registry.add("spring.datasource.hikari.maximum-pool-size", () -> 3);
         registry.add("spring.datasource.hikari.minimum-idle", () -> 0);
 

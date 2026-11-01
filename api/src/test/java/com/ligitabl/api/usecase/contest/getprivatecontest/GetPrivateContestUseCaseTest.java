@@ -36,10 +36,9 @@ import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 /**
- * Verifies the split introduced for {@code resolveCurrentRound}: the default-segment lookup
- * (via {@link ContestSupport#findCurrentSprint}) uses the finalization-adjusted effective
- * position, while the live-segment check (feeding {@code activeOnly}) and the segment tree keep
- * using the raw, real-time current round position.
+ * The default-segment lookup ({@link ContestSupport#findCurrentSprint}) uses the
+ * finalization-adjusted effective position, while the live-segment check (feeding
+ * {@code activeOnly}) and the segment tree use the raw current round position.
  */
 @ExtendWith(MockitoExtension.class)
 class GetPrivateContestUseCaseTest {
@@ -185,9 +184,8 @@ class GetPrivateContestUseCaseTest {
 
     @Test
     void noSegmentCode_currentRoundNotFinalized_activeOnlyStillDerivedFromRawPosition() {
-        // S3 = 10-14, so raw position 12 is "live" within it; the effective position (11) would
-        // also happen to fall inside S3 here, so pick a returned segment where only the raw
-        // position keeps it "live" to prove activeOnly isn't computed from the effective position.
+        // S3 = 10-14. Pick a segment where only the raw position keeps it "live", to prove
+        // activeOnly isn't computed from the effective position.
         stubCurrentRound(10, false);
         when(contestSupport.findCurrentSprint(any(), any(), anyInt())).thenReturn(CompetitionPhaseFixtures.s("S2"));
 

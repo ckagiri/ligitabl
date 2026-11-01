@@ -9,11 +9,7 @@ import java.util.UUID;
 import org.jooq.DSLContext;
 import org.jooq.Record3;
 
-/**
- * Resolves the "current" season for a competition from t_season date ranges, so seeding
- * config doesn't need to hardcode a season slug that goes stale every time a new season
- * is added.
- */
+/** Resolves the "current" season from t_season date ranges, so seeding config needs no season slug to go stale. */
 public class CurrentSeasonResolver {
 
     private final DSLContext dsl;

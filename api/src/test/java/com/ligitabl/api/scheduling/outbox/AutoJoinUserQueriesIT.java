@@ -20,11 +20,8 @@ import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.UserRepo;
 
 /**
- * The two auto-join queries are deliberately asymmetric — one ignores email flags, the
- * other enforces them — so they are tested side by side against the same fixture. A single
- * cohort of users is set up once and each query is asserted to select a different, exact
- * subset of it; that is the only way the asymmetry is visible as a property rather than as
- * two unrelated assertions.
+ * The two auto-join queries are deliberately asymmetric: one ignores email flags, the other
+ * enforces them. Each is asserted to select a different exact subset of one shared cohort.
  */
 @SpringBootTest
 @DisplayName("Auto-join user queries (real Postgres)")
@@ -102,8 +99,7 @@ class AutoJoinUserQueriesIT extends AbstractPostgresIT {
                         returningPlayerFromLastSeason)
                 .doesNotContain(seenBeforePreSeasonOpened, roundZeroVerified, roundOneVerified);
 
-        // The mirror image, which is what shows the NOT EXISTS is genuinely season-scoped
-        // rather than "has any prediction anywhere": ask about last season instead, and the
+        // The mirror image shows the NOT EXISTS is season-scoped: ask about last season and the
         // same users swap sides.
         assertThat(userRepo.findUnjoinedUserIdsActiveSince(otherSeasonId, PRE_SEASON_OPENED.minusYears(1)))
                 .contains(roundZeroVerified, roundOneVerified)
@@ -198,11 +194,7 @@ class AutoJoinUserQueriesIT extends AbstractPostgresIT {
         return insertUser(email, lastLoginAt, verified, optedOut, OffsetDateTime.now());
     }
 
-    /**
-     * c_update_date must be set on INSERT: {@code trg_t_user_update_ts} is a BEFORE UPDATE
-     * trigger that stamps now(), so any attempt to back-date it with an UPDATE is silently
-     * overwritten.
-     */
+    /** Sets c_update_date on INSERT: the BEFORE UPDATE trigger {@code trg_t_user_update_ts} overwrites any back-dating UPDATE. */
     private UUID insertUser(
             String email, OffsetDateTime lastLoginAt, boolean verified, boolean optedOut, OffsetDateTime updateDate) {
         UUID id = UUID.randomUUID();

@@ -184,10 +184,8 @@ class UpdateSeasonDatesUseCaseTest {
     }
 
     /**
-     * A season that hasn't started yet (future startDate) — used for "upcoming" fixtures so that
-     * setting a future preSeasonOpensAt/predictionsOpenAt on them lands on OFF_SEASON/IN_PLAY
-     * rather than the INACTIVE limbo state a *started* season would fall into under the same
-     * combination (see Season.getSeasonState()'s beforeActualStart/pastActualEnd guards).
+     * Not started yet, so future window dates land on OFF_SEASON/IN_PLAY rather than the INACTIVE a
+     * started season would fall into (Season.getSeasonState()'s beforeActualStart/pastActualEnd).
      */
     private Season upcomingCandidateSeason(UUID id) {
         return Season.builder()
@@ -203,11 +201,7 @@ class UpdateSeasonDatesUseCaseTest {
                 .build();
     }
 
-    /**
-     * INACTIVE: already started (not beforeActualStart), predictions still gated in the future
-     * (not open), but preSeasonOpensAt already in the past (open) — none of OFF_SEASON/IN_PLAY/
-     * PRE_SEASON apply, so Season.getSeasonState() falls through to INACTIVE.
-     */
+    /** Started, predictions not yet open, pre-season already open: none of the other states apply. */
     private Season inactiveSeason(UUID id) {
         return Season.builder()
                 .id(id)

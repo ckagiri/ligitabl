@@ -88,12 +88,8 @@ class AuthControllerRegisterFormIT extends AbstractPostgresIT {
 
         ResponseEntity<String> response = postRegisterForm(newEmail, "Web Form User", "testPassword123", "valid-token");
 
-        // AuthController redirects on success rather than returning a body. The injected
-        // TestRestTemplate follows that redirect (to /my-table), which then legitimately 403s on
-        // its own terms (a POST there needs a CSRF token this test doesn't carry) — unrelated to
-        // Turnstile and not the thing under test here. The real signal that registration actually
-        // succeeded is the persisted row: never 422 (the failure status this suite cares about),
-        // and a real t_user row.
+        // Success redirects to /my-table, which the following TestRestTemplate then gets a 403 from
+        // (no CSRF token), unrelated to Turnstile. The signal is no 422 and a persisted t_user row.
         assertThat(response.getStatusCode().value()).isNotEqualTo(422);
         assertThat(userRepo.findByEmail(Email.create(newEmail))).isPresent();
     }

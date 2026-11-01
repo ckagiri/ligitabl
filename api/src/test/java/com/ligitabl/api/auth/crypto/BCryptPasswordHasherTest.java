@@ -21,7 +21,7 @@ class BCryptPasswordHasherTest {
                 .isFalse();
     }
 
-    /** A Google-only account has no hash; this used to NPE and surface as a 500 on login. */
+    /** A Google-only account has no hash; a login attempt must not NPE into a 500. */
     @Test
     void nullHash_neverMatches() {
         assertThat(hasher.verify(plaintext, null)).isFalse();

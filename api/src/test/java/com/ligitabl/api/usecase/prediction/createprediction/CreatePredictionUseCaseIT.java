@@ -102,15 +102,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         insertRound(roundId, seasonId, 1, RoundStatus.OPEN);
     }
 
-    /**
-     * The frozen {@code MID_SEASON} as an {@link OffsetDateTime}.
-     *
-     * <p>Season fixtures must be dated against the same instant the use case reads from the mocked
-     * clock. They previously used real {@code MID_SEASON()} while the clock was pinned to 2024 — harmless
-     * only while the season predicates read the wall clock themselves and so never consulted this
-     * clock. Now that they take an explicit instant, a fixture and a clock that disagree describe
-     * two different worlds.
-     */
+    /** The frozen {@code MID_SEASON}: season fixtures must be dated against the instant the clock gives. */
     private OffsetDateTime atNow() {
         return OffsetDateTime.ofInstant(MID_SEASON, ZoneOffset.UTC);
     }
@@ -386,9 +378,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
 
         @BeforeEach
         void markSeasonAsPreSeason() {
-            // getSeasonState() only classifies PRE_SEASON when the season's own start date is still
-            // in the future (an upcoming, not-yet-started season) — the class-level fixture uses a
-            // fixed historical 2024/25 window for the in-play tests, so push it out here.
+        // PRE_SEASON needs the season's start date in the future, but the class fixture is in play.
             setSeasonWindow(
                     atNow().toLocalDate().plusDays(1), atNow().toLocalDate().plusMonths(9));
             setPreSeasonOpensAt(atNow().minusDays(1));
@@ -478,9 +468,8 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject the merge when the round-0 row has lost its initialRankings marker")
         void shouldRejectMergeWhenMarkerMissing() {
-            // The other half of "initialRankings is the permanent marker". Every round-0 writer —
-            // a user registering in pre-season, and a RegisterDefaultTableCommand
-            // on behalf of one — sets it precisely so this guard never fires.
+        // The other half of "initialRankings is the permanent marker": every round-0 writer sets it,
+        // so this guard never fires.
             assertThat(useCase.execute(userId, singleSwap("MCI", "ARS")).isRight())
                     .isTrue();
             jdbcTemplate.update(

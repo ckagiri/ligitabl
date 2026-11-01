@@ -25,10 +25,8 @@ class ThymeleafEmailTemplateRendererTest {
         ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
         resolver.setPrefix("templates/");
         resolver.setSuffix(".html");
-        // SpringTemplateEngine (not the bare thymeleaf-core TemplateEngine) so the
-        // SpringStandardDialect is registered — templates use SpringEL's T(...)
-        // operator (e.g. round-results.html's ScoreTier lookup), which the plain
-        // OGNL-based StandardDialect does not support.
+        // SpringTemplateEngine, not the bare TemplateEngine: templates use SpringEL's T(...)
+        // operator (e.g. round-results.html's ScoreTier lookup), which only SpringStandardDialect has.
         SpringTemplateEngine engine = new SpringTemplateEngine();
         engine.setTemplateResolver(resolver);
         renderer = new ThymeleafEmailTemplateRenderer(engine);
@@ -68,10 +66,8 @@ class ThymeleafEmailTemplateRendererTest {
     }
 
     /**
-     * Direct coverage of the HTML→text conversion, because the whole-template test can only
-     * exercise the entities and structures our templates happen to use today. Adding
-     * {@code &nbsp;} handling and asserting it via a template would pass whether or not the code
-     * existed, since no template currently contains one.
+     * Direct coverage of the HTML→text conversion: a template-based test only exercises the entities
+     * today's templates happen to use, so it would pass with {@code &nbsp;} handling missing.
      */
     @Test
     void toPlainTextStripsCodeElementsAndUnescapesEntities() {
@@ -139,12 +135,8 @@ class ThymeleafEmailTemplateRendererTest {
     }
 
     /**
-     * The text part is a real {@code text/plain} alternative now that {@code EmailProvider} sends
-     * it, so it has to read as prose for every template — not just the one that happened to be
-     * inspected.
-     *
-     * <p>These are the assertions whose absence hid the problem: {@code isNotBlank()} passes
-     * happily on a body that is entirely CSS.
+     * The text part is a real {@code text/plain} alternative, so it must read as prose for every
+     * template. {@code isNotBlank()} alone passes on a body that is entirely CSS.
      */
     @Test
     void everyTemplatesTextPartIsProseNotMarkup() {
@@ -181,9 +173,8 @@ class ThymeleafEmailTemplateRendererTest {
     }
 
     /**
-     * A sprint-only podium, the simplest shape. Phase 5 pins the copy itself (the double callout,
-     * the season finale, the ordinal subjects); this exists so the exhaustive-type loop above has
-     * real variables to render with rather than passing vacuously on nulls.
+     * A sprint-only podium, so the exhaustive-type loop above renders real variables rather than
+     * passing vacuously on nulls. The copy itself is pinned elsewhere.
      */
     private static Map<String, Object> segmentResultsData() {
         return Map.of(
@@ -403,14 +394,9 @@ class ThymeleafEmailTemplateRendererTest {
     }
 
     /**
-     * Names the specific entities this template uses, so a regression points straight at the copy
-     * rather than at the renderer.
-     *
-     * <p>The general property is covered for every template by
-     * {@link #everyTemplatesTextPartIsProseNotMarkup}, which asserts no {@code &entity;} survives
-     * anywhere — so this case is strictly subsumed by it. Kept because a failure here reads as
-     * "somebody put {@code &middot;} back in segment-results.html", which is the likelier mistake
-     * and the more useful message; the general test only says the property broke somewhere.
+     * Names the entities this template uses. {@link #everyTemplatesTextPartIsProseNotMarkup}
+     * already covers it, but a failure here says "{@code &middot;} is back in
+     * segment-results.html", the likelier mistake.
      */
     @Test
     void segmentResultsTextBodyCarriesNoRawEntities() {

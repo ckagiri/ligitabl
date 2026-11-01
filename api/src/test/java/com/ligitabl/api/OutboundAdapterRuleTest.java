@@ -13,8 +13,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Outbound adapters translate between the core and the outside world; they don't read or write the
- * domain's repositories. An adapter that does has started making decisions, which belong in a use
- * case (the outbox enqueuers lived here until they moved to usecase/notification).
+ * domain's repositories. An adapter that does has started making decisions, which belong in a use case.
  */
 class OutboundAdapterRuleTest {
 

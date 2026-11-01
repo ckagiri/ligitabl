@@ -196,9 +196,7 @@ class RequestEmailVerificationUseCaseTest {
     @DisplayName("Should allow a resend at the exact instant the cooldown elapses")
     void shouldAllowResendAtTheExactCooldownBoundary() {
         // The throttle is `now.isBefore(earliestResend)`, which is strict, so a request landing
-        // exactly on the boundary goes through. Untestable while the use case read the wall clock:
-        // naming the boundary meant naming an instant that had already passed by the time the
-        // assertion ran, so only "well inside" and "well outside" could be expressed.
+        // exactly on the boundary goes through.
         when(userRepo.findById(userId)).thenReturn(Optional.of(user));
         when(tokenRepo.findLatestForUser(userId))
                 .thenReturn(Optional.of(tokenCreatedAt(TestClock.NOW.minus(2, ChronoUnit.MINUTES))));

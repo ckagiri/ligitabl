@@ -214,11 +214,9 @@ class EnqueueRoundResultsEmailsUseCaseTest {
                 entry(18, alice, 1800, 0),
                 entry(25, bob, 1500, 0));
 
-        // "Previous" boards (fromRound..ROUND-1) drive the isNew*Best flags — the max achieved
-        // strictly before this round. Alice's previous sprint best (150) is below her round
-        // score (175), so round 22 is still a genuine new sprint best. Bob's previous sprint
-        // best (160) already exceeds his round score (150). Season previous bests are left
-        // unchanged from the inclusive board since neither user's round score threatens them.
+        // "Previous" boards (fromRound..ROUND-1) drive the isNew*Best flags. Alice's previous
+        // sprint best is below her round score, so this is a new sprint best; Bob's already
+        // exceeds his. Season bests are untouched by either round score.
         stubBoard(
                 SPRINT.getFrom(),
                 ROUND - 1,
@@ -355,9 +353,8 @@ class EnqueueRoundResultsEmailsUseCaseTest {
 
     @Test
     void tyingAnEarlierSprintBestIsNotFlaggedAsNew() throws Exception {
-        // Alice already hit 175 earlier in the sprint (round 21) and scores 175 again in
-        // round 22 — the inclusive board's maxScore (175) still equals her round score, but
-        // it isn't a *new* best since she already achieved it before this round.
+        // Alice already scored 175 earlier in the sprint, so matching it again isn't a *new* best,
+        // even though the inclusive board's maxScore equals her round score.
         stubBoard(
                 SPRINT.getFrom(),
                 120,
@@ -412,10 +409,8 @@ class EnqueueRoundResultsEmailsUseCaseTest {
 
     @Test
     void sprintStartingAtRoundOneSuppressesSeasonBestCallout() throws Exception {
-        // Sprint S1 (gw1-3, containing round 1) starts the same round as the season —
-        // season-best would be numerically identical to sprint-best (same round range,
-        // 1..currentRound), so season's best-callout is dropped. Quarter is unaffected —
-        // it's a plain standings row, not part of this redundancy check.
+        // S1 starts with the season, so season-best equals sprint-best and the season callout is
+        // dropped. The quarter is a plain standings row, unaffected.
         RoundSpan s1 = span("S1", 1, 25, PhaseType.SPRINT);
         when(competitionRepo.findById(competitionId))
                 .thenReturn(Optional.of(Competition.builder()
