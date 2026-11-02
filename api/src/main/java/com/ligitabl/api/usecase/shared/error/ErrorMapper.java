@@ -1,12 +1,7 @@
 package com.ligitabl.api.usecase.shared.error;
 
 import com.ligitabl.api.shared.errors.*;
-import com.ligitabl.api.shared.errors.UseCaseError;
 
-/**
- * Maps domain exceptions to use case errors, e.g.
- * {@code Either.catching(() -> domainOperation(), ErrorMapper::toUseCaseError)}.
- */
 public class ErrorMapper {
 
     public static int toHttpStatus(UseCaseError error) {
@@ -32,24 +27,5 @@ public class ErrorMapper {
             return 403;
         }
         return 500;
-    }
-
-    public static UseCaseError toUseCaseError(Exception exception) {
-        return switch (exception) {
-                // Standard Java exceptions
-            case IllegalArgumentException e -> UseCaseErrors.validation("Invalid input", e.getMessage());
-
-            case IllegalStateException e -> UseCaseErrors.unprocessableEntity(
-                    "Invalid state for operation: " + e.getMessage());
-
-            case NullPointerException e -> UseCaseErrors.validation(
-                    "Required field is missing", e.getMessage() != null ? e.getMessage() : "A required value is null");
-
-                // Fallback for unknown exceptions
-            default -> UseCaseErrors.unprocessableEntity(
-                    exception.getMessage() != null
-                            ? exception.getMessage()
-                            : exception.getClass().getSimpleName());
-        };
     }
 }

@@ -142,21 +142,19 @@ public class GetDefaultRoundStandingsUseCase
     }
 
     private Either<UseCaseError, Standings> fetchStandings(Season season, Round round) {
-        return Either.catching(
-                () -> standingsRepo
-                        .findBySeasonAndRoundPosition(season.getId(), round.getPosition())
-                        .orElseGet(() -> {
-                            log.debug(
-                                    "No standings found for season={} round={}, returning empty",
-                                    season.getId(),
-                                    round.getPosition());
-                            return Standings.builder()
-                                    .seasonId(season.getId())
-                                    .roundPosition(round.getPosition())
-                                    .rankings(List.of())
-                                    .finalised(false)
-                                    .build();
-                        }),
-                UseCaseErrors::fromException);
+        return Either.right(standingsRepo
+                .findBySeasonAndRoundPosition(season.getId(), round.getPosition())
+                .orElseGet(() -> {
+                    log.debug(
+                            "No standings found for season={} round={}, returning empty",
+                            season.getId(),
+                            round.getPosition());
+                    return Standings.builder()
+                            .seasonId(season.getId())
+                            .roundPosition(round.getPosition())
+                            .rankings(List.of())
+                            .finalised(false)
+                            .build();
+                }));
     }
 }

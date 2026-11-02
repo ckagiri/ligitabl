@@ -1,6 +1,7 @@
 package com.ligitabl.api.usecase.leaderboard.getuserdetail;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -11,6 +12,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.assertj.core.groups.Tuple;
+import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.model.domain.identity.PublicId;
 import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.domain.league.Competition;
@@ -83,6 +86,23 @@ class GetUserDetailUseCaseTest {
                 teamRepo,
                 userRepo,
                 new CompetitionDefaults(DEFAULT_COMPETITION_SLUG));
+    }
+
+    @Test
+    void missing_competition_is_not_found() {
+        given(competitionRepo.findBySlug(DEFAULT_COMPETITION_SLUG)).willReturn(Optional.empty());
+
+        var result = useCase.execute("23456789AB", null, null);
+
+        assertThat(result.getLeft()).isInstanceOf(NotFoundError.class);
+    }
+
+    @Test
+    void database_failure_is_thrown_not_returned() {
+        given(competitionRepo.findBySlug(DEFAULT_COMPETITION_SLUG))
+                .willThrow(new DataAccessException("SQL [select secret_column]"));
+
+        assertThatThrownBy(() -> useCase.execute("23456789AB", null, null)).isInstanceOf(DataAccessException.class);
     }
 
     @Test

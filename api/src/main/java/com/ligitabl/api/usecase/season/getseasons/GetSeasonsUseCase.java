@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.season.shared.SeasonDto;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
@@ -30,7 +29,7 @@ public class GetSeasonsUseCase implements UseCase<GetSeasonsQuery, Either<UseCas
                 .validate(query)
                 .flatMap(q -> hierarchyValidator.validateCompetition(q.competitionSlug()))
                 .map(Competition::getId)
-                .flatMap(Either.catching(seasonRepo::findAllByCompetitionId, UseCaseErrors::fromException))
+                .map(seasonRepo::findAllByCompetitionId)
                 .map(SeasonDto::listOf);
     }
 }

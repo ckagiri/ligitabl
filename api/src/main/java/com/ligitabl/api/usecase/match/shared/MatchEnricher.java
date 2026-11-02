@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.model.domain.league.Match;
 import com.ligitabl.model.domain.league.Team;
 import com.ligitabl.model.repo.TeamRepo;
@@ -26,22 +25,18 @@ public class MatchEnricher {
     private final TeamRepo teamRepo;
 
     public Either<UseCaseError, List<MatchDto>> enrichWithTeams(List<Match> matches) {
-        try {
-            if (matches.isEmpty()) {
-                return Either.right(List.of());
-            }
-
-            Set<UUID> teamIds = matches.stream()
-                    .flatMap(m -> Stream.of(m.getHomeTeamId(), m.getAwayTeamId()))
-                    .collect(Collectors.toSet());
-
-            // Fetch all teams at once
-            List<Team> teams = teamRepo.findAllByIds(teamIds);
-            Map<UUID, Team> teamsById = teams.stream().collect(Collectors.toMap(Team::getId, Function.identity()));
-
-            return Either.right(MatchDto.listOf(matches, teamsById));
-        } catch (Exception e) {
-            return Either.left(UseCaseErrors.fromException(e));
+        if (matches.isEmpty()) {
+            return Either.right(List.of());
         }
+
+        Set<UUID> teamIds = matches.stream()
+                .flatMap(m -> Stream.of(m.getHomeTeamId(), m.getAwayTeamId()))
+                .collect(Collectors.toSet());
+
+        // Fetch all teams at once
+        List<Team> teams = teamRepo.findAllByIds(teamIds);
+        Map<UUID, Team> teamsById = teams.stream().collect(Collectors.toMap(Team::getId, Function.identity()));
+
+        return Either.right(MatchDto.listOf(matches, teamsById));
     }
 }
