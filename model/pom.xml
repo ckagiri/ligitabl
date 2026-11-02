@@ -28,6 +28,7 @@
         <testcontainers.version>1.20.4</testcontainers.version>
         <junit.jupiter.version>5.10.2</junit.jupiter.version>
         <assertj.version>3.26.3</assertj.version>
+        <archunit.version>1.5.1</archunit.version>
         <jakarta.validation.version>3.1.0</jakarta.validation.version>
         <!-- Default: skip jOOQ codegen to allow fast builds; use -Pwith-jooq to enable -->
         <jooq.codegen.skip>true</jooq.codegen.skip>
@@ -111,6 +112,13 @@
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Architecture rules over compiled classes; see docs/architecture.md -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit</artifactId>
+            <version>${archunit.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- JSON mapping for jsonb columns (teams, phases) -->

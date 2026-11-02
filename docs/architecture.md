@@ -17,7 +17,7 @@ interfaces.
     - `prediction`: season and final-table predictions, swaps, scoring, what-ifs.
     - `contest`: contests and entries.
 
-    `AbstractModel` stays in `domain` itself. It imports no Spring, jOOQ or `infra`. Entities (`AbstractModel` subclasses and `User`) are equal by id; an unsaved one equals only itself. Compare fields in tests with `usingRecursiveComparison()`. Entities have no public setters: a state change is a method named for what happens (`Round.markFinalized()`, `Contest.toggleJoining()`), and adapters, the demo seeder and tests that need another shape build a copy with `toBuilder()`.
+    `league` and `identity` depend on no other context; `prediction` and `contest` depend only on `league`. `AbstractModel` stays in `domain` itself. The domain doesn't depend on `repo`, `infra`, `query` or `outbox`, and neither it nor `repo` imports Spring or jOOQ. Entities (`AbstractModel` subclasses and `User`) are equal by id; an unsaved one equals only itself. Compare fields in tests with `usingRecursiveComparison()`. Entities have no public setters: a state change is a method named for what happens (`Round.markFinalized()`, `Contest.toggleJoining()`), and adapters, the demo seeder and tests that need another shape build a copy with `toBuilder()`.
   - `query`: read models that repos return for views, such as leaderboard rows and `UserContestView`. They aren't entities.
   - `outbox`: `OutboxEvent`.
   - `repo`: repository interfaces. These are the persistence ports, so `api` has no second layer of them.
@@ -52,6 +52,13 @@ An inbound adapter may read a repo directly to assemble a view: a lookup for a p
 
 A rule that depends only on one entity's state belongs on the entity, as with `User.canUnlinkGoogle()`. The use case checks it before writing, and the view reads it to decide what to show, so the two can't drift. A use case earns its own class when there is something to do: a write, a transaction, or more than one repo or port to coordinate. A view that only asks the entity a question doesn't need one.
 
+The build checks the write half. An adapter (anything outside `usecase` and `runners`) that calls a repo method whose name doesn't start with a read verb (`find`, `exists`, `count`, `sum`, `is`, `has`, `get`) fails `AdapterRepoWriteRuleTest`. A new read verb counts as a write until it's added there. Three writes are exempt, by class and method, because no rule sits behind them:
+- outbox delivery bookkeeping in `OutboxRelayJob` and `OutboxEventProcessor`: the outbox mechanism itself;
+- `deleteExpired` in the two token cleanup jobs: housekeeping;
+- `clearResults` in `DevFinalTableController`: dev only.
+
+A rule hidden inside a read, such as choosing which users a batch applies to, can't be found that way and stays review-only.
+
 **3. Outbound adapters are reached through ports.**
 This covers `client`, `notification` and `auth`. The use case depends on an interface and the adapter implements it. The port and the types in its signature live in `usecase` (shared ones in `usecase/shared/…`), so the dependency points from the adapter to the core.
 - Examples: `MatchFeed`, `AdminAlerts`, `TokenGenerator`, `EmailProvider`, `EmailTemplateRenderer`.
@@ -69,34 +76,30 @@ The outbox is the exception. `OutboxEventProcessor.processOne` holds one transac
 
 | Rule | Enforced by | Strength |
 |---|---|---|
-| 1. `usecase` doesn't reference `rest`, `web`, `scheduling`, `runners` | `UseCaseDependencyRuleTest` | Build fails |
-| 3. `usecase` doesn't reference `client`, `notification`, `auth` | `UseCaseDependencyRuleTest` | Build fails |
+| 1. `usecase` doesn't depend on `rest`, `web`, `scheduling`, `runners` | `UseCaseDependencyRuleTest` | Build fails |
+| 3. `usecase` doesn't depend on `client`, `notification`, `auth` | `UseCaseDependencyRuleTest` | Build fails |
 | Every `*UseCase` has an `execute` method and no other public methods or nested public types | `UseCaseEntryPointRuleTest` | Build fails |
-| `notification` and `client` don't import `model.repo` | `OutboundAdapterRuleTest` | Build fails |
+| `notification` and `client` don't depend on `model.repo` | `OutboundAdapterRuleTest` | Build fails |
+| 2. Adapters don't call repo writes, bar three exemptions | `AdapterRepoWriteRuleTest` | Build fails |
+| `model`: context direction; `domain` free of `repo`, `infra`, `query`, `outbox`; `domain` and `repo` free of Spring and jOOQ | `ModelDependencyRuleTest` | Build fails |
 | Every `@Scheduled` method is monitored or exempt | `ScheduledJobRegistryTest`, `ManualSchedulingAuditTest` | Build fails |
-| 2. No writes or rules in adapters | Review | None |
+| 2. No business rules in adapters | Review | None |
 | 4, 5 | Review | None |
 
-⚠️ `UseCaseDependencyRuleTest` and `UseCaseEntryPointRuleTest` match **source text** against regexes. A literal that has gone stale, such as a package name after a rename, matches nothing, so the test passes no matter what the code does. After moving or renaming a package, prove that each rule still fails: add a violation, watch the test go red, then remove it.
+The dependency rules are ArchUnit tests over compiled classes, in test scope. Name a package in a rule through `ApiClasses.pkg` (or `pkg` in `ModelDependencyRuleTest`), never a string literal: it throws for a package that no longer exists, so a rule can't go stale after a rename and silently match nothing. A new context under `domain` fails the build until it's added to `ModelDependencyRuleTest` with the contexts it may depend on.
 
 ## Current state
 
 **What holds:**
 - `usecase` has no references to any adapter package, and the build enforces it.
-- `model`'s `domain` and `repo` are free of framework and persistence imports.
+- `model`'s contexts depend in one direction, and `domain` and `repo` are free of Spring and jOOQ. The build enforces both.
+- Adapters don't write through repos outside the three named exemptions, and the build enforces it.
 - Use cases expose only `execute` overloads, and their contract types are top-level.
 - Error types are sealed, and so is every result type that models more than one outcome, so `switch` is exhaustive. A result that only carries success data is a record or a `@Value` class.
 - Expected failures are `Either` values rather than exceptions. Use cases read the time from an injected `Clock`.
 - Use case tests are cheap because of all the above.
 
 **Where it's weaker:**
-- **Business rules leak at the edges.** Adapters with repo access are where rules creep in outside `usecase`: a scheduler choosing who to email, a controller checking account state before a write. The build guards the core from adapters, but nothing yet stops an adapter from growing a rule of its own (gap 2).
-- **Rule 2 relies on review alone,** and a review-only rule erodes.
+- **Business rules leak at the edges.** Adapters with repo access are where rules creep in outside `usecase`: a scheduler choosing who to email, a controller checking account state before calling a use case. The build stops an adapter writing, but not deciding something with what it reads.
+- **Rule 2's business-rule half relies on review alone,** and a review-only rule erodes.
 - **Shared helpers are where coupling builds up.** `usecase` has 16 helper classes (`*Support`, `*Service`, `*Helper`, `*Enricher`) beside 91 use cases. `*Support` especially tends to become the place logic goes when nobody wants to write a use case. Prefer a use case or a domain method.
-
-## Known gaps
-
-| # | Gap | Fix |
-|---|---|---|
-| 1 | The dependency and entry-point rules match source text, not real class dependencies. | Replace them with ArchUnit, test scope only. |
-| 2 | Rule 2 is unenforced. 37 adapter classes import a repo (`web` 21, `auth` 8, `scheduling` 6, `rest` 2), and nearly all only read for a view. The only repo writes in adapters are:<br>• outbox delivery bookkeeping in `OutboxRelayJob` and `OutboxEventProcessor` (`claimBatchForProcessing`, `mark*`, `resetStuckProcessing`): the outbox mechanism itself;<br>• `deleteExpired` in the two token cleanup jobs: housekeeping with no rule;<br>• `predictionRepo.clearResults` in `DevFinalTableController`: dev only.<br>A rule hidden inside a read, such as choosing which users a batch applies to, can't be found by grep or ArchUnit and stays review-only. | An ArchUnit rule that adapters don't call repo write methods, with the three exemptions above named. It starts with no violations. |
