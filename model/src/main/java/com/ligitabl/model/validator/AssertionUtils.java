@@ -2,6 +2,10 @@ package com.ligitabl.model.validator;
 
 import com.ligitabl.model.shared.InvalidValueException;
 
+/**
+ * Checks on values from outside the system, for value objects to use. A failure is shown to the user, so a
+ * guard against a bug throws a plain JDK exception instead.
+ */
 public class AssertionUtils {
     public static void assertArgumentEquals(Object anObject1, Object anObject2, String aMessage) {
         if (!anObject1.equals(anObject2)) {
