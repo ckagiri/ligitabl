@@ -8,6 +8,7 @@ import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 
 import com.ligitabl.api.logging.RequestId;
+import com.ligitabl.api.shared.errors.AuthorizationError;
 import com.ligitabl.api.shared.errors.UnexpectedError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.exceptions.UseCaseException;
@@ -31,5 +32,25 @@ class AuthErrorHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody())
                 .isEqualTo(new AuthDto.ErrorResponse("INTERNAL_ERROR", UnexpectedError.PUBLIC_MESSAGE, null, "req-1"));
+    }
+
+    @Test
+    void notFoundIsA404() {
+        var ex = new UseCaseException(UseCaseErrors.notFound("User", "abc"));
+
+        var response = handler.handleUseCase(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody().code()).isEqualTo("NOT_FOUND");
+    }
+
+    @Test
+    void authorizationErrorIsA403() {
+        var ex = new UseCaseException(new AuthorizationError("Not allowed"));
+
+        var response = handler.handleUseCase(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getBody().code()).isEqualTo("ACCESS_DENIED");
     }
 }

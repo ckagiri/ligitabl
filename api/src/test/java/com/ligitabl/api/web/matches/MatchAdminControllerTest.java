@@ -257,7 +257,7 @@ class MatchAdminControllerTest {
         String view = controller.transition("home-vs-away", 5, "LIVE", null, null, new ExtendedModelMap(), response);
 
         assertThat(view).isEqualTo("fragments/match-admin-modal :: error-message");
-        assertThat(response.getStatus()).isEqualTo(422);
+        assertThat(response.getStatus()).isEqualTo(400);
         assertThat(response.getHeader("HX-Trigger")).isNull();
     }
 }
