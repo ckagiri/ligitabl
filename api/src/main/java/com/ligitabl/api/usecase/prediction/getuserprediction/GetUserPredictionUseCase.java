@@ -34,6 +34,7 @@ import com.ligitabl.model.domain.prediction.SwapEligibility;
 import com.ligitabl.model.repo.*;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Resolves the viewer's predictions and access mode: a guest gets fallback rankings READONLY; a
@@ -42,6 +43,7 @@ import lombok.AllArgsConstructor;
  */
 @Service
 @AllArgsConstructor
+@Slf4j
 public class GetUserPredictionUseCase {
     private final CompetitionDefaults competitionDefaults;
     private final CompetitionRepo competitionRepo;
@@ -152,6 +154,7 @@ public class GetUserPredictionUseCase {
                 .findByUserAndSeason(ctx.userId(), qry.seasonId())
                 .orElse(null);
         if (seasonPrediction == null) {
+            log.error("User {} has a main-contest entry but no prediction", ctx.userId());
             return Either.left(UseCaseErrors.notFound("Prediction not found"));
         }
 
@@ -184,11 +187,14 @@ public class GetUserPredictionUseCase {
             UserContext ctx,
             SeasonPrediction seasonPrediction,
             Integer joinedAtRound) {
-        // Expected: ?round= can name a round from before the user joined.
         RoundResult roundResult = roundResultRepo
                 .findByUserAndRound(ctx.userId(), rc.viewingRound())
                 .orElse(null);
         if (roundResult == null) {
+            // ?round= can name a round from before the user joined. From after, it's a data gap.
+            if (joinedAtRound == null || rc.viewingRound() >= joinedAtRound) {
+                log.error("No RoundResult for user {} at round {}", ctx.userId(), rc.viewingRound());
+            }
             return Either.left(UseCaseErrors.notFound("You have no result for round " + rc.viewingRound()));
         }
 
