@@ -97,7 +97,7 @@
               class="px-2 sm:px-3 py-3 sm:py-4 whitespace-nowrap text-center"
             >
               <span
-                th:classappend="${rank.hit == 0} ? 'text-green-600 font-bold' : (${rank.hit <= 2} ? 'text-yellow-600' : 'text-red-600')"
+                th:classappend="${rank.hit == 0} ? 'text-green-600 font-bold' : (${rank.hit <= 4} ? 'text-yellow-600' : 'text-red-600')"
                 class="text-xs sm:text-sm font-semibold"
                 th:text="${rank.hit}"
                 >0</span

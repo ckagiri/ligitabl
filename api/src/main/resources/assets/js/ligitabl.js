@@ -626,12 +626,13 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             return dir === "up" ? "down" : "up";
         },
 
-        // Colour for the delta number in whatever mode the table is in.
+        // Colour says how close the pick is and the arrow says which way, so the mode never changes
+        // it. Same bands as the server-rendered historical and public tables; change them together.
         deltaTextClass(teamCode) {
-            if (this.getDelta(teamCode) === 0) return "text-green-600";
-            return this.displayedDeltaDirection(teamCode) === "down"
-                ? "text-red-600"
-                : "text-green-600";
+            const delta = this.getDelta(teamCode);
+            if (delta === "-") return "text-gray-400";
+            if (delta === 0) return "text-green-600";
+            return delta <= 4 ? "text-yellow-600" : "text-red-600";
         },
 
         toggleDeltaMode() {
