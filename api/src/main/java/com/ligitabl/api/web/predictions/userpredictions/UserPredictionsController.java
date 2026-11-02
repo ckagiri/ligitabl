@@ -28,11 +28,11 @@ import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.shared.exceptions.UseCaseErrorStatus;
 import com.ligitabl.api.usecase.prediction.getuserprediction.GetUserPredictionQuery;
 import com.ligitabl.api.usecase.prediction.getuserprediction.GetUserPredictionUseCase;
 import com.ligitabl.api.usecase.prediction.getuserprediction.UserPredictionViewData;
 import com.ligitabl.api.usecase.prediction.whatif.GetWhatIfRecapUseCase;
-import com.ligitabl.api.usecase.shared.error.ErrorMapper;
 import com.ligitabl.api.usecase.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.api.usecase.shared.season.SeasonPredictionSupport;
 import com.ligitabl.api.usecase.standings.shared.FormService;
@@ -553,7 +553,7 @@ public class UserPredictionsController {
     }
 
     private int mapErrorToStatus(UseCaseError error) {
-        return ErrorMapper.toHttpStatus(error);
+        return UseCaseErrorStatus.of(error).value();
     }
 
     public record SwapStatusDTO(

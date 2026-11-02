@@ -8,10 +8,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ligitabl.api.shared.errors.ConflictError;
-import com.ligitabl.api.shared.errors.NotFoundError;
+import com.ligitabl.api.shared.errors.UnexpectedError;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.shared.errors.ValidationError;
+import com.ligitabl.api.shared.exceptions.UseCaseErrorStatus;
 import com.ligitabl.api.usecase.round.advanceround.AdvanceCurrentRoundNowUseCase;
 import com.ligitabl.api.usecase.round.advanceround.CancelRoundAdvancementUseCase;
 import com.ligitabl.api.usecase.round.advanceround.GetRoundAdvancementStatusUseCase;
@@ -63,15 +62,10 @@ public class RoundAdvancementController {
     }
 
     private ResponseEntity<?> toErrorResponse(UseCaseError error) {
-        return switch (error) {
-            case NotFoundError e -> ResponseEntity.notFound().build();
-            case ConflictError e -> ResponseEntity.status(409).body(new ErrorDto(e.getMessage()));
-            case ValidationError e -> ResponseEntity.badRequest().body(new ErrorDto(e.getMessage()));
-            default -> {
-                log.error("Unexpected error in RoundAdvancementController: {}", error);
-                yield ResponseEntity.internalServerError().body(new ErrorDto("Unexpected error"));
-            }
-        };
+        if (error instanceof UnexpectedError unexpected) {
+            log.error("Round advancement action failed: {}", unexpected.logMessage(), unexpected.cause());
+        }
+        return ResponseEntity.status(UseCaseErrorStatus.of(error)).body(new ErrorDto(error.getMessage()));
     }
 
     record ErrorDto(String message) {}
