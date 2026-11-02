@@ -72,18 +72,30 @@ public class CreatePredictionUseCase {
     public Either<CreatePredictionError, CreatePredictionResult> execute(UUID userId, JoinLockedRoundCommand command) {
         Season season = command.season();
         return resolveJoinPlan(userId, season)
-                .flatMap(plan -> executeJoinPlan(
+                .flatMap(plan -> autoJoinWrite(() -> executeJoinPlan(
                         userId,
                         season,
                         command.mainContest(),
                         NO_SWAPS,
                         plan,
-                        () -> Either.right(new RoundInfo(command.roundPosition(), command.roundPosition()))));
+                        () -> Either.right(new RoundInfo(command.roundPosition(), command.roundPosition())))));
     }
 
     public Either<CreatePredictionError, CreatePredictionResult> execute(
             UUID userId, RegisterDefaultTableCommand command) {
-        return registerPreSeason(userId, command.season(), command.mainContest(), NO_SWAPS);
+        return autoJoinWrite(() -> registerPreSeason(userId, command.season(), command.mainContest(), NO_SWAPS));
+    }
+
+    // The auto-join loop treats a Left as one user's failure. The @Transactional overload doesn't
+    // come through here: its exceptions must leave the proxy to roll back.
+    private Either<CreatePredictionError, CreatePredictionResult> autoJoinWrite(
+            Supplier<Either<CreatePredictionError, CreatePredictionResult>> write) {
+        try {
+            return write.get();
+        } catch (Exception e) {
+            log.error("Auto-join write failed", e);
+            return Either.left(new CreatePredictionError.TransactionFailed(e.getMessage()));
+        }
     }
 
     @Transactional
@@ -277,51 +289,41 @@ public class CreatePredictionUseCase {
             CreatePredictionCommand request,
             int atRoundNumber,
             int currentRoundPosition) {
-        try {
-            Instant now = clock.instant();
-            SwapResult swapResult =
-                    applySwaps(getPreviousRoundRankings(season, currentRoundPosition), request.swaps(), now);
+        Instant now = clock.instant();
+        SwapResult swapResult =
+                applySwaps(getPreviousRoundRankings(season, currentRoundPosition), request.swaps(), now);
 
-            SeasonPrediction prediction = SeasonPrediction.builder()
-                    .userId(userId)
-                    .seasonId(season.getId())
-                    .currentRankings(swapResult.rankings())
-                    .swaps(new ArrayList<>(List.of(new RoundSwap(atRoundNumber, swapResult.changes()))))
-                    .lastSwapAt(request.swaps().isEmpty() ? null : now) // bonus only if no swaps used at signup
-                    .atRoundNumber(atRoundNumber)
-                    // The commitment belongs to the round the user starts playing. Joining a locked
-                    // round places them at the next one and consumes its opening window, so they get
-                    // cooldown there, not an opening swap.
-                    .openingCommittedRound(atRoundNumber)
-                    .build();
+        SeasonPrediction prediction = SeasonPrediction.builder()
+                .userId(userId)
+                .seasonId(season.getId())
+                .currentRankings(swapResult.rankings())
+                .swaps(new ArrayList<>(List.of(new RoundSwap(atRoundNumber, swapResult.changes()))))
+                .lastSwapAt(request.swaps().isEmpty() ? null : now) // bonus only if no swaps used at signup
+                .atRoundNumber(atRoundNumber)
+                // The commitment belongs to the round the user starts playing. Joining a locked
+                // round places them at the next one and consumes its opening window, so they get
+                // cooldown there, not an opening swap.
+                .openingCommittedRound(atRoundNumber)
+                .build();
 
-            SeasonPrediction savedPrediction = predictionRepo.save(prediction);
-            log.info("Created prediction {} for user {} at round {}", savedPrediction.getId(), userId, atRoundNumber);
+        SeasonPrediction savedPrediction = predictionRepo.save(prediction);
+        log.info("Created prediction {} for user {} at round {}", savedPrediction.getId(), userId, atRoundNumber);
 
-            Entry entry = Entry.builder()
-                    .userId(userId)
-                    .contestId(mainContest.getId())
-                    .joinedAtRound(atRoundNumber)
-                    .build();
+        Entry entry = Entry.builder()
+                .userId(userId)
+                .contestId(mainContest.getId())
+                .joinedAtRound(atRoundNumber)
+                .build();
 
-            Entry savedEntry = entryRepo.save(entry);
-            log.info(
-                    "Created entry {} for user {} in default contest {}",
-                    savedEntry.getId(),
-                    userId,
-                    mainContest.getId());
+        Entry savedEntry = entryRepo.save(entry);
+        log.info("Created entry {} for user {} in default contest {}", savedEntry.getId(), userId, mainContest.getId());
 
-            String message = atRoundNumber == 1
-                    ? "Welcome! Your prediction is active from Round 1"
-                    : String.format("Welcome! Your prediction will be active from Round %d", atRoundNumber);
+        String message = atRoundNumber == 1
+                ? "Welcome! Your prediction is active from Round 1"
+                : String.format("Welcome! Your prediction will be active from Round %d", atRoundNumber);
 
-            return Either.right(
-                    new CreatePredictionResult(savedPrediction.getId(), savedEntry.getId(), atRoundNumber, message));
-
-        } catch (Exception e) {
-            log.error("Failed to create prediction and entry", e);
-            return Either.left(new CreatePredictionError.TransactionFailed(e.getMessage()));
-        }
+        return Either.right(
+                new CreatePredictionResult(savedPrediction.getId(), savedEntry.getId(), atRoundNumber, message));
     }
 
     // The one-time 0-5 swap shot, stored at atRoundNumber=0. The prediction is scored once rounds
@@ -329,46 +331,40 @@ public class CreatePredictionUseCase {
     // never counts into a RoundResult.swapCount.
     private Either<CreatePredictionError, CreatePredictionResult> registerPreSeason(
             UUID userId, Season season, Contest mainContest, CreatePredictionCommand request) {
-        try {
-            Instant now = clock.instant();
-            SwapResult swapResult = applySwaps(season.getInitialRankings(), request.swaps(), now);
+        Instant now = clock.instant();
+        SwapResult swapResult = applySwaps(season.getInitialRankings(), request.swaps(), now);
 
-            SeasonPrediction prediction = SeasonPrediction.builder()
-                    .userId(userId)
-                    .seasonId(season.getId())
-                    .initialRankings(swapResult.rankings()) // permanent marker: this user pre-registered
-                    .currentRankings(swapResult.rankings())
-                    .swaps(new ArrayList<>(List.of(new RoundSwap(ROUND_ZERO, swapResult.changes()))))
-                    .lastSwapAt(null)
-                    .atRoundNumber(ROUND_ZERO)
-                    .openingCommittedRound(ROUND_ZERO)
-                    .build();
+        SeasonPrediction prediction = SeasonPrediction.builder()
+                .userId(userId)
+                .seasonId(season.getId())
+                .initialRankings(swapResult.rankings()) // permanent marker: this user pre-registered
+                .currentRankings(swapResult.rankings())
+                .swaps(new ArrayList<>(List.of(new RoundSwap(ROUND_ZERO, swapResult.changes()))))
+                .lastSwapAt(null)
+                .atRoundNumber(ROUND_ZERO)
+                .openingCommittedRound(ROUND_ZERO)
+                .build();
 
-            SeasonPrediction savedPrediction = predictionRepo.save(prediction);
-            log.info(
-                    "[PRE_SEASON_REGISTER] Created prediction {} for user {} with {} swaps",
-                    savedPrediction.getId(),
-                    userId,
-                    swapResult.changes().size());
+        SeasonPrediction savedPrediction = predictionRepo.save(prediction);
+        log.info(
+                "[PRE_SEASON_REGISTER] Created prediction {} for user {} with {} swaps",
+                savedPrediction.getId(),
+                userId,
+                swapResult.changes().size());
 
-            Entry entry = Entry.builder()
-                    .userId(userId)
-                    .contestId(mainContest.getId())
-                    .joinedAtRound(ROUND_ZERO)
-                    .build();
+        Entry entry = Entry.builder()
+                .userId(userId)
+                .contestId(mainContest.getId())
+                .joinedAtRound(ROUND_ZERO)
+                .build();
 
-            Entry savedEntry = entryRepo.save(entry);
+        Entry savedEntry = entryRepo.save(entry);
 
-            return Either.right(new CreatePredictionResult(
-                    savedPrediction.getId(),
-                    savedEntry.getId(),
-                    ROUND_ZERO,
-                    "You're registered! Your table is set for when predictions open."));
-
-        } catch (Exception e) {
-            log.error("Failed to create pre-season registration", e);
-            return Either.left(new CreatePredictionError.TransactionFailed(e.getMessage()));
-        }
+        return Either.right(new CreatePredictionResult(
+                savedPrediction.getId(),
+                savedEntry.getId(),
+                ROUND_ZERO,
+                "You're registered! Your table is set for when predictions open."));
     }
 
     // Updates the existing SeasonPrediction and Entry in place rather than creating duplicates.
@@ -391,31 +387,25 @@ public class CreatePredictionUseCase {
             return Either.left(new CreatePredictionError.CorruptPreSeasonRegistration(existing.getId()));
         }
 
-        try {
-            Instant now = clock.instant();
-            // Baseline is the pre-registration snapshot, not season-wide standings — this user's
-            // starting point is whatever they set during pre-season registration.
-            List<TeamRank> baseline = existing.getInitialRankings();
-            SwapResult swapResult = applySwaps(baseline, request.swaps(), now);
-            existing.mergePreSeason(atRoundNumber, swapResult.rankings(), swapResult.changes(), now);
+        Instant now = clock.instant();
+        // Baseline is the pre-registration snapshot, not season-wide standings — this user's
+        // starting point is whatever they set during pre-season registration.
+        List<TeamRank> baseline = existing.getInitialRankings();
+        SwapResult swapResult = applySwaps(baseline, request.swaps(), now);
+        existing.mergePreSeason(atRoundNumber, swapResult.rankings(), swapResult.changes(), now);
 
-            SeasonPrediction saved = predictionRepo.save(existing);
-            log.info(
-                    "[MERGE_PRE_SEASON_REGISTRATION] Updated prediction {} for user {} to atRoundNumber={}",
-                    saved.getId(),
-                    userId,
-                    atRoundNumber);
+        SeasonPrediction saved = predictionRepo.save(existing);
+        log.info(
+                "[MERGE_PRE_SEASON_REGISTRATION] Updated prediction {} for user {} to atRoundNumber={}",
+                saved.getId(),
+                userId,
+                atRoundNumber);
 
-            String message = atRoundNumber == 1
-                    ? "Welcome! Your prediction is active from Round 1"
-                    : String.format("Welcome! Your prediction will be active from Round %d", atRoundNumber);
+        String message = atRoundNumber == 1
+                ? "Welcome! Your prediction is active from Round 1"
+                : String.format("Welcome! Your prediction will be active from Round %d", atRoundNumber);
 
-            return Either.right(new CreatePredictionResult(saved.getId(), entry.getId(), atRoundNumber, message));
-
-        } catch (Exception e) {
-            log.error("Failed to merge pre-season registration into real entry", e);
-            return Either.left(new CreatePredictionError.TransactionFailed(e.getMessage()));
-        }
+        return Either.right(new CreatePredictionResult(saved.getId(), entry.getId(), atRoundNumber, message));
     }
 
     private List<TeamRank> getPreviousRoundRankings(Season season, int currentRoundPosition) {

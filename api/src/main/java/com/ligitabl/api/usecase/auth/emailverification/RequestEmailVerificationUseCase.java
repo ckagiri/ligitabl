@@ -82,6 +82,7 @@ public class RequestEmailVerificationUseCase {
             return Either.right(
                     new RequestEmailVerificationResult.EmailSent(user.getEmail().value()));
         } catch (Exception e) {
+            // Caught, not thrown: past this proxy it would mark RegisterUseCase's transaction rollback-only.
             log.error("[EMAIL_VERIFICATION] Unexpected failure userId={}", userId, e);
             return Either.left(new RequestEmailVerificationError.UnexpectedError());
         }

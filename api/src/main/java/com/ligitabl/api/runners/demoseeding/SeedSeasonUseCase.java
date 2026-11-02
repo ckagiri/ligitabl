@@ -492,7 +492,6 @@ public class SeedSeasonUseCase {
             case FinalizeRoundError.RoundNotReady e -> String.format("Round %s not ready: %s", e.roundId(), e.reason());
             case FinalizeRoundError.StandingsValidationFailed e -> String.format(
                     "Standings validation failed: %s", e.reason());
-            case FinalizeRoundError.TransactionFailed e -> String.format("Transaction failed: %s", e.reason());
             default -> "Unexpected finalize-round error: " + error;
         };
     }

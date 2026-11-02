@@ -57,9 +57,7 @@ public class FinalizeRoundUseCase {
 
     @Transactional
     public Either<FinalizeRoundError, FinalizeRoundResult> execute(FinalizeRoundCommand command) {
-        if (command == null || command.seasonId() == null) {
-            return Either.left(new FinalizeRoundError.TransactionFailed("seasonId must not be null"));
-        }
+        Objects.requireNonNull(command.seasonId(), "seasonId");
 
         log.info(
                 "Starting round finalization for season: {} (roundPosition={}, recompute={})",
@@ -149,62 +147,56 @@ public class FinalizeRoundUseCase {
     }
 
     private Either<FinalizeRoundError, FinalizeRoundResult> executeFinalizationWorkflow(FinalizationContext ctx) {
-        try {
-            var standingsResult = calculateFinalStandings(ctx);
-            if (standingsResult.isLeft()) {
-                return Either.left(standingsResult.getLeft());
-            }
-            Standings finalStandings = standingsResult.get();
-
-            List<SeasonPrediction> predictions = predictionRepo.findBySeasonAndAtRoundNumberLessThanEqual(
-                    ctx.season().getId(), ctx.round().getPosition());
-
-            List<RoundSubmission> submissions = createRoundSubmissions(predictions, ctx);
-
-            List<RoundResult> results = calculateRoundResults(predictions, submissions, finalStandings, ctx);
-
-            boolean isLastRound = ctx.round().getPosition() >= ctx.season().getMaxRounds();
-            if (!isLastRound) {
-                createNextRoundStandings(ctx.round(), ctx.season(), finalStandings);
-            }
-
-            // Do NOT advance the season pointer here.
-            if (!ctx.round().isFinalized()) {
-                ctx.round().markFinalized();
-                roundRepo.save(ctx.round());
-                log.info("Round {} marked as finalized", ctx.round().getPosition());
-            }
-
-            // Refinalize cascade: recomputing an earlier round makes every round's cumulative
-            // standings from here through the current one stale. Mark them unfinalized; the admin
-            // walks forward refinalizing each.
-            if (ctx.recompute()) {
-                markDownstreamOutOfSync(ctx);
-            }
-
-            // Fire-and-forget; the Slack call never blocks or throws.
-            adminAlerts.notifyRoundFinalized(
-                    ctx.round().getId(), ctx.round().getPosition(), submissions.size(), results.size(), isLastRound);
-
-            Instant completedAt = clock.instant();
-            log.info(
-                    "Round finalization completed: round={}, submissions={}, results={}",
-                    ctx.round().getPosition(),
-                    submissions.size(),
-                    results.size());
-
-            return Either.right(new FinalizeRoundResult(
-                    ctx.round().getId(),
-                    ctx.round().getPosition(),
-                    submissions.size(),
-                    results.size(),
-                    isLastRound,
-                    completedAt));
-
-        } catch (Exception e) {
-            log.error("Round finalization failed", e);
-            return Either.left(new FinalizeRoundError.TransactionFailed(e.getMessage()));
+        var standingsResult = calculateFinalStandings(ctx);
+        if (standingsResult.isLeft()) {
+            return Either.left(standingsResult.getLeft());
         }
+        Standings finalStandings = standingsResult.get();
+
+        List<SeasonPrediction> predictions = predictionRepo.findBySeasonAndAtRoundNumberLessThanEqual(
+                ctx.season().getId(), ctx.round().getPosition());
+
+        List<RoundSubmission> submissions = createRoundSubmissions(predictions, ctx);
+
+        List<RoundResult> results = calculateRoundResults(predictions, submissions, finalStandings, ctx);
+
+        boolean isLastRound = ctx.round().getPosition() >= ctx.season().getMaxRounds();
+        if (!isLastRound) {
+            createNextRoundStandings(ctx.round(), ctx.season(), finalStandings);
+        }
+
+        // Do NOT advance the season pointer here.
+        if (!ctx.round().isFinalized()) {
+            ctx.round().markFinalized();
+            roundRepo.save(ctx.round());
+            log.info("Round {} marked as finalized", ctx.round().getPosition());
+        }
+
+        // Refinalize cascade: recomputing an earlier round makes every round's cumulative
+        // standings from here through the current one stale. Mark them unfinalized; the admin
+        // walks forward refinalizing each.
+        if (ctx.recompute()) {
+            markDownstreamOutOfSync(ctx);
+        }
+
+        // Fire-and-forget; the Slack call never blocks or throws.
+        adminAlerts.notifyRoundFinalized(
+                ctx.round().getId(), ctx.round().getPosition(), submissions.size(), results.size(), isLastRound);
+
+        Instant completedAt = clock.instant();
+        log.info(
+                "Round finalization completed: round={}, submissions={}, results={}",
+                ctx.round().getPosition(),
+                submissions.size(),
+                results.size());
+
+        return Either.right(new FinalizeRoundResult(
+                ctx.round().getId(),
+                ctx.round().getPosition(),
+                submissions.size(),
+                results.size(),
+                isLastRound,
+                completedAt));
     }
 
     private void markDownstreamOutOfSync(FinalizationContext ctx) {
@@ -223,36 +215,30 @@ public class FinalizeRoundUseCase {
     }
 
     private Either<FinalizeRoundError, Standings> calculateFinalStandings(FinalizationContext ctx) {
-        try {
-            Either<FinalizeRoundError, List<StandingsTeamRank>> calculation = standingsCalculator
-                    .calculateRankings(ctx.season().getId(), ctx.round().getPosition())
-                    .mapLeft(error -> new FinalizeRoundError.StandingsValidationFailed(error.toString()));
+        Either<FinalizeRoundError, List<StandingsTeamRank>> calculation = standingsCalculator
+                .calculateRankings(ctx.season().getId(), ctx.round().getPosition())
+                .mapLeft(error -> new FinalizeRoundError.StandingsValidationFailed(error.toString()));
 
-            if (calculation.isLeft()) {
-                return Either.left(calculation.getLeft());
-            }
-
-            List<StandingsTeamRank> rankings = calculation.get();
-
-            // Get or create standings record
-            Standings standings = standingsRepo
-                    .findBySeasonAndRoundPosition(
-                            ctx.season().getId(), ctx.round().getPosition())
-                    .orElseGet(() -> Standings.builder()
-                            .seasonId(ctx.season().getId())
-                            .roundPosition(ctx.round().getPosition())
-                            .rankings(List.of())
-                            .finalised(false)
-                            .finalisedAt(null)
-                            .build());
-
-            standings.finalise(rankings, now());
-
-            return Either.right(saveStandings(standings));
-
-        } catch (Exception e) {
-            return Either.left(new FinalizeRoundError.StandingsValidationFailed(e.getMessage()));
+        if (calculation.isLeft()) {
+            return Either.left(calculation.getLeft());
         }
+
+        List<StandingsTeamRank> rankings = calculation.get();
+
+        // Get or create standings record
+        Standings standings = standingsRepo
+                .findBySeasonAndRoundPosition(ctx.season().getId(), ctx.round().getPosition())
+                .orElseGet(() -> Standings.builder()
+                        .seasonId(ctx.season().getId())
+                        .roundPosition(ctx.round().getPosition())
+                        .rankings(List.of())
+                        .finalised(false)
+                        .finalisedAt(null)
+                        .build());
+
+        standings.finalise(rankings, now());
+
+        return Either.right(saveStandings(standings));
     }
 
     private List<RoundSubmission> createRoundSubmissions(List<SeasonPrediction> predictions, FinalizationContext ctx) {

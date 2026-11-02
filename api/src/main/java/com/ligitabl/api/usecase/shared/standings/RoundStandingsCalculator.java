@@ -106,6 +106,7 @@ public class RoundStandingsCalculator {
             log.debug("Calculated standings: {} teams", calculatedStandings.size());
             return Either.right(calculatedStandings);
         } catch (Exception e) {
+            // Nothing is written yet, and callers decide: a manual match result commits regardless.
             log.error("Standings calculation failed", e);
             return Either.left(new StandingsError.CalculationFailed(e.getMessage()));
         }

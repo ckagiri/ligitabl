@@ -59,9 +59,6 @@ public class FinalizeRoundController {
                             .body(new RoundObstructedResponse("ROUND_OBSTRUCTED", e.message(), e.obstructedMatchIds()));
                     case FinalizeRoundError.StandingsValidationFailed e -> ResponseEntity.badRequest()
                             .body(new ErrorResponse("Standings validation failed: " + e.reason()));
-                    case FinalizeRoundError.TransactionFailed e -> ResponseEntity.internalServerError()
-                            .body(new ErrorResponse(String.format("Transaction failed: %s", e.reason())));
-
                     default -> ResponseEntity.internalServerError()
                             .body(new ErrorResponse("Unexpected error: " + error));
                 },

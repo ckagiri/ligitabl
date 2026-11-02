@@ -130,34 +130,29 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
 
     private Either<UseCaseError, RescheduleResult> performReschedule(
             RescheduleContext ctx, RescheduleMatchCommand cmd) {
-        try {
-            Match match = ctx.match();
-            Instant now = clock.instant();
+        Match match = ctx.match();
+        Instant now = clock.instant();
 
-            MatchStatus oldStatus = match.getStatus();
-            int fromRound = ctx.sourceRound().getPosition();
-            int toRound = ctx.targetRound().getPosition();
+        MatchStatus oldStatus = match.getStatus();
+        int fromRound = ctx.sourceRound().getPosition();
+        int toRound = ctx.targetRound().getPosition();
 
-            match.rescheduleToRound(ctx.targetRound().getId(), ctx.season().isInSetupMode());
+        match.rescheduleToRound(ctx.targetRound().getId(), ctx.season().isInSetupMode());
 
-            Match saved = matchRepo.save(match);
+        Match saved = matchRepo.save(match);
 
-            markOutOfSyncIfMovedToPastRound(ctx, fromRound, toRound);
+        markOutOfSyncIfMovedToPastRound(ctx, fromRound, toRound);
 
-            return Either.right(RescheduleResult.builder()
-                    .matchId(saved.getId())
-                    .matchSlug(saved.getSlug())
-                    .oldStatus(oldStatus)
-                    .newStatus(saved.getStatus())
-                    .fromRound(fromRound)
-                    .toRound(toRound)
-                    .wasPostponed(saved.wasPostponed())
-                    .timestamp(now)
-                    .build());
-
-        } catch (Exception e) {
-            return Either.left(UseCaseErrors.fromException(e));
-        }
+        return Either.right(RescheduleResult.builder()
+                .matchId(saved.getId())
+                .matchSlug(saved.getSlug())
+                .oldStatus(oldStatus)
+                .newStatus(saved.getStatus())
+                .fromRound(fromRound)
+                .toRound(toRound)
+                .wasPostponed(saved.wasPostponed())
+                .timestamp(now)
+                .build());
     }
 
     // Setup mode only. Moving a match into a round before the current one makes the finalized

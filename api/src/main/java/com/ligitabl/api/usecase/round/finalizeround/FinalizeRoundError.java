@@ -10,8 +10,6 @@ public sealed interface FinalizeRoundError {
 
     record StandingsValidationFailed(String reason) implements FinalizeRoundError {}
 
-    record TransactionFailed(String reason) implements FinalizeRoundError {}
-
     record RoundNotFound(UUID roundId) implements FinalizeRoundError {}
 
     record SeasonNotFound(UUID seasonId) implements FinalizeRoundError {}

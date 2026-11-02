@@ -1,6 +1,7 @@
 package com.ligitabl.api.usecase.round.advanceround;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -27,6 +28,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.usecase.shared.AdminAlerts;
@@ -57,6 +60,9 @@ class RoundAdvancementServiceTest {
     @Mock
     private OutboxRepo outboxRepo;
 
+    @Mock
+    private PlatformTransactionManager transactionManager;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private RoundAdvancementService service;
@@ -71,7 +77,14 @@ class RoundAdvancementServiceTest {
         seasonId = UUID.randomUUID();
 
         service = new RoundAdvancementService(
-                taskScheduler, roundRepo, seasonRepo, clock, adminAlerts, outboxRepo, objectMapper);
+                taskScheduler,
+                roundRepo,
+                seasonRepo,
+                clock,
+                adminAlerts,
+                outboxRepo,
+                objectMapper,
+                new TransactionTemplate(transactionManager));
         setField(service, "delayMinutes", 3);
     }
 
@@ -149,6 +162,33 @@ class RoundAdvancementServiceTest {
 
         verify(adminAlerts, never()).notifyRoundAdvanced(anyInt(), any(), anyBoolean());
         verify(adminAlerts, never()).notifyAdvancementFailed(any(), anyString());
+    }
+
+    @Test
+    void attemptAutoAdvancement_failure_rollsBack() {
+        Round round = round(5, true, now().plusMinutes(3), false);
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season(38)));
+        when(roundRepo.findBySeasonIdAndPosition(seasonId, 6)).thenReturn(Optional.of(round(6, false, null, false)));
+        when(seasonRepo.save(any())).thenThrow(new IllegalStateException("season write failed"));
+
+        service.attemptAutoAdvancement(roundId, seasonId);
+
+        verify(transactionManager).rollback(any());
+        verify(transactionManager, never()).commit(any());
+        verify(adminAlerts).notifyAdvancementFailed(roundId, "season write failed");
+    }
+
+    @Test
+    void advanceManually_missingNextRound_writesNothing() {
+        Round round = round(5, true, null, false);
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season(38)));
+        when(roundRepo.findBySeasonIdAndPosition(seasonId, 6)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.advanceManually(roundId)).isInstanceOf(IllegalStateException.class);
+
+        verify(roundRepo, never()).save(any());
     }
 
     @Test

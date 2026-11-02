@@ -89,31 +89,24 @@ public class TransitionMatchStatusUseCase
 
                     } catch (IllegalStateException | IllegalArgumentException e) {
                         return Either.left(UseCaseErrors.validation(e.getMessage()));
-                    } catch (Exception e) {
-                        return Either.left(UseCaseErrors.fromException(e));
                     }
                 });
     }
 
     private Either<UseCaseError, TransitionResult> save(TransitionContext ctx) {
-        try {
-            Match saved = matchRepo.save(ctx.match());
-            markOutOfSyncIfPastRound(ctx);
-            recalculateStandingsIfAffected(ctx);
-            Instant now = clock.instant();
+        Match saved = matchRepo.save(ctx.match());
+        markOutOfSyncIfPastRound(ctx);
+        recalculateStandingsIfAffected(ctx);
+        Instant now = clock.instant();
 
-            return Either.right(TransitionResult.builder()
-                    .matchId(saved.getId())
-                    .matchSlug(saved.getSlug())
-                    .oldStatus(ctx.oldStatus())
-                    .newStatus(saved.getStatus())
-                    .roundPosition(ctx.context().round().getPosition())
-                    .timestamp(now)
-                    .build());
-
-        } catch (Exception e) {
-            return Either.left(UseCaseErrors.fromException(e));
-        }
+        return Either.right(TransitionResult.builder()
+                .matchId(saved.getId())
+                .matchSlug(saved.getSlug())
+                .oldStatus(ctx.oldStatus())
+                .newStatus(saved.getStatus())
+                .roundPosition(ctx.context().round().getPosition())
+                .timestamp(now)
+                .build());
     }
 
     // Setup mode only: a status change at or before the current round makes that round's finalized
