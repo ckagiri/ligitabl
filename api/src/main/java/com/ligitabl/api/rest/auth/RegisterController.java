@@ -60,8 +60,8 @@ public class RegisterController {
         return turnstileClient
                 .verify(request.turnstileToken(), httpRequest.getRemoteAddr())
                 .peekLeft(err -> log.warn("[TURNSTILE_VERIFY_FAILED] reason={}", err))
-                .mapLeft(err ->
-                        (UseCaseError) UseCaseErrors.unprocessableEntity("Verification failed, please try again"))
+                .mapLeft(err -> (UseCaseError)
+                        UseCaseErrors.validation("turnstileToken", "Verification failed, please try again"))
                 .map(response -> Boolean.TRUE);
     }
 

@@ -13,7 +13,6 @@ import com.ligitabl.api.logging.RequestId;
 import com.ligitabl.api.shared.errors.AuthenticationError;
 import com.ligitabl.api.shared.errors.ConflictError;
 import com.ligitabl.api.shared.errors.UnexpectedError;
-import com.ligitabl.api.shared.errors.UnprocessableEntityError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.api.shared.exceptions.UseCaseException;
@@ -52,11 +51,6 @@ public class AuthErrorHandler {
         if (error instanceof ConflictError ce) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new AuthDto.ErrorResponse("ALREADY_EXISTS", ce.getMessage()));
-        }
-
-        if (error instanceof UnprocessableEntityError ue) {
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                    .body(new AuthDto.ErrorResponse("VERIFICATION_FAILED", ue.getMessage()));
         }
 
         if (error instanceof UnexpectedError ue) {

@@ -23,6 +23,8 @@ import com.ligitabl.model.domain.league.Round;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.StandingsRepo;
+import com.ligitabl.model.shared.InvalidValueException;
+import com.ligitabl.model.shared.RuleViolationException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -87,8 +89,8 @@ public class TransitionMatchStatusUseCase
                         match.transitionTo(cmd.getNewStatus(), cmd.getReason(), isSetupMode);
                         return Either.right(new TransitionContext(matchCtx.context(), match, oldStatus, currentRound));
 
-                    } catch (IllegalStateException | IllegalArgumentException e) {
-                        return Either.left(UseCaseErrors.validation(e.getMessage()));
+                    } catch (InvalidValueException | RuleViolationException e) {
+                        return Either.left(UseCaseErrors.fromException(e));
                     }
                 });
     }

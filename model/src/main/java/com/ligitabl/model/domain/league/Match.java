@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.ligitabl.model.domain.AbstractModel;
+import com.ligitabl.model.shared.RuleViolationException;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
@@ -118,7 +119,7 @@ public class Match extends AbstractModel<UUID> {
         // set of retroactive-correction targets — LIVE/SUSPENDED/CANCELLED still aren't reachable.
         boolean allowed = isSetupMode ? SETUP_MODE_TARGETS.contains(newStatus) : isAllowedTransition(from, newStatus);
         if (!allowed) {
-            throw new IllegalStateException(String.format("Cannot transition from %s to %s", from, newStatus));
+            throw new RuleViolationException(String.format("Cannot transition from %s to %s", from, newStatus));
         }
 
         this.status = newStatus;

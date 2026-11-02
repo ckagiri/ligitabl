@@ -131,7 +131,25 @@ Sealed error types get no catch-all variant for exceptions, such as `Failed(Stri
 
 Never branch on `getMessage()` text. Needing to is the signal to move to a sealed type. Existing sealed types stay as they are: this rule decides where new code starts and when to promote, and doesn't call for migrating anything.
 
-`UseCaseErrorStatus` is the one mapping from `UseCaseError` to an HTTP status.
+`UseCaseErrorStatus` is the one mapping from `UseCaseError` to an HTTP status. Each variant means one thing:
+
+| Variant | Meaning | Status |
+|---|---|---|
+| `ValidationError` | The request itself is malformed | 400 |
+| `AuthenticationError` | We don't know who the caller is | 401 |
+| `AuthorizationError` | We know who the caller is, and they can't do this | 403 |
+| `NotFoundError` | What the request names doesn't exist | 404 |
+| `ConflictError` | The request is fine, but the current state doesn't allow it | 409 |
+| `UnexpectedError` | A failure with no safe detail to show | 500 |
+
+## Exceptions from the domain
+
+`model` throws exceptions, so these two types carry the distinction across. `UseCaseErrors.fromException` maps them, and anything else becomes an `UnexpectedError`.
+
+- **`InvalidValueException`**, to `ValidationError`: a value from outside the system is malformed, such as a submitted email.
+- **`RuleViolationException`**, to `ConflictError`: the current state doesn't allow the operation, such as an illegal match transition.
+
+Their messages are shown to users. A guard against a bug, such as a null check or "Home team not loaded", stays a plain `IllegalArgumentException` or `IllegalStateException`, so it surfaces as a 500.
 
 ## Best practices (repo conventions)
 

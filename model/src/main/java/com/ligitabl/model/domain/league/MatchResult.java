@@ -1,21 +1,22 @@
 package com.ligitabl.model.domain.league;
 
 import com.ligitabl.model.domain.league.standings.Constants;
+import com.ligitabl.model.shared.InvalidValueException;
 
 public record MatchResult(int homeGoals, int awayGoals) {
     public MatchResult {
         if (homeGoals < 0) {
-            throw new IllegalArgumentException(String.format("Home goals cannot be negative: %d", homeGoals));
+            throw new InvalidValueException(String.format("Home goals cannot be negative: %d", homeGoals));
         }
         if (awayGoals < 0) {
-            throw new IllegalArgumentException(String.format("Away goals cannot be negative: %d", awayGoals));
+            throw new InvalidValueException(String.format("Away goals cannot be negative: %d", awayGoals));
         }
         if (homeGoals > Constants.MAX_GOALS_PER_MATCH) {
-            throw new IllegalArgumentException(
+            throw new InvalidValueException(
                     String.format("Home goals %d exceeds maximum %d", homeGoals, Constants.MAX_GOALS_PER_MATCH));
         }
         if (awayGoals > Constants.MAX_GOALS_PER_MATCH) {
-            throw new IllegalArgumentException(
+            throw new InvalidValueException(
                     String.format("Away goals %d exceeds maximum %d", awayGoals, Constants.MAX_GOALS_PER_MATCH));
         }
     }

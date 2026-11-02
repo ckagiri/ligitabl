@@ -4,6 +4,8 @@ import static com.ligitabl.model.validator.AssertionUtils.assertArgumentNotEmpty
 
 import java.util.regex.Pattern;
 
+import com.ligitabl.model.shared.InvalidValueException;
+
 public record Email(String value) {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
@@ -18,7 +20,7 @@ public record Email(String value) {
         String normalized = value.trim().toLowerCase();
 
         if (!EMAIL_PATTERN.matcher(normalized).matches()) {
-            throw new IllegalArgumentException("Invalid email address");
+            throw new InvalidValueException("Invalid email address");
         }
 
         return new Email(normalized);

@@ -63,7 +63,7 @@ public class HierarchyValidator {
 
         UUID activeSeasonId = competition.getActiveSeasonId();
         if (activeSeasonId == null) {
-            return Either.left(UseCaseErrors.validation("Competition has no active season"));
+            return Either.left(UseCaseErrors.conflict("Competition has no active season"));
         }
 
         return requireFound(seasonRepo.findById(activeSeasonId), UseCaseErrors.notFound("Season", activeSeasonId));
@@ -76,7 +76,7 @@ public class HierarchyValidator {
 
         UUID currentRoundId = season.getCurrentRoundId();
         if (currentRoundId == null) {
-            return Either.left(UseCaseErrors.validation("Season has no current round"));
+            return Either.left(UseCaseErrors.conflict("Season has no current round"));
         }
 
         return requireFound(roundRepo.findById(currentRoundId), UseCaseErrors.notFound("Round", currentRoundId));

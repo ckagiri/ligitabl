@@ -218,10 +218,11 @@ class AuthControllerIT extends AbstractPostgresIT {
         ResponseEntity<AuthDto.ErrorResponse> response =
                 postRegisterForError(newEmail, "Failed Verify User", "password123");
 
-        assertThat(response.getStatusCode().value()).isEqualTo(422);
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
         AuthDto.ErrorResponse body = response.getBody();
         assertNotNull(body);
-        assertThat(body.code()).isEqualTo("VERIFICATION_FAILED");
+        assertThat(body.code()).isEqualTo("VALIDATION_ERROR");
+        assertThat(body.field()).isEqualTo("turnstileToken");
         assertThat(userRepo.findByEmail(Email.create(newEmail))).isEmpty();
     }
 

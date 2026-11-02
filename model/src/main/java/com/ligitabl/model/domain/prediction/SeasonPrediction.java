@@ -10,6 +10,7 @@ import java.util.UUID;
 import com.ligitabl.model.domain.AbstractModel;
 import com.ligitabl.model.domain.league.RoundStatus;
 import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.shared.RuleViolationException;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
@@ -184,7 +185,7 @@ public class SeasonPrediction extends AbstractModel<UUID> {
 
     private static void requireAllowed(SwapEligibility eligibility) {
         if (!eligibility.allowed()) {
-            throw new IllegalStateException("Swap not allowed: " + eligibility);
+            throw new RuleViolationException("Swap not allowed: " + eligibility);
         }
     }
 }

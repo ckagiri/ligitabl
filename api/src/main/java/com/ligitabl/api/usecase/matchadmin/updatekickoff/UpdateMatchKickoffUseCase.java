@@ -36,7 +36,7 @@ public class UpdateMatchKickoffUseCase {
                         UseCaseErrors.notFound("Match", "slug", cmd.matchSlug())))
                 .flatMap(match -> {
                     if (match.getStatus() == MatchStatus.FINISHED || match.getStatus() == MatchStatus.LIVE) {
-                        return Either.left(UseCaseErrors.validation("Cannot update kickoff for a "
+                        return Either.left(UseCaseErrors.conflict("Cannot update kickoff for a "
                                 + match.getStatus().name().toLowerCase() + " match"));
                     }
                     match.changeKickOff(cmd.newKickOff());

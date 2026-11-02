@@ -1,5 +1,8 @@
 package com.ligitabl.api.shared.errors;
 
+import com.ligitabl.model.shared.InvalidValueException;
+import com.ligitabl.model.shared.RuleViolationException;
+
 public final class UseCaseErrors {
     private UseCaseErrors() {
         // prevent instantiation
@@ -15,10 +18,6 @@ public final class UseCaseErrors {
 
     public static ConflictError conflict(String message) {
         return new ConflictError(message);
-    }
-
-    public static UnprocessableEntityError unprocessableEntity(String message) {
-        return new UnprocessableEntityError(message);
     }
 
     public static NotFoundError notFound(String message) {
@@ -46,11 +45,10 @@ public final class UseCaseErrors {
     }
 
     public static UseCaseError fromException(Throwable throwable) {
-        if (throwable instanceof IllegalArgumentException) {
-            return UseCaseErrors.unprocessableEntity(throwable.getMessage());
-        } else if (throwable instanceof IllegalStateException) {
-            return UseCaseErrors.conflict(throwable.getMessage());
-        }
-        return UseCaseErrors.unexpected(throwable);
+        return switch (throwable) {
+            case InvalidValueException e -> validation(e.getMessage());
+            case RuleViolationException e -> conflict(e.getMessage());
+            default -> unexpected(throwable);
+        };
     }
 }

@@ -22,6 +22,7 @@ import com.ligitabl.model.outbox.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
+import com.ligitabl.model.shared.RuleViolationException;
 
 import io.sentry.Sentry;
 import lombok.RequiredArgsConstructor;
@@ -145,7 +146,7 @@ public class RoundAdvancementService {
         }
 
         if (!round.isFinalized()) {
-            throw new IllegalStateException("Cannot advance non-finalized round: " + roundId);
+            throw new RuleViolationException("Cannot advance non-finalized round: " + roundId);
         }
 
         var season = seasonRepo
@@ -167,11 +168,11 @@ public class RoundAdvancementService {
                 .orElseThrow(() -> new IllegalArgumentException("Round not found: " + roundId));
 
         if (round.isAdvanced()) {
-            throw new IllegalStateException("Round already advanced: " + roundId);
+            throw new RuleViolationException("Round already advanced: " + roundId);
         }
 
         if (round.getAdvanceAt() == null) {
-            throw new IllegalStateException("No advancement scheduled for round: " + roundId);
+            throw new RuleViolationException("No advancement scheduled for round: " + roundId);
         }
 
         round.cancelScheduledAdvance();

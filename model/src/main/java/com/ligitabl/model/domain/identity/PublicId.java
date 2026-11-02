@@ -4,6 +4,8 @@ import static com.ligitabl.model.validator.AssertionUtils.assertArgumentNotEmpty
 
 import java.util.regex.Pattern;
 
+import com.ligitabl.model.shared.InvalidValueException;
+
 public record PublicId(String value) {
 
     private static final Pattern PUBLIC_ID_PATTERN =
@@ -11,7 +13,7 @@ public record PublicId(String value) {
 
     public PublicId {
         if (value == null || value.length() != 10) {
-            throw new IllegalArgumentException("PublicId must be exactly 10 characters");
+            throw new InvalidValueException("PublicId must be exactly 10 characters");
         }
     }
 
@@ -19,7 +21,7 @@ public record PublicId(String value) {
         assertArgumentNotEmpty(value, "Public id cannot be empty");
 
         if (!PUBLIC_ID_PATTERN.matcher(value).matches()) {
-            throw new IllegalArgumentException("Invalid Public ID format: " + value);
+            throw new InvalidValueException("Invalid Public ID format: " + value);
         }
 
         return new PublicId(value);
