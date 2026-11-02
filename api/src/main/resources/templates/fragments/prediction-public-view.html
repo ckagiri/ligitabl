@@ -82,7 +82,7 @@
             </td>
             <td x-show="compareStandings" x-cloak class="px-2 sm:px-3 py-3 sm:py-4 whitespace-nowrap text-center">
               <span
-                th:classappend="${row.delta == 0} ? 'text-green-600 font-bold' : (${row.delta <= 2} ? 'text-yellow-600' : 'text-red-600')"
+                th:classappend="${row.delta == 0} ? 'text-green-600 font-bold' : (${row.delta <= 4} ? 'text-yellow-600' : 'text-red-600')"
                 class="text-xs sm:text-sm font-semibold"
                 th:text="${row.delta}"
                 >0</span
@@ -309,7 +309,7 @@
                       >
                       <span
                         class="font-semibold"
-                        :class="getDelta(team.code) === 0 ? 'text-green-600' : (getDelta(team.code) <= 2 ? 'text-yellow-600' : 'text-red-600')"
+                        :class="deltaTextClass(team.code)"
                         x-text="getDelta(team.code)"
                       ></span>
                     </div>
@@ -413,7 +413,7 @@
             <td x-show="showStandings" class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right">
               <span
                 class="text-sm font-semibold"
-                :class="getDelta(team.code) === 0 ? 'text-green-600' : (getDelta(team.code) <= 2 ? 'text-yellow-600' : 'text-red-600')"
+                :class="deltaTextClass(team.code)"
                 x-text="getDelta(team.code)"
               ></span>
             </td>
