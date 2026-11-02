@@ -25,6 +25,4 @@ public sealed interface CreatePredictionError {
 
     /** A round-0 pre-season registration row was found with no initialRankings snapshot — data integrity issue. */
     record CorruptPreSeasonRegistration(UUID predictionId) implements CreatePredictionError {}
-
-    record TransactionFailed(String reason) implements CreatePredictionError {}
 }
