@@ -3,6 +3,7 @@ package com.ligitabl.api.scheduling.outbox;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -32,6 +33,7 @@ import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.api.usecase.shared.outbox.RoundLockedPayload;
 import com.ligitabl.api.usecase.shared.outbox.SeasonInPlayPayload;
 import com.ligitabl.model.outbox.OutboxEvent;
+import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.OutboxRepo;
 
 /**
@@ -76,6 +78,10 @@ class OutboxFailureIsolationIT extends AbstractPostgresIT {
      */
     @SpyBean
     CreatePredictionUseCase createPredictionUseCase;
+
+    /** Lets one user's second write fail for a reason other than the database. */
+    @SpyBean
+    EntryRepo entryRepo;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -162,6 +168,27 @@ class OutboxFailureIsolationIT extends AbstractPostgresIT {
         // The loop stopped at the user who actually threw, which no database state can show because
         // nothing was written either way.
         verify(createPredictionUseCase, times(1)).execute(any(), any(JoinLockedRoundCommand.class));
+    }
+
+    @Test
+    @DisplayName("A non-database failure undoes only that user's join, and the batch carries on")
+    void nonDatabaseFailureLeavesNoHalfJoinedUser() throws Exception {
+        season.insertUser("first@example.com");
+        season.insertUser("second@example.com");
+        doThrow(new IllegalStateException("guard failed"))
+                .doCallRealMethod()
+                .when(entryRepo)
+                .save(any());
+
+        saveEvent("round-locked:guard", OutboxEventTypes.ROUND_LOCKED, roundLockedPayload());
+        relayClaimed();
+
+        assertThat(stored("round-locked:guard").getStatus()).isEqualTo(OutboxEvent.Status.SENT);
+        assertThat(countPredictions())
+                .as("the failed user's prediction is rolled back; only the other user joined")
+                .isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM t_entry", Integer.class))
+                .isEqualTo(1);
     }
 
     @Test

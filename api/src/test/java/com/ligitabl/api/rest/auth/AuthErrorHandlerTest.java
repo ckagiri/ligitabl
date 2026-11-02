@@ -53,4 +53,13 @@ class AuthErrorHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(response.getBody().code()).isEqualTo("ACCESS_DENIED");
     }
+
+    @Test
+    void aDatabaseFailureKeepsTheAuthBodyAndHidesItsMessage() {
+        var response = handler.handleDatabaseFailure(new org.jooq.exception.DataAccessException("SQL [select secret]"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(response.getBody().code()).isEqualTo("INTERNAL_ERROR");
+        assertThat(response.getBody().message()).isEqualTo(UnexpectedError.PUBLIC_MESSAGE);
+    }
 }

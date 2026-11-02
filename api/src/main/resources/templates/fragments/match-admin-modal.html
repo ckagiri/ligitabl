@@ -71,6 +71,7 @@
               th:attr="hx-post=@{/matches/{slug}/transition(slug=${matchSlug})}"
               hx-target="#match-admin-modal"
               hx-swap="innerHTML"
+              hx-on::before-swap="if (event.detail.xhr.status >= 400 && event.detail.xhr.status < 500) { event.detail.shouldSwap = true; event.detail.isError = false; }"
             >
               <input type="hidden" name="round" th:value="${round}">
 
@@ -139,6 +140,7 @@
               th:attr="hx-post=@{/matches/{slug}/move(slug=${matchSlug})}"
               hx-target="#match-admin-modal"
               hx-swap="innerHTML"
+              hx-on::before-swap="if (event.detail.xhr.status >= 400 && event.detail.xhr.status < 500) { event.detail.shouldSwap = true; event.detail.isError = false; }"
             >
               <input type="hidden" name="round" th:value="${round}">
 
@@ -174,6 +176,7 @@
               th:attr="hx-post=@{/matches/{slug}/update-kickoff(slug=${matchSlug})}"
               hx-target="#match-admin-modal"
               hx-swap="innerHTML"
+              hx-on::before-swap="if (event.detail.xhr.status >= 400 && event.detail.xhr.status < 500) { event.detail.shouldSwap = true; event.detail.isError = false; }"
             >
               <input type="hidden" name="round" th:value="${round}">
               <input type="hidden" name="utcOffset" :value="new Date().getTimezoneOffset()">

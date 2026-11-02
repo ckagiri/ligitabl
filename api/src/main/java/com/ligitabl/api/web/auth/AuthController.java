@@ -55,6 +55,7 @@ import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.UserRepo;
+import com.ligitabl.model.shared.InvalidValueException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -181,7 +182,7 @@ public class AuthController {
 
                         return savedOrDefault(request, response);
                     });
-        } catch (IllegalArgumentException e) {
+        } catch (InvalidValueException e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("email", form.getEmail());
             model.addAttribute("displayName", form.getDisplayName());
@@ -292,7 +293,7 @@ public class AuthController {
             }
 
             return savedOrDefault(request, response);
-        } catch (IllegalArgumentException e) {
+        } catch (InvalidValueException e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("pageTitle", "Login");
             model.addAttribute("loginForm", form);

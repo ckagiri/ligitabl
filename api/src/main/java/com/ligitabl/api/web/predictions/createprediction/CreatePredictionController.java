@@ -55,8 +55,15 @@ public class CreatePredictionController {
                                 .map(s -> new CreatePredictionCommand.SwapPair(s.teamACode(), s.teamBCode()))
                                 .toList());
 
-        Either<CreatePredictionError, CreatePredictionResult> result =
-                createPredictionUseCase.execute(userDetails.getUserId(), command);
+        Either<CreatePredictionError, CreatePredictionResult> result;
+        try {
+            result = createPredictionUseCase.execute(userDetails.getUserId(), command);
+        } catch (RuntimeException e) {
+            // Already rolled back. The page reads this JSON, and an error page would look like a network failure.
+            log.error("Create prediction failed", e);
+            response.setStatus(500);
+            return Map.of("success", false, "message", "Failed to create prediction. Please try again.");
+        }
 
         return result.fold(
                 error -> {

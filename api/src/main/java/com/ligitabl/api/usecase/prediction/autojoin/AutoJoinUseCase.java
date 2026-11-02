@@ -53,6 +53,7 @@ public class AutoJoinUseCase {
     private final CreatePredictionUseCase createPredictionUseCase;
     private final OutboxRepo outboxRepo;
     private final ObjectMapper objectMapper;
+    private final UserJoinSavepoint userJoinSavepoint;
 
     /**
      * Joins users who registered after the pre-season window opened into the round that locked,
@@ -73,8 +74,8 @@ public class AutoJoinUseCase {
 
         for (UUID userId : unjoinedUserIds) {
             try {
-                createPredictionUseCase
-                        .execute(userId, command.get())
+                userJoinSavepoint
+                        .call(() -> createPredictionUseCase.execute(userId, command.get()))
                         .peekLeft(error -> log.warn("[ROUND_LOCKED] Auto-join skipped for user {}: {}", userId, error));
             } catch (org.jooq.exception.DataAccessException | org.springframework.dao.DataAccessException e) {
                 throw e;
@@ -159,8 +160,8 @@ public class AutoJoinUseCase {
         int joined = 0;
         for (UUID userId : eligibleUserIds) {
             try {
-                if (createPredictionUseCase
-                        .execute(userId, command)
+                if (userJoinSavepoint
+                        .call(() -> createPredictionUseCase.execute(userId, command))
                         .peekLeft(
                                 error -> log.warn("[SEASON_IN_PLAY] Auto-join skipped for user {}: {}", userId, error))
                         .isRight()) {
