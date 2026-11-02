@@ -56,7 +56,7 @@ public class GetUserPredictionUseCase {
     private final Clock clock;
 
     public Either<UseCaseError, UserPredictionViewData> execute(GetUserPredictionQuery query) {
-        return findActiveSeason().map(season -> buildViewData(query, season));
+        return findActiveSeason().flatMap(season -> buildViewData(query, season));
     }
 
     /**
@@ -73,7 +73,7 @@ public class GetUserPredictionUseCase {
             Map<String, List<Match>> currentRoundMatches,
             UUID mainContestId) {}
 
-    private UserPredictionViewData buildViewData(GetUserPredictionQuery query, Season season) {
+    private Either<UseCaseError, UserPredictionViewData> buildViewData(GetUserPredictionQuery query, Season season) {
         UserContext ctx = query.userContext();
         Round currentRoundEntity = getCurrentRoundEntity(season);
         int currentRound = currentRoundEntity.getPosition();
@@ -103,7 +103,7 @@ public class GetUserPredictionUseCase {
                 season.getMainContestId());
 
         return switch (ctx.userType()) {
-            case GUEST -> buildGuestView(query, rc);
+            case GUEST -> Either.right(buildGuestView(query, rc));
             case AUTHENTICATED -> buildAuthenticatedView(query, rc);
         };
     }
@@ -140,16 +140,20 @@ public class GetUserPredictionUseCase {
      * Three shapes: no prediction yet (fallback, can-create-entry), a historical round (genuinely
      * past, or the last round once advanced), or the current, still-editable round.
      */
-    private UserPredictionViewData buildAuthenticatedView(GetUserPredictionQuery qry, RequestContext rc) {
+    private Either<UseCaseError, UserPredictionViewData> buildAuthenticatedView(
+            GetUserPredictionQuery qry, RequestContext rc) {
         UserContext ctx = qry.userContext();
 
         if (!ctx.hasMainContestEntry()) {
-            return buildNoPredictionFallbackView(qry, rc);
+            return Either.right(buildNoPredictionFallbackView(qry, rc));
         }
 
         var seasonPrediction = seasonPredictionRepo
                 .findByUserAndSeason(ctx.userId(), qry.seasonId())
-                .orElseThrow(() -> new IllegalStateException("User context indicates prediction exists but not found"));
+                .orElse(null);
+        if (seasonPrediction == null) {
+            return Either.left(UseCaseErrors.notFound("Prediction not found"));
+        }
 
         // SeasonPrediction.atRoundNumber moves with swaps, so the stable join marker for round
         // navigation is the main-contest Entry's joinedAtRound.
@@ -167,24 +171,26 @@ public class GetUserPredictionUseCase {
 
         return showAsHistorical
                 ? buildHistoricalResultView(qry, rc, ctx, seasonPrediction, joinedAtRound)
-                : buildCurrentEditableView(qry, rc, seasonPrediction, joinedAtRound);
+                : Either.right(buildCurrentEditableView(qry, rc, seasonPrediction, joinedAtRound));
     }
 
     /**
      * Build view for a scored round — genuinely historical, or the current round once it's the
      * season's last round and has advanced.
      */
-    private UserPredictionViewData buildHistoricalResultView(
+    private Either<UseCaseError, UserPredictionViewData> buildHistoricalResultView(
             GetUserPredictionQuery qry,
             RequestContext rc,
             UserContext ctx,
             SeasonPrediction seasonPrediction,
             Integer joinedAtRound) {
+        // Expected: ?round= can name a round from before the user joined.
         RoundResult roundResult = roundResultRepo
                 .findByUserAndRound(ctx.userId(), rc.viewingRound())
-                .orElseThrow(() -> new IllegalStateException("Expected RoundResult for user " + ctx.userId()
-                        + " at round " + rc.viewingRound() + " but none found (isCurrentRound=" + rc.isCurrentRound()
-                        + ", roundStatus=" + rc.currentRoundStatus() + ")"));
+                .orElse(null);
+        if (roundResult == null) {
+            return Either.left(UseCaseErrors.notFound("You have no result for round " + rc.viewingRound()));
+        }
 
         List<TeamRank> rankings = convertResultRankingsToTeamRankings(roundResult);
 
@@ -208,7 +214,7 @@ public class GetUserPredictionUseCase {
                 .max()
                 .orElse(0);
 
-        return UserPredictionViewData.builder()
+        return Either.right(UserPredictionViewData.builder()
                 .rankings(rankings)
                 .source(RankingSource.USER_PREDICTION)
                 .accessMode(PredictionAccessMode.READONLY) // Historical is always readonly
@@ -229,7 +235,7 @@ public class GetUserPredictionUseCase {
                 .sprintBestScore(sprintBest)
                 .sprintLabel(sprint.getName())
                 .isGuest(false)
-                .build();
+                .build());
     }
 
     private UserPredictionViewData buildCurrentEditableView(
@@ -387,10 +393,10 @@ public class GetUserPredictionUseCase {
     private Either<UseCaseError, Season> findActiveSeason() {
         return Either.<UseCaseError, Season>ofOptional(
                         seasonRepo.findActiveSeason(competitionDefaults.defaultCompetitionSlug()),
-                        () -> UseCaseErrors.notFound("No active season available"))
+                        () -> UseCaseErrors.conflict("No active season available"))
                 .filter(
                         season -> season.getCurrentRoundId() != null,
-                        __ -> UseCaseErrors.notFound("Season has no current round"));
+                        __ -> UseCaseErrors.conflict("Season has no current round"));
     }
 
     private Round getCurrentRoundEntity(Season season) {

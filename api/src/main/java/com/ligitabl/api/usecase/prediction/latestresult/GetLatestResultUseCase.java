@@ -45,10 +45,10 @@ public class GetLatestResultUseCase {
     private Either<UseCaseError, Season> findActiveSeason() {
         return Either.<UseCaseError, Season>ofOptional(
                         seasonRepo.findActiveSeason(competitionDefaults.defaultCompetitionSlug()),
-                        () -> UseCaseErrors.notFound("No active season available"))
+                        () -> UseCaseErrors.conflict("No active season available"))
                 .filter(
                         season -> season.getCurrentRoundId() != null,
-                        __ -> UseCaseErrors.notFound("Season has no current round"));
+                        __ -> UseCaseErrors.conflict("Season has no current round"));
     }
 
     private Optional<LatestResultResponse> buildResult(UUID userId, Season season) {
