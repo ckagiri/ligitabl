@@ -61,20 +61,18 @@ public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseE
                     .emailVerified(false)
                     .build();
 
-            return Either.catching(() -> userRepo.create(user), UseCaseErrors::fromException)
-                    .map(saved -> {
-                        // Registration counts as the first login
-                        recordLoginUseCase.execute(saved.getId());
-                        sendVerificationEmail(saved.getId());
-                        log.info("User registered successfully: {}", saved.getPublicId());
-                        adminAlerts.notifyNewUserSignup(
-                                saved.getPublicId().value(),
-                                saved.getDisplayName(),
-                                saved.getEmail().value(),
-                                "email registration");
-                        return new RegisterResult(
-                                saved.getPublicId(), saved.getEmail(), saved.getDisplayName(), saved.getRoles());
-                    });
+            User saved = userRepo.create(user);
+            // Registration counts as the first login
+            recordLoginUseCase.execute(saved.getId());
+            sendVerificationEmail(saved.getId());
+            log.info("User registered successfully: {}", saved.getPublicId());
+            adminAlerts.notifyNewUserSignup(
+                    saved.getPublicId().value(),
+                    saved.getDisplayName(),
+                    saved.getEmail().value(),
+                    "email registration");
+            return Either.right(new RegisterResult(
+                    saved.getPublicId(), saved.getEmail(), saved.getDisplayName(), saved.getRoles()));
         });
     }
 

@@ -48,28 +48,22 @@ public class RoundStandingsCalculator {
 
     @Transactional
     public Either<StandingsError, Standings> calculateAndPersist(UUID seasonId, int roundPosition) {
-        return calculateRankings(seasonId, roundPosition)
-                .flatMap(Either.catching(
-                        rankings -> {
-                            Standings existing = standingsRepo
-                                    .findBySeasonAndRoundPosition(seasonId, roundPosition)
-                                    .orElse(null);
+        return calculateRankings(seasonId, roundPosition).map(rankings -> {
+            Standings existing = standingsRepo
+                    .findBySeasonAndRoundPosition(seasonId, roundPosition)
+                    .orElse(null);
 
-                            if (existing == null) {
-                                return standingsRepo.save(Standings.builder()
-                                        .seasonId(seasonId)
-                                        .roundPosition(roundPosition)
-                                        .rankings(rankings)
-                                        .finalised(false)
-                                        .build());
-                            }
+            if (existing == null) {
+                return standingsRepo.save(Standings.builder()
+                        .seasonId(seasonId)
+                        .roundPosition(roundPosition)
+                        .rankings(rankings)
+                        .finalised(false)
+                        .build());
+            }
 
-                            return standingsRepo.updateRankings(existing.getId(), rankings);
-                        },
-                        e -> {
-                            log.error("Failed to persist standings: season={}, round={}", seasonId, roundPosition, e);
-                            return new StandingsError.CalculationFailed(e.getMessage());
-                        }));
+            return standingsRepo.updateRankings(existing.getId(), rankings);
+        });
     }
 
     private Either<StandingsError, StandingsData> fetchTeamsAndMatches(UUID seasonId, int roundPosition) {
@@ -106,6 +100,7 @@ public class RoundStandingsCalculator {
             log.debug("Calculated standings: {} teams", calculatedStandings.size());
             return Either.right(calculatedStandings);
         } catch (Exception e) {
+            // Nothing is written yet, and callers decide: a manual match result commits regardless.
             log.error("Standings calculation failed", e);
             return Either.left(new StandingsError.CalculationFailed(e.getMessage()));
         }

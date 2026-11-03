@@ -85,6 +85,7 @@ The outbox is the exception. `OutboxEventProcessor.processOne` holds one transac
 | Every `@Scheduled` method is monitored or exempt | `ScheduledJobRegistryTest`, `ManualSchedulingAuditTest` | Build fails |
 | 2. No business rules in adapters | Review | None |
 | 4, 5 | Review | None |
+| When to use `Left` or an exception, and `UseCaseError` or a sealed type ([rules](./dev/functional-either.md)) | Review | None |
 
 The dependency rules are ArchUnit tests over compiled classes, in test scope. Name a package in a rule through `ApiClasses.pkg` (or `pkg` in `ModelDependencyRuleTest`), never a string literal: it throws for a package that no longer exists, so a rule can't go stale after a rename and silently match nothing. A new context under `domain` fails the build until it's added to `ModelDependencyRuleTest` with the contexts it may depend on.
 

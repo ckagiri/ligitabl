@@ -98,7 +98,7 @@ public class GetDefaultRoundMatchesUseCase
     }
 
     private Either<UseCaseError, List<Match>> fetchMatches(Round round) {
-        return Either.catching(() -> matchRepo.findByRoundId(round.getId()), UseCaseErrors::fromException);
+        return Either.right(matchRepo.findByRoundId(round.getId()));
     }
 
     private Either<UseCaseError, Round> resolveCurrentRound(Season season) {

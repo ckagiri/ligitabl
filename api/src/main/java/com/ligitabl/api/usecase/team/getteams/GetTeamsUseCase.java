@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecase.team.shared.TeamDto;
 import com.ligitabl.model.repo.TeamRepo;
 
@@ -20,6 +19,6 @@ public class GetTeamsUseCase implements UseCase<Void, Either<UseCaseError, List<
 
     @Override
     public Either<UseCaseError, List<TeamDto>> execute(Void unused) {
-        return Either.catching(() -> TeamDto.listOf(teamRepo.findAll()), UseCaseErrors::fromException);
+        return Either.right(TeamDto.listOf(teamRepo.findAll()));
     }
 }

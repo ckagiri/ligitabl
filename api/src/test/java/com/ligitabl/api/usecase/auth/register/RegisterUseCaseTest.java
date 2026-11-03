@@ -1,6 +1,7 @@
 package com.ligitabl.api.usecase.auth.register;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -16,7 +17,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.ConflictError;
-import com.ligitabl.api.shared.errors.UnexpectedError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.api.shared.validation.RequestValidator;
@@ -246,8 +246,8 @@ class RegisterUseCaseTest {
     }
 
     @Test
-    @DisplayName("Should handle repository create errors")
-    void shouldHandleRepositoryCreateErrors() {
+    @DisplayName("A repository failure leaves the transaction as an exception, so it rolls back")
+    void repositoryCreateFailureThrows() {
         when(userRepo.existsByEmail(email)).thenReturn(false);
         when(passwordHasher.hash(password)).thenReturn(hashed);
         when(publicIdGenerator.generate(any(UUID.class))).thenReturn(publicId);
@@ -255,10 +255,7 @@ class RegisterUseCaseTest {
 
         var cmd = new RegisterCommand(email, "Test User", password);
 
-        Either<UseCaseError, RegisterResult> result = useCase.execute(cmd);
-
-        assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(UnexpectedError.class);
+        assertThatThrownBy(() -> useCase.execute(cmd)).hasMessage("Database error");
     }
 
     @Test

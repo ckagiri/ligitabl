@@ -20,6 +20,9 @@ import java.util.function.Supplier;
  * </ul>
  * Each has a supplier form and a function form for {@code flatMap}, taking an error mapper, a
  * fixed Left value, or neither (Left is the exception itself).
+ *
+ * <p>Wrap one call that throws on bad input. Never wrap a repo call or a whole use case: a bug or a
+ * failed query should stay an exception, so it rolls back, logs at ERROR and returns a generic 500.
  */
 public sealed interface Either<L, R> permits Either.Left, Either.Right {
 
@@ -295,10 +298,10 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     // ========== Unified Catching API (RECOMMENDED DEFAULT) ==========
 
     /**
-     * Catches Exception (checked and runtime) but NOT Error, mapping it to Left. The default for
-     * most code.
+     * Catches Exception (checked and runtime) but NOT Error, mapping it to Left. The default of the
+     * three.
      *
-     * Usage: Either.catching(() -> operation(), UseCaseErrors::catching)
+     * Usage: Either.catching(() -> Email.create(input), UseCaseErrors::fromException)
      */
     static <L, T> Either<L, T> catching(CheckedSupplier<T> supplier, Function<Exception, L> errorMapper) {
         Objects.requireNonNull(supplier, "supplier");
@@ -322,7 +325,7 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     /**
      * Catches Exception but NOT Error, for use in flatMap.
      *
-     * Usage: either.flatMap(Either.catching(value -> operation(value), UseCaseErrors::catching))
+     * Usage: either.flatMap(Either.catching(TeamSlug::of, UseCaseErrors::fromException))
      */
     static <L, R, T> Function<R, Either<L, T>> catching(
             CheckedFunction<R, T> operation, Function<Exception, L> errorMapper) {

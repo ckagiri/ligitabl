@@ -10,7 +10,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.usecase.shared.AdminAlerts;
@@ -48,6 +48,7 @@ public class RoundAdvancementService {
     private final AdminAlerts adminAlerts;
     private final OutboxRepo outboxRepo;
     private final ObjectMapper objectMapper;
+    private final TransactionTemplate transactionTemplate;
 
     @Value("${ligitabl.round-advancement.delay-minutes:3}")
     private int delayMinutes;
@@ -92,43 +93,44 @@ public class RoundAdvancementService {
     }
 
     /** Idempotent, so both the scheduled task and RoundAdvancementRecovery may call it. */
-    @Transactional
     public void attemptAutoAdvancement(UUID roundId, UUID seasonId) {
         try {
-            var round = roundRepo
-                    .findById(roundId)
-                    .orElseThrow(() -> new IllegalStateException("Round not found: " + roundId));
-
-            if (round.getAdvanceAt() == null) {
-                log.info("Skipping auto-advancement for round={}: advancement was cancelled", roundId);
-                return;
-            }
-
-            if (round.isAdvanced()) {
-                log.info("Skipping auto-advancement for round={}: already advanced (manual override)", roundId);
-                return;
-            }
-
-            if (!round.isFinalized()) {
-                log.warn("Skipping auto-advancement for round={}: status is not FINALIZED", roundId);
-                return;
-            }
-
-            var season = seasonRepo
-                    .findById(seasonId)
-                    .orElseThrow(() -> new IllegalStateException("Season not found: " + seasonId));
-
-            advanceToNextRound(season, round);
-
-            log.info("Auto-advanced from round position={} (seasonId={})", round.getPosition(), seasonId);
-            adminAlerts.notifyRoundAdvanced(
-                    round.getPosition(), seasonId, round.getPosition() >= season.getMaxRounds());
-
+            // Not @Transactional: the scheduled task calls this directly, past the proxy.
+            transactionTemplate.executeWithoutResult(__ -> advanceIfDue(roundId, seasonId));
         } catch (Exception e) {
             log.error("Failed to auto-advance round={}", roundId, e);
             Sentry.captureException(e);
             adminAlerts.notifyAdvancementFailed(roundId, e.getMessage());
         }
+    }
+
+    private void advanceIfDue(UUID roundId, UUID seasonId) {
+        var round =
+                roundRepo.findById(roundId).orElseThrow(() -> new IllegalStateException("Round not found: " + roundId));
+
+        if (round.getAdvanceAt() == null) {
+            log.info("Skipping auto-advancement for round={}: advancement was cancelled", roundId);
+            return;
+        }
+
+        if (round.isAdvanced()) {
+            log.info("Skipping auto-advancement for round={}: already advanced (manual override)", roundId);
+            return;
+        }
+
+        if (!round.isFinalized()) {
+            log.warn("Skipping auto-advancement for round={}: status is not FINALIZED", roundId);
+            return;
+        }
+
+        var season = seasonRepo
+                .findById(seasonId)
+                .orElseThrow(() -> new IllegalStateException("Season not found: " + seasonId));
+
+        advanceToNextRound(season, round);
+
+        log.info("Auto-advanced from round position={} (seasonId={})", round.getPosition(), seasonId);
+        adminAlerts.notifyRoundAdvanced(round.getPosition(), seasonId, round.getPosition() >= season.getMaxRounds());
     }
 
     /** For the admin advance-now endpoint. Returns false if already advanced. */
@@ -184,11 +186,20 @@ public class RoundAdvancementService {
      */
     private void advanceToNextRound(Season season, Round currentRound) {
         int currentPosition = currentRound.getPosition();
+        boolean isLastRound = currentPosition >= season.getMaxRounds();
+
+        // Looked up before the first write: AdvanceCurrentRoundNowUseCase turns this exception into
+        // a Left, which commits.
+        Round nextRound = isLastRound
+                ? null
+                : roundRepo
+                        .findBySeasonIdAndPosition(season.getId(), currentPosition + 1)
+                        .orElseThrow(() -> new IllegalStateException("Next round not found: seasonId=" + season.getId()
+                                + " position=" + (currentPosition + 1)));
 
         currentRound.markAdvanced(now());
         roundRepo.save(currentRound);
 
-        boolean isLastRound = currentPosition >= season.getMaxRounds();
         int newCurrentRoundPosition = currentPosition;
 
         if (isLastRound) {
@@ -197,11 +208,6 @@ public class RoundAdvancementService {
                     season.getId(),
                     currentPosition);
         } else {
-            var nextRound = roundRepo
-                    .findBySeasonIdAndPosition(season.getId(), currentPosition + 1)
-                    .orElseThrow(() -> new IllegalStateException(
-                            "Next round not found: seasonId=" + season.getId() + " position=" + (currentPosition + 1)));
-
             season.moveToRound(nextRound);
             seasonRepo.save(season);
             newCurrentRoundPosition = nextRound.getPosition();

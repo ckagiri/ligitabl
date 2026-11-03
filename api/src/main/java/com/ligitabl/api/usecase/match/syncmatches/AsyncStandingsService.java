@@ -22,8 +22,8 @@ public class AsyncStandingsService {
 
     private final RoundStandingsCalculator standingsCalculator;
 
+    // Not @Transactional: the failure caught below must not mark an outer transaction rollback-only.
     @Async("asyncStandingsExecutor")
-    @Transactional
     public void recalculateAsync(UUID seasonId, int roundPosition) {
         try {
             log.info("Starting async standings recalculation: season={}, round={}", seasonId, roundPosition);

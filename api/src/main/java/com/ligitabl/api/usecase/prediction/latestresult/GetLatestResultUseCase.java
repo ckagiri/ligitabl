@@ -8,8 +8,8 @@ import org.springframework.stereotype.Service;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
-import com.ligitabl.api.usecase.shared.error.ErrorMapper;
 import com.ligitabl.model.domain.league.Round;
 import com.ligitabl.model.domain.league.RoundSpan;
 import com.ligitabl.model.domain.league.RoundStatus;
@@ -39,14 +39,19 @@ public class GetLatestResultUseCase {
     private final CompetitionRepo competitionRepo;
 
     public Either<UseCaseError, Optional<LatestResultResponse>> execute(UUID userId) {
-        return Either.catching(() -> buildResult(userId), ErrorMapper::toUseCaseError);
+        return findActiveSeason().map(season -> buildResult(userId, season));
     }
 
-    private Optional<LatestResultResponse> buildResult(UUID userId) {
-        Season season = seasonRepo
-                .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
-                .orElseThrow(() -> new IllegalStateException("No active season available"));
+    private Either<UseCaseError, Season> findActiveSeason() {
+        return Either.<UseCaseError, Season>ofOptional(
+                        seasonRepo.findActiveSeason(competitionDefaults.defaultCompetitionSlug()),
+                        () -> UseCaseErrors.notFound("No active season available"))
+                .filter(
+                        season -> season.getCurrentRoundId() != null,
+                        __ -> UseCaseErrors.notFound("Season has no current round"));
+    }
 
+    private Optional<LatestResultResponse> buildResult(UUID userId, Season season) {
         Round currentRoundEntity = getCurrentRoundEntity(season);
         int currentRound = currentRoundEntity.getPosition();
         RoundStatus currentRoundStatus = roundSupport.resolveStatus(currentRoundEntity);
@@ -150,12 +155,8 @@ public class GetLatestResultUseCase {
     }
 
     private Round getCurrentRoundEntity(Season season) {
-        UUID currentRoundId = season.getCurrentRoundId();
-        if (currentRoundId == null) {
-            throw new IllegalStateException("Season has no current round");
-        }
         return roundRepo
-                .findById(currentRoundId)
+                .findById(season.getCurrentRoundId())
                 .orElseThrow(() -> new IllegalStateException("Current round not found"));
     }
 }

@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.shared.exceptions.UseCaseErrorStatus;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
-import com.ligitabl.api.usecase.shared.error.ErrorMapper;
 import com.ligitabl.model.domain.league.Competition;
 import com.ligitabl.model.domain.league.Match;
 import com.ligitabl.model.domain.league.Round;
@@ -68,7 +68,7 @@ public class AdminMatchesController {
 
         return resolveContext()
                 .fold(
-                        error -> ResponseEntity.status(ErrorMapper.toHttpStatus(error))
+                        error -> ResponseEntity.status(UseCaseErrorStatus.of(error))
                                 .build(),
                         ctx -> ResponseEntity.ok(buildData(ctx)));
     }
@@ -98,7 +98,7 @@ public class AdminMatchesController {
     }
 
     private String handleError(UseCaseError error, Model model, HttpServletResponse response) {
-        response.setStatus(ErrorMapper.toHttpStatus(error));
+        response.setStatus(UseCaseErrorStatus.of(error).value());
         model.addAttribute("error", error.getMessage());
         model.addAttribute("pageTitle", "Admin · Matches");
         return "error";

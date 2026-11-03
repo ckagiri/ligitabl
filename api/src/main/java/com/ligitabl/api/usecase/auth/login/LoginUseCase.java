@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional(readOnly = true)
 public class LoginUseCase implements UseCase<LoginCommand, Either<UseCaseError, LoginResult>> {
 
-    private static final UseCaseError INVALID_CREDENTIALS = UseCaseErrors.unauthorized("Invalid credentials");
+    private static final UseCaseError INVALID_CREDENTIALS = UseCaseErrors.unauthenticated("Invalid credentials");
 
     private final VerifyCredentialsUseCase verifyCredentialsUseCase;
     private final TokenGenerator tokenGenerator;

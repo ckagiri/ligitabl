@@ -41,8 +41,8 @@ public final class UseCaseErrors {
         return new UnexpectedError(new RuntimeException(message));
     }
 
-    public static AuthorizationError unauthorized(String message) {
-        return new AuthorizationError(message);
+    public static AuthenticationError unauthenticated(String message) {
+        return new AuthenticationError(message);
     }
 
     public static UseCaseError fromException(Throwable throwable) {

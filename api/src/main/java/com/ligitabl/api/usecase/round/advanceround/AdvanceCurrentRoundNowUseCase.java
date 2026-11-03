@@ -40,13 +40,11 @@ public class AdvanceCurrentRoundNowUseCase {
                     if (!attempt.advanced()) {
                         return Either.left(UseCaseErrors.conflict("Round already advanced"));
                     }
-                    return roundRepo
+                    var r = roundRepo
                             .findById(attempt.roundId())
-                            .map(r -> Either.<UseCaseError, AdvanceCurrentRoundNowResult>right(
-                                    new AdvanceCurrentRoundNowResult(
-                                            r.getId(), r.getPosition(), r.getPosition() + 1, r.getAdvancedAt())))
-                            .orElseGet(
-                                    () -> Either.left(UseCaseErrors.unexpected("Round not found after advancement")));
+                            .orElseThrow(() -> new IllegalStateException("Round not found after advancement"));
+                    return Either.right(new AdvanceCurrentRoundNowResult(
+                            r.getId(), r.getPosition(), r.getPosition() + 1, r.getAdvancedAt()));
                 });
     }
 }

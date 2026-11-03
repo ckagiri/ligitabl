@@ -13,7 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
-import com.ligitabl.api.shared.errors.*;
+import com.ligitabl.api.shared.errors.UnexpectedError;
+import com.ligitabl.api.shared.errors.UseCaseErrors;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,18 +44,8 @@ public class GlobalExceptionHandler {
         // Log at WARN for client/expected errors; ERROR for unexpected server errors
         if (error instanceof UnexpectedError ue) {
             log.error("Unexpected error: {}", ue.logMessage(), ue.cause());
-        } else if (error instanceof NotFoundError nf) {
-            log.warn("Not found: {}", nf.getMessage());
-        } else if (error instanceof ValidationError ve) {
-            log.warn("Validation failed: {}", ve.getMessage());
-        } else if (error instanceof UnprocessableEntityError ue) {
-            log.warn("Unprocessable entity: {}", ue.getMessage());
-        } else if (error instanceof ConflictError ce) {
-            log.warn("Conflict: {}", ce.getMessage());
-        } else if (error instanceof AuthorizationError ue) {
-            log.warn("Unauthorized: {}", ue.getMessage());
         } else {
-            log.error("Unhandled error type: {}", error.getClass().getSimpleName());
+            log.warn("{}: {}", error.getClass().getSimpleName(), error.getMessage());
         }
 
         return UseCaseErrorResponseFactory.from(error, request.getDescription(false));

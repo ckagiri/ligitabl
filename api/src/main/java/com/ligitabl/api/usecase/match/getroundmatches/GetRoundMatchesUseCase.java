@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.match.shared.MatchDto;
 import com.ligitabl.api.usecase.match.shared.MatchEnricher;
@@ -33,7 +32,7 @@ public class GetRoundMatchesUseCase implements UseCase<GetRoundMatchesQuery, Eit
                 .flatMap(q -> hierarchyValidator.validateCompetitionSeasonAndRound(
                         q.competitionSlug(), q.seasonSlug(), q.position()))
                 .map(Round::getId)
-                .flatMap(Either.catching(matchRepo::findByRoundId, UseCaseErrors::fromException))
+                .map(matchRepo::findByRoundId)
                 .flatMap(matchEnricher::enrichWithTeams);
     }
 }

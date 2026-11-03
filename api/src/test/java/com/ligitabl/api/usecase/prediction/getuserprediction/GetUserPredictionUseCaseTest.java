@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.usecase.prediction.shared.PredictionAccessMode;
 import com.ligitabl.model.domain.league.Competition;
@@ -372,9 +374,26 @@ class GetUserPredictionUseCaseTest {
         when(roundResultRepo.findByUserAndRound(userId, 10)).thenReturn(Optional.empty());
 
         var query = GetUserPredictionQuery.forAuthenticatedUser(userId, seasonId, true, null);
-        Either<?, UserPredictionViewData> result = useCase.execute(query);
 
-        assertTrue(result.isLeft());
+        assertThrows(IllegalStateException.class, () -> useCase.execute(query));
+    }
+
+    @Test
+    void noActiveSeason_isNotFound() {
+        when(seasonRepo.findActiveSeason(any(String.class))).thenReturn(Optional.empty());
+
+        var result = useCase.execute(GetUserPredictionQuery.forGuest(UUID.randomUUID(), null));
+
+        assertInstanceOf(NotFoundError.class, result.getLeft());
+    }
+
+    @Test
+    void databaseFailure_isThrownNotReturned() {
+        when(seasonRepo.findActiveSeason(any(String.class)))
+                .thenThrow(new DataAccessException("SQL [select secret_column]"));
+        var query = GetUserPredictionQuery.forGuest(UUID.randomUUID(), null);
+
+        assertThrows(DataAccessException.class, () -> useCase.execute(query));
     }
 
     // ── seasonCompleted derivation: from round state, not Season.completed ─────

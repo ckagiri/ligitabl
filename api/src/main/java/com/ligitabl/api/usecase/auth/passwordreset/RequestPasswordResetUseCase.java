@@ -63,6 +63,7 @@ public class RequestPasswordResetUseCase {
 
             return Either.right(new RequestPasswordResetResult.EmailSent(email.value()));
         } catch (Exception e) {
+            // Keeps the form's error message. All this can commit is a reset token nobody received.
             log.error("[PASSWORD_RESET] Unexpected failure email={}", emailStr, e);
             return Either.left(new RequestPasswordResetError.UnexpectedError());
         }

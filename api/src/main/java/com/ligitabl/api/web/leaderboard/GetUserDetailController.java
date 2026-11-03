@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.usecase.leaderboard.getuserdetail.GetUserDetailUseCase;
 import com.ligitabl.api.usecase.leaderboard.getuserdetail.PredictionTeam;
 import com.ligitabl.api.usecase.leaderboard.getuserdetail.UserPredictions;
@@ -148,8 +149,8 @@ public class GetUserDetailController {
         return href;
     }
 
-    private String handleError(Exception error, Model model, HttpServletResponse response) {
-        log.error("Error fetching user predictions: {}", error.getMessage());
+    private String handleError(UseCaseError error, Model model, HttpServletResponse response) {
+        log.warn("Error fetching user predictions: {}", error.logMessage());
 
         response.setStatus(404);
         model.addAttribute("error", error.getMessage());

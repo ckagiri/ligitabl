@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.shared.exceptions.UseCaseErrorStatus;
 import com.ligitabl.api.usecase.match.getdefaultroundmatches.GetDefaultRoundMatchesQuery;
 import com.ligitabl.api.usecase.match.getdefaultroundmatches.GetDefaultRoundMatchesUseCase;
-import com.ligitabl.api.usecase.shared.error.ErrorMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -105,7 +105,7 @@ public class RoundMatchesController {
     }
 
     private String handleMatchesError(UseCaseError error, Model model, HttpServletResponse response) {
-        response.setStatus(ErrorMapper.toHttpStatus(error));
+        response.setStatus(UseCaseErrorStatus.of(error).value());
         model.addAttribute("error", error.getMessage());
         model.addAttribute("pageTitle", "Matches");
         return "error";

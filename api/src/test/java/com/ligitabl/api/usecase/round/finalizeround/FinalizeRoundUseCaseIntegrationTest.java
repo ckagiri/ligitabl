@@ -2,6 +2,9 @@ package com.ligitabl.api.usecase.round.finalizeround;
 
 import static com.ligitabl.api.testsupport.TestIds.randomPublicId;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -15,6 +18,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -73,7 +77,7 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
     @Autowired
     RoundSubmissionRepo roundSubmissionRepo;
 
-    @Autowired
+    @SpyBean
     RoundResultRepo roundResultRepo;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -105,6 +109,34 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
 
         aliceId = insertUser("alice@example.com", "Alice");
         bobId = insertUser("bob@example.com", "Bob");
+    }
+
+    @Test
+    @DisplayName("A Java exception after submissions are saved rolls back the whole finalization")
+    void javaExceptionMidFinalizationRollsBack() throws Exception {
+        insertSeason(2, 4);
+
+        Round round1 = createRound(1, false);
+        createRound(2, false);
+        setCurrentRound(round1.getId());
+
+        createFinishedMatch(round1, arsenal, chelsea, 2, 1);
+        createFinishedMatch(round1, liverpool, manCity, 1, 1);
+
+        createPrediction(aliceId, 1);
+        createPrediction(bobId, 1);
+
+        // Not a SQL error: Postgres would abort the transaction on its own.
+        doThrow(new IllegalStateException("scoring bug")).when(roundResultRepo).save(any());
+
+        assertThatThrownBy(() -> finalizeRoundUseCase.execute(seasonId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("scoring bug");
+
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM t_round_submission", Integer.class))
+                .isZero();
+        assertThat(roundRepo.findById(round1.getId()).orElseThrow().isFinalized())
+                .isFalse();
     }
 
     @Test

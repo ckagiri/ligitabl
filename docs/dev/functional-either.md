@@ -49,10 +49,11 @@ Convention:
 
 ## Catching exceptions into `Either` (recommended)
 
-The implementation provides a single, consistent “catching” API. Pick the variant based on how broad you want the catch to be.
+The implementation provides a single, consistent “catching” API. Pick the variant based on how broad you want the catch to be. See "`Left` or an exception?" below for when to catch at all.
 
-### `Either.catching` (recommended default)
+### `Either.catching`
 
+- Wrap one call that throws on bad input, such as `Email.create`. Never wrap a repo call or a whole use case.
 - Catches `Exception` (checked + runtime), but rethrows `Error`.
 - Preserves interrupts: if the thrown error is an `InterruptedException`, it re-sets the thread interrupt flag.
 
@@ -114,9 +115,26 @@ return useCase.execute(cmd)
     .getOrElseThrow(UseCaseException::new);
 ```
 
+## `Left` or an exception?
+
+- **`Left`**: a failure the caller handles. That means bad input, a broken business rule, or an infrastructure failure the business process has an answer to, such as the football feed being down.
+- **Exception**: a bug, or an infrastructure failure nobody can act on, such as a failed query. Let it reach the error handlers, which log it at ERROR and return a generic 500.
+
+Sealed error types get no catch-all variant for exceptions, such as `Failed(String reason)`: it drops the stack trace and hides the failure from the error handlers.
+
+**A `Left` from a `@Transactional` method commits.** Only an exception leaving the proxy rolls back. Don't catch exceptions around writes, and check business rules before the first write. If a `Left` must follow a write, call `setRollbackOnly`. Use cases running inside the outbox processor's transaction are the exception: see "Transactions belong on the use case" in [Architecture](../architecture.md).
+
+## `UseCaseError` or a per-use-case type?
+
+- **`UseCaseError`**: every caller only picks a status and shows the message. CRUD and thin reads usually stay here.
+- **A sealed type for the use case**, such as `SwapError`: a caller does anything more, by branching on the specific failure, showing data carried by the error, or taking a different path. That caller may be the one you're writing.
+
+Never branch on `getMessage()` text. Needing to is the signal to move to a sealed type. Existing sealed types stay as they are: this rule decides where new code starts and when to promote, and doesn't call for migrating anything.
+
+`UseCaseErrorStatus` is the one mapping from `UseCaseError` to an HTTP status.
+
 ## Best practices (repo conventions)
 
-- Map exceptions to a small, stable domain error type (e.g., `UseCaseError`) at the boundary; don’t leak raw `Exception`/`Throwable` widely.
-- Prefer `Either.catching(...)` in application code; reserve `catchingAll(...)` for true “last chance” boundaries.
+- Reserve `catchingAll(...)` for true “last chance” boundaries.
 - Don’t swallow interrupts: the catching helpers already preserve them.
 - Avoid `null` inside `Either` values. Prefer domain objects or a `Unit` right value when you need “success with no payload”.

@@ -85,7 +85,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void expectedErrorsKeepTheirMessage() {
-        var ex = new UseCaseException(UseCaseErrors.unauthorized("Invalid credentials"));
+        var ex = new UseCaseException(UseCaseErrors.unauthenticated("Invalid credentials"));
 
         var response = handler.handleBusinessFailure(ex, request);
 

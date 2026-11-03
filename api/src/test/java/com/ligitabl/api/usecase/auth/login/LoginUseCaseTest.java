@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.shared.errors.AuthorizationError;
+import com.ligitabl.api.shared.errors.AuthenticationError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.shared.auth.TokenGenerator;
@@ -97,7 +97,7 @@ class LoginUseCaseTest {
         Either<UseCaseError, LoginResult> result = loginUseCase.execute(cmd);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(AuthorizationError.class);
+        assertThat(result.getLeft()).isInstanceOf(AuthenticationError.class);
 
         verify(userRepo).findByEmail(email);
         verify(passwordHasher, never()).verify(any(), any());
@@ -115,7 +115,7 @@ class LoginUseCaseTest {
 
         Either<UseCaseError, LoginResult> result = loginUseCase.execute(cmd);
 
-        assertThat(result.getLeft()).isInstanceOf(AuthorizationError.class);
+        assertThat(result.getLeft()).isInstanceOf(AuthenticationError.class);
         verify(tokenGenerator, never()).generateAccessToken(any(), any());
     }
 
@@ -130,7 +130,7 @@ class LoginUseCaseTest {
         Either<UseCaseError, LoginResult> result = loginUseCase.execute(cmd);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(AuthorizationError.class);
+        assertThat(result.getLeft()).isInstanceOf(AuthenticationError.class);
 
         verify(userRepo).findByEmail(email);
         verify(passwordHasher).verify(password, user.getPassword());

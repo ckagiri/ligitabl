@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.ligitabl.api.logging.RequestId;
-import com.ligitabl.api.shared.errors.AuthorizationError;
+import com.ligitabl.api.shared.errors.AuthenticationError;
 import com.ligitabl.api.shared.errors.ConflictError;
 import com.ligitabl.api.shared.errors.UnexpectedError;
 import com.ligitabl.api.shared.errors.UnprocessableEntityError;
@@ -44,7 +44,7 @@ public class AuthErrorHandler {
                     .body(new AuthDto.ErrorResponse("VALIDATION_ERROR", first.message(), first.field()));
         }
 
-        if (error instanceof AuthorizationError ae) {
+        if (error instanceof AuthenticationError ae) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new AuthDto.ErrorResponse("AUTHENTICATION_ERROR", ae.getMessage()));
         }

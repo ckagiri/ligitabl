@@ -14,9 +14,10 @@ import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.model.domain.identity.PublicId;
 import com.ligitabl.model.domain.identity.User;
-import com.ligitabl.model.domain.league.Competition;
 import com.ligitabl.model.domain.league.Round;
 import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.domain.league.Team;
@@ -37,7 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Fetches a user's predictions for the leaderboard modal.
- * Uses Either.catching to handle errors with exceptions.
  */
 @Service
 @RequiredArgsConstructor
@@ -53,55 +53,58 @@ public class GetUserDetailUseCase {
     private final UserRepo userRepo;
     private final CompetitionDefaults competitionDefaults;
 
-    public Either<Exception, UserPredictions> execute(String publicId, Integer effectiveToRound, UUID seasonId) {
-        return Either.catching(() -> {
-            Competition competition = competitionRepo
-                    .findBySlug(competitionDefaults.defaultCompetitionSlug())
-                    .orElseThrow(() -> new GetUserDetailNotFoundException("Default competition not found"));
+    public Either<UseCaseError, UserPredictions> execute(String publicId, Integer effectiveToRound, UUID seasonId) {
+        var competition = competitionRepo
+                .findBySlug(competitionDefaults.defaultCompetitionSlug())
+                .orElse(null);
+        if (competition == null) return Either.left(UseCaseErrors.notFound("Default competition not found"));
 
-            // Resolve season: prefer the contest's own season when provided, otherwise
-            // fall back to the globally active season (e.g. when opened from /leaderboard).
-            Season season = (seasonId != null
-                            ? seasonRepo.findById(seasonId)
-                            : seasonRepo.findActiveSeason(competition.getId()))
-                    .orElseThrow(() -> new GetUserDetailNotFoundException("Season not found"));
+        // Resolve season: prefer the contest's own season when provided, otherwise
+        // fall back to the globally active season (e.g. when opened from /leaderboard).
+        Season season = (seasonId != null
+                        ? seasonRepo.findById(seasonId)
+                        : seasonRepo.findActiveSeason(competition.getId()))
+                .orElse(null);
+        if (season == null) return Either.left(UseCaseErrors.notFound("Season not found"));
 
-            Round currentRound = roundRepo
-                    .findById(season.getCurrentRoundId())
-                    .orElseThrow(() -> new GetUserDetailNotFoundException("Current round not found"));
+        Round currentRound = roundRepo.findById(season.getCurrentRoundId()).orElse(null);
+        if (currentRound == null) return Either.left(UseCaseErrors.notFound("Current round not found"));
 
-            User user = userRepo.findByPublicId(PublicId.create(publicId))
-                    .orElseThrow(() -> new GetUserDetailNotFoundException("User not found: " + publicId));
+        return findUser(publicId)
+                .flatMap(user -> buildUserPredictions(user, publicId, effectiveToRound, season, currentRound));
+    }
 
-            // Only for the "View full prediction" link; a season without a slug just yields no link.
-            String seasonSlug = season.getSlug() != null ? season.getSlug().toShorthand() : null;
+    private Either<UseCaseError, User> findUser(String publicId) {
+        UseCaseError notFound = UseCaseErrors.notFound("User not found: " + publicId);
+        return Either.catching(() -> PublicId.create(publicId), notFound)
+                .flatMap(id -> Either.ofOptional(userRepo.findByPublicId(id), notFound));
+    }
 
-            // If a finalized round result exists for the effective round, prefer that.
-            return Optional.ofNullable(effectiveToRound)
-                    .flatMap(round ->
-                            roundSubmissionRepo.findByUserAndSeasonAndRound(user.getId(), season.getId(), round))
-                    .flatMap(submission -> roundResultRepo.findByRoundSubmissionId(submission.getId()))
-                    .map(roundResult -> buildUserPredictionsFromResult(effectiveToRound, roundResult, seasonSlug))
-                    .orElseGet(() -> {
-                        int displayRound = effectiveToRound != null ? effectiveToRound : currentRound.getPosition();
+    private Either<UseCaseError, UserPredictions> buildUserPredictions(
+            User user, String publicId, Integer effectiveToRound, Season season, Round currentRound) {
+        // Only for the "View full prediction" link; a season without a slug just yields no link.
+        String seasonSlug = season.getSlug() != null ? season.getSlug().toShorthand() : null;
 
-                        // Only fall back to live prediction when viewing the current round
-                        if (effectiveToRound == null || effectiveToRound >= currentRound.getPosition()) {
-                            SeasonPrediction prediction = seasonPredictionRepo
-                                    .findByUserAndSeason(user.getId(), season.getId())
-                                    .orElseThrow(() -> new GetUserDetailNotFoundException(
-                                            "No prediction found for user " + publicId));
-                            return new UserPredictions(
-                                    displayRound,
-                                    null,
-                                    mapRankingsToPredictionTeams(prediction.getCurrentRankings()),
-                                    seasonSlug);
-                        }
+        // If a finalized round result exists for the effective round, prefer that.
+        var fromResult = Optional.ofNullable(effectiveToRound)
+                .flatMap(round -> roundSubmissionRepo.findByUserAndSeasonAndRound(user.getId(), season.getId(), round))
+                .flatMap(submission -> roundResultRepo.findByRoundSubmissionId(submission.getId()))
+                .map(roundResult -> buildUserPredictionsFromResult(effectiveToRound, roundResult, seasonSlug));
+        if (fromResult.isPresent()) return Either.right(fromResult.get());
 
-                        // Past round with no finalized data
-                        return new UserPredictions(displayRound, null, List.of(), seasonSlug);
-                    });
-        });
+        int displayRound = effectiveToRound != null ? effectiveToRound : currentRound.getPosition();
+
+        // Past round with no finalized data
+        if (effectiveToRound != null && effectiveToRound < currentRound.getPosition()) {
+            return Either.right(new UserPredictions(displayRound, null, List.of(), seasonSlug));
+        }
+
+        // Only fall back to live prediction when viewing the current round
+        return Either.<UseCaseError, SeasonPrediction>ofOptional(
+                        seasonPredictionRepo.findByUserAndSeason(user.getId(), season.getId()),
+                        () -> UseCaseErrors.notFound("No prediction found for user " + publicId))
+                .map(prediction -> new UserPredictions(
+                        displayRound, null, mapRankingsToPredictionTeams(prediction.getCurrentRankings()), seasonSlug));
     }
 
     private UserPredictions buildUserPredictionsFromResult(
