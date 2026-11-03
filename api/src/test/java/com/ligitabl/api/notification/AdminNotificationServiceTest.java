@@ -2,10 +2,12 @@ package com.ligitabl.api.notification;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -19,6 +21,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionSynchronizationUtils;
 
 import com.ligitabl.api.notification.email.EmailService;
 
@@ -163,5 +167,31 @@ class AdminNotificationServiceTest {
         verify(slackNotificationService, times(2)).send(captor.capture());
         assertThat(captor.getAllValues().get(0)).startsWith("🔴");
         assertThat(captor.getAllValues().get(1)).startsWith("ℹ️");
+    }
+
+    @Test
+    void anAnnouncementInsideATransactionWaitsForTheCommit() {
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            service.notifyRoundAdvanced(5, UUID.randomUUID(), false);
+            verifyNoInteractions(slackNotificationService);
+
+            TransactionSynchronizationUtils.triggerAfterCommit();
+            verify(slackNotificationService).send(contains("Round advanced"));
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
+    void aFailureAlertInsideATransactionGoesOutImmediately() {
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            service.notifyAdvancementFailed(UUID.randomUUID(), "boom");
+
+            verify(slackNotificationService).send(contains("boom"));
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
     }
 }

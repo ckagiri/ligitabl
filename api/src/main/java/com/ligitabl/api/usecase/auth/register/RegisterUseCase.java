@@ -3,6 +3,7 @@ package com.ligitabl.api.usecase.auth.register;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,7 @@ import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationUseCase;
 import com.ligitabl.api.usecase.auth.recordlogin.RecordLoginUseCase;
 import com.ligitabl.api.usecase.shared.AdminAlerts;
+import com.ligitabl.model.domain.identity.Email;
 import com.ligitabl.model.domain.identity.Password;
 import com.ligitabl.model.domain.identity.PasswordHasher;
 import com.ligitabl.model.domain.identity.PublicIdGenerator;
@@ -29,7 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Transactional
 public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseError, RegisterResult>> {
-
     private final UserRepo userRepo;
     private final RecordLoginUseCase recordLoginUseCase;
     private final PasswordHasher passwordHasher;
@@ -44,8 +45,7 @@ public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseE
 
         return requestValidator.validate(normalized).flatMap(cmd -> {
             if (userRepo.existsByEmail(cmd.email())) {
-                return Either.left(
-                        UseCaseErrors.conflict("User with email '" + cmd.email().value() + "' already exists"));
+                return Either.left(alreadyExists(cmd.email()));
             }
 
             UUID userId = UUID.randomUUID();
@@ -61,7 +61,13 @@ public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseE
                     .emailVerified(false)
                     .build();
 
-            User saved = userRepo.create(user);
+            User saved;
+            try {
+                saved = userRepo.create(user);
+            } catch (DuplicateKeyException e) {
+                // The check above can't stop two signups racing for one email; the constraint does.
+                return Either.left(alreadyExists(cmd.email()));
+            }
             // Registration counts as the first login
             recordLoginUseCase.execute(saved.getId());
             sendVerificationEmail(saved.getId());
@@ -74,6 +80,10 @@ public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseE
             return Either.right(new RegisterResult(
                     saved.getPublicId(), saved.getEmail(), saved.getDisplayName(), saved.getRoles()));
         });
+    }
+
+    private static UseCaseError alreadyExists(Email email) {
+        return UseCaseErrors.conflict("User with email '" + email.value() + "' already exists");
     }
 
     /**

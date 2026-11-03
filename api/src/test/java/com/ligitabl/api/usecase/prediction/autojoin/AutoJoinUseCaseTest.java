@@ -70,6 +70,14 @@ class AutoJoinUseCaseTest {
     @Mock
     OutboxRepo outboxRepo;
 
+    // Savepoints need a real transaction: OutboxFailureIsolationIT covers them.
+    private final UserJoinSavepoint noSavepoint = new UserJoinSavepoint() {
+        @Override
+        <T> T call(java.util.function.Supplier<T> join) {
+            return join.get();
+        }
+    };
+
     private AutoJoinUseCase useCase;
 
     private final UUID seasonId = UUID.randomUUID();
@@ -79,7 +87,14 @@ class AutoJoinUseCaseTest {
     @BeforeEach
     void setup() {
         useCase = new AutoJoinUseCase(
-                seasonRepo, userRepo, contestRepo, roundRepo, createPredictionUseCase, outboxRepo, new ObjectMapper());
+                seasonRepo,
+                userRepo,
+                contestRepo,
+                roundRepo,
+                createPredictionUseCase,
+                outboxRepo,
+                new ObjectMapper(),
+                noSavepoint);
     }
 
     private static Either<?, CreatePredictionResult> created(int atRound) {

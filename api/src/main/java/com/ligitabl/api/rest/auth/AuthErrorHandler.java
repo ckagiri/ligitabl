@@ -15,6 +15,7 @@ import com.ligitabl.api.shared.errors.ConflictError;
 import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.api.shared.errors.UnexpectedError;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.api.shared.exceptions.UseCaseErrorStatus;
 import com.ligitabl.api.shared.exceptions.UseCaseException;
@@ -33,6 +34,12 @@ public class AuthErrorHandler {
         String message = fieldError == null ? "Validation failed" : fieldError.getDefaultMessage();
 
         return ResponseEntity.badRequest().body(new AuthDto.ErrorResponse("VALIDATION_ERROR", message, field));
+    }
+
+    @ExceptionHandler({org.jooq.exception.DataAccessException.class, org.springframework.dao.DataAccessException.class})
+    public ResponseEntity<AuthDto.ErrorResponse> handleDatabaseFailure(Exception ex) {
+        var error = UseCaseErrors.unexpected(ex);
+        return ResponseEntity.status(UseCaseErrorStatus.of(error)).body(toBody(error));
     }
 
     @ExceptionHandler(UseCaseException.class)

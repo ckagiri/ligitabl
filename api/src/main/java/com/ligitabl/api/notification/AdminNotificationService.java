@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.ligitabl.api.notification.email.EmailService;
 import com.ligitabl.api.usecase.shared.AdminAlerts;
@@ -96,11 +98,11 @@ public class AdminNotificationService implements AdminAlerts {
 
     @Override
     public void notifyRoundFinalized(UUID roundId, int roundPosition, int submissions, int results, boolean lastRound) {
-        info(
+        afterCommit(() -> info(
                 "Round finalized",
                 "Round " + roundPosition + " finalized" + (lastRound ? " (last round of season)" : "") + ".\n"
                         + "Submissions: " + submissions + "\n" + "Results: "
-                        + results + "\n" + "Round ID: " + roundId);
+                        + results + "\n" + "Round ID: " + roundId));
     }
 
     @Override
@@ -114,13 +116,13 @@ public class AdminNotificationService implements AdminAlerts {
 
     @Override
     public void notifyRoundAdvanced(int fromPosition, UUID seasonId, boolean lastRound) {
-        info(
+        afterCommit(() -> info(
                 "Round advanced",
                 lastRound
                         ? "Last round (position " + fromPosition + ") advanced — season completion is a separate "
                                 + "admin action.\n" + "Season ID: " + seasonId
                         : "Advanced from round " + fromPosition + " to " + (fromPosition + 1) + ".\n" + "Season ID: "
-                                + seasonId);
+                                + seasonId));
     }
 
     @Override
@@ -133,17 +135,17 @@ public class AdminNotificationService implements AdminAlerts {
     // --- Matchday / season lifecycle ---
 
     public void notifyMatchdayAdvanced(int previousMatchday, int newMatchday, UUID seasonId) {
-        info(
+        afterCommit(() -> info(
                 "Matchday advanced",
-                "Matchday " + previousMatchday + " → " + newMatchday + ".\n" + "Season ID: " + seasonId);
+                "Matchday " + previousMatchday + " → " + newMatchday + ".\n" + "Season ID: " + seasonId));
     }
 
     @Override
     public void notifySeasonActivated(String competitionSlug, UUID promotedSeasonId, UUID previousSeasonId) {
-        info(
+        afterCommit(() -> info(
                 "Season activated",
                 "Competition " + competitionSlug + ": upcoming season promoted to active.\n" + "New season ID: "
-                        + promotedSeasonId + "\n" + "Previous season ID: " + previousSeasonId);
+                        + promotedSeasonId + "\n" + "Previous season ID: " + previousSeasonId));
     }
 
     // --- User lifecycle ---
@@ -152,8 +154,25 @@ public class AdminNotificationService implements AdminAlerts {
     public void notifyNewUserSignup(String publicId, String displayName, String email, String signupMethod) {
         String title = "New user signup";
         String body = displayName + " (" + email + ") signed up via " + signupMethod + ".\n" + "User: " + publicId;
-        log.info("{}: {}", title, body);
-        slackNotificationService.send(SlackNotificationService.Channel.NEW_USERS, "🎉 *" + title + "*\n" + body);
+        afterCommit(() -> {
+            log.info("{}: {}", title, body);
+            slackNotificationService.send(SlackNotificationService.Channel.NEW_USERS, "🎉 *" + title + "*\n" + body);
+        });
+    }
+
+    // Announcements of completed work wait for the commit, so a rollback can't leave a false one.
+    // Alerts about failures don't: they must get out even if the transaction rolls back.
+    private static void afterCommit(Runnable announce) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            announce.run();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                announce.run();
+            }
+        });
     }
 
     // --- Tiers ---
