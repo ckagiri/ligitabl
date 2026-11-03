@@ -31,7 +31,9 @@ public sealed interface Password {
     record Hashed(String value) implements Password {
 
         public Hashed {
-            assertArgumentNotEmpty(value, "Hashed password cannot be empty");
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException("Hashed password cannot be empty");
+            }
         }
 
         /**

@@ -20,7 +20,6 @@ public class UseCaseErrorResponseFactory {
         return switch (error) {
             case NotFoundError __ -> "Not Found";
             case ValidationError __ -> "Validation Failed";
-            case UnprocessableEntityError __ -> "Unprocessable Entity";
             case ConflictError __ -> "Business Rule Violation";
             case AuthenticationError __ -> "Unauthorized";
             case AuthorizationError __ -> "Forbidden";

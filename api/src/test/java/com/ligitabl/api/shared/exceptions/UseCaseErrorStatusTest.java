@@ -20,7 +20,6 @@ class UseCaseErrorStatusTest {
                 Arguments.of(new AuthorizationError("no"), HttpStatus.FORBIDDEN),
                 Arguments.of(new NotFoundError("gone"), HttpStatus.NOT_FOUND),
                 Arguments.of(new ConflictError("clash"), HttpStatus.CONFLICT),
-                Arguments.of(new UnprocessableEntityError("odd"), HttpStatus.UNPROCESSABLE_ENTITY),
                 Arguments.of(new UnexpectedError(new RuntimeException("boom")), HttpStatus.INTERNAL_SERVER_ERROR));
     }
 

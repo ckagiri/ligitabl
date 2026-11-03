@@ -176,6 +176,7 @@ class RoundAdvancementServiceTest {
 
         verify(transactionManager).rollback(any());
         verify(transactionManager, never()).commit(any());
+        verify(adminAlerts, never()).notifyRoundAdvanced(anyInt(), any(), anyBoolean());
         verify(adminAlerts).notifyAdvancementFailed(roundId, "season write failed");
     }
 

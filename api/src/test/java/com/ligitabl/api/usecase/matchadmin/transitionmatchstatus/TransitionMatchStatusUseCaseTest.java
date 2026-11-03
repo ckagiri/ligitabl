@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.ConflictError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.api.usecase.shared.standings.RoundStandingsCalculator;
@@ -274,7 +275,7 @@ class TransitionMatchStatusUseCaseTest {
 
         Either<UseCaseError, TransitionResult> result = useCase.execute(cmd);
 
-        assertTrue(result.isLeft());
+        assertInstanceOf(ConflictError.class, result.getLeft());
         verify(matchRepo, never()).save(any());
     }
 

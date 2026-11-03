@@ -20,6 +20,7 @@ import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
+import com.ligitabl.model.shared.RuleViolationException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,13 +51,13 @@ public class ManageSeasonSetupModeUseCase
 
     private Either<UseCaseError, SetupModeResult> enterSetupMode(Season season) {
         if (season.isInSetupMode()) {
-            return Either.left(UseCaseErrors.validation("Season is already in setup mode"));
+            return Either.left(UseCaseErrors.conflict("Season is already in setup mode"));
         }
 
         try {
             season.enterSetupMode();
-        } catch (IllegalStateException e) {
-            return Either.left(UseCaseErrors.validation(e.getMessage()));
+        } catch (RuleViolationException e) {
+            return Either.left(UseCaseErrors.conflict(e.getMessage()));
         }
         Season saved = seasonRepo.save(season);
         Instant now = clock.instant();
@@ -74,7 +75,7 @@ public class ManageSeasonSetupModeUseCase
 
     private Either<UseCaseError, SetupModeResult> leaveSetupMode(Season season) {
         if (!season.isInSetupMode()) {
-            return Either.left(UseCaseErrors.validation("Season is not in setup mode"));
+            return Either.left(UseCaseErrors.conflict("Season is not in setup mode"));
         }
 
         return findOutOfSyncRounds(season).flatMap(outOfSyncRounds -> {
@@ -82,14 +83,14 @@ public class ManageSeasonSetupModeUseCase
                 String positions = outOfSyncRounds.stream()
                         .map(r -> String.valueOf(r.getPosition()))
                         .collect(Collectors.joining(", "));
-                return Either.left(UseCaseErrors.validation(String.format(
+                return Either.left(UseCaseErrors.conflict(String.format(
                         "Cannot exit setup mode: round(s) %s are out of sync. Refinalize them first.", positions)));
             }
 
             try {
                 season.leaveSetupMode();
-            } catch (IllegalStateException e) {
-                return Either.left(UseCaseErrors.validation(e.getMessage()));
+            } catch (RuleViolationException e) {
+                return Either.left(UseCaseErrors.conflict(e.getMessage()));
             }
             Season saved = seasonRepo.save(season);
             Instant now = clock.instant();

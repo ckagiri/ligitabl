@@ -51,9 +51,14 @@ public class FinalizeAndAdvanceRoundController {
             return toFinalizeErrorResponse(error);
         }
 
-        var advanceResult = advanceCurrentRoundNowUseCase.execute();
-        if (advanceResult.isLeft()) {
-            log.warn("Finalization succeeded but advancement failed: {}", advanceResult.getLeft());
+        // Finalization has committed, so this request has succeeded whatever happens to the advance.
+        try {
+            var advanceResult = advanceCurrentRoundNowUseCase.execute();
+            if (advanceResult.isLeft()) {
+                log.warn("Finalization succeeded but advancement failed: {}", advanceResult.getLeft());
+            }
+        } catch (RuntimeException e) {
+            log.error("Finalization succeeded but advancement failed", e);
         }
 
         return ResponseEntity.ok()
@@ -110,9 +115,22 @@ public class FinalizeAndAdvanceRoundController {
         return switch (error) {
             case FinalizeRoundError.RoundObstructed e -> ResponseEntity.status(409)
                     .body(e.message());
-            case FinalizeRoundError.RoundNotReady e -> ResponseEntity.badRequest()
+            case FinalizeRoundError.RoundNotReady e -> ResponseEntity.status(409)
                     .body(e.reason());
-            default -> ResponseEntity.internalServerError().body(String.valueOf(error));
+            case FinalizeRoundError.AlreadyFinalized __ -> ResponseEntity.status(409)
+                    .body("Round is already finalized");
+            case FinalizeRoundError.StandingsValidationFailed e -> ResponseEntity.status(409)
+                    .body("Standings validation failed: " + e.reason());
+            case FinalizeRoundError.NotInSetupMode __ -> ResponseEntity.status(409)
+                    .body("Season is not in setup mode");
+            case FinalizeRoundError.RoundAheadOfCurrent e -> ResponseEntity.badRequest()
+                    .body("Round " + e.roundPosition() + " is ahead of current round " + e.currentRoundPosition());
+            case FinalizeRoundError.RoundNotFound __ -> ResponseEntity.status(404)
+                    .body("Round not found");
+            case FinalizeRoundError.SeasonNotFound __ -> ResponseEntity.status(404)
+                    .body("Season not found");
+            case FinalizeRoundError.NextRoundNotFound e -> ResponseEntity.status(409)
+                    .body("Next round not found: position " + e.position());
         };
     }
 

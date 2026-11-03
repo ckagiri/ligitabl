@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.ConflictError;
 import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.usecase.prediction.shared.PredictionAccessMode;
@@ -374,17 +375,18 @@ class GetUserPredictionUseCaseTest {
         when(roundResultRepo.findByUserAndRound(userId, 10)).thenReturn(Optional.empty());
 
         var query = GetUserPredictionQuery.forAuthenticatedUser(userId, seasonId, true, null);
+        var result = useCase.execute(query);
 
-        assertThrows(IllegalStateException.class, () -> useCase.execute(query));
+        assertInstanceOf(NotFoundError.class, result.getLeft());
     }
 
     @Test
-    void noActiveSeason_isNotFound() {
+    void noActiveSeason_isAConflict() {
         when(seasonRepo.findActiveSeason(any(String.class))).thenReturn(Optional.empty());
 
         var result = useCase.execute(GetUserPredictionQuery.forGuest(UUID.randomUUID(), null));
 
-        assertInstanceOf(NotFoundError.class, result.getLeft());
+        assertInstanceOf(ConflictError.class, result.getLeft());
     }
 
     @Test

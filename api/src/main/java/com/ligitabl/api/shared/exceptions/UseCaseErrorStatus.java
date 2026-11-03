@@ -14,7 +14,6 @@ public final class UseCaseErrorStatus {
             case AuthorizationError __ -> HttpStatus.FORBIDDEN;
             case NotFoundError __ -> HttpStatus.NOT_FOUND;
             case ConflictError __ -> HttpStatus.CONFLICT;
-            case UnprocessableEntityError __ -> HttpStatus.UNPROCESSABLE_ENTITY;
             case UnexpectedError __ -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
     }

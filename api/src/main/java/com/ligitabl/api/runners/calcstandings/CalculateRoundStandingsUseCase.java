@@ -71,7 +71,7 @@ public class CalculateRoundStandingsUseCase
     private Either<UseCaseError, Season> getActiveSeason(Competition competition) {
         UUID activeSeasonId = competition.getActiveSeasonId();
         if (activeSeasonId == null) {
-            return Either.left(UseCaseErrors.validation("Competition has no active season"));
+            return Either.left(UseCaseErrors.conflict("Competition has no active season"));
         }
 
         return requireFound(seasonRepo.findById(activeSeasonId), UseCaseErrors.notFound("Season", activeSeasonId));
@@ -88,7 +88,7 @@ public class CalculateRoundStandingsUseCase
     private Either<UseCaseError, Round> getCurrentRound(Season season) {
         UUID currentRoundId = season.getCurrentRoundId();
         if (currentRoundId == null) {
-            return Either.left(UseCaseErrors.validation("Season has no current round"));
+            return Either.left(UseCaseErrors.conflict("Season has no current round"));
         }
 
         return requireFound(roundRepo.findById(currentRoundId), UseCaseErrors.notFound("Round", currentRoundId));
@@ -111,7 +111,7 @@ public class CalculateRoundStandingsUseCase
 
     private Either<UseCaseError, Standings> calcAndSaveStandings(Season season, Round round) {
         if (round.isFinalized()) {
-            return Either.left(UseCaseErrors.validation("Round already finalized"));
+            return Either.left(UseCaseErrors.conflict("Round already finalized"));
         }
 
         // Get matches for this round to check if there are any finished matches
@@ -123,7 +123,7 @@ public class CalculateRoundStandingsUseCase
         boolean hasFinishedMatches = matches.stream().anyMatch(match -> match.getStatus() == MatchStatus.FINISHED);
 
         if (!hasFinishedMatches) {
-            return Either.left(UseCaseErrors.validation("No finished matches in round " + round.getPosition()));
+            return Either.left(UseCaseErrors.conflict("No finished matches in round " + round.getPosition()));
         }
 
         var calculation = standingsCalculator
@@ -141,7 +141,7 @@ public class CalculateRoundStandingsUseCase
                 .orElse(null);
 
         if (existing != null && existing.isFinalised()) {
-            return Either.left(UseCaseErrors.validation("Standings already finalised"));
+            return Either.left(UseCaseErrors.conflict("Standings already finalised"));
         }
 
         if (existing == null) {
@@ -165,10 +165,10 @@ public class CalculateRoundStandingsUseCase
     private UseCaseError standingsErrorToUseCaseError(StandingsError error) {
         return switch (error) {
             case StandingsError.SeasonNotFound e -> UseCaseErrors.notFound("Season", e.seasonId());
-            case StandingsError.NoInitialRankings e -> UseCaseErrors.validation(
+            case StandingsError.NoInitialRankings e -> UseCaseErrors.conflict(
                     "Season has no initial rankings: " + e.seasonId());
             case StandingsError.TeamsNotFound e -> UseCaseErrors.notFound("Team", e.codes());
-            case StandingsError.CalculationFailed e -> UseCaseErrors.validation(
+            case StandingsError.CalculationFailed e -> UseCaseErrors.unexpected(
                     "Standings calculation failed: " + e.message());
         };
     }

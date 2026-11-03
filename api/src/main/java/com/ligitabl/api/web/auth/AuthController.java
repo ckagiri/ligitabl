@@ -138,7 +138,7 @@ public class AuthController {
                     (turnstileToken != null && !turnstileToken.isBlank()) ? turnstileToken : widgetTurnstileToken;
             String turnstileFailure = verifyTurnstile(submittedToken, request);
             if (turnstileFailure != null) {
-                response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
+                response.setStatus(HttpStatus.BAD_REQUEST.value());
                 model.addAttribute("error", turnstileFailure);
                 model.addAttribute("email", form.getEmail());
                 model.addAttribute("displayName", form.getDisplayName());

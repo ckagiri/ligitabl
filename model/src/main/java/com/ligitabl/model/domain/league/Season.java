@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.ligitabl.model.domain.AbstractModel;
+import com.ligitabl.model.shared.RuleViolationException;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -76,7 +77,7 @@ public class Season extends AbstractModel<UUID> {
 
     public void enterSetupMode() {
         if (isInSetupMode()) {
-            throw new IllegalStateException("Season is already in setup mode");
+            throw new RuleViolationException("Season is already in setup mode");
         }
 
         this.detachedContestId = this.mainContestId;
@@ -85,11 +86,11 @@ public class Season extends AbstractModel<UUID> {
 
     public void leaveSetupMode() {
         if (!isInSetupMode()) {
-            throw new IllegalStateException("Season is not in setup mode");
+            throw new RuleViolationException("Season is not in setup mode");
         }
 
         if (detachedContestId == null) {
-            throw new IllegalStateException("Season cannot leave setup mode without a detached contest");
+            throw new RuleViolationException("Season cannot leave setup mode without a detached contest");
         }
 
         this.mainContestId = detachedContestId;

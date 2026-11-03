@@ -11,6 +11,7 @@ import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.model.repo.RoundRepo;
+import com.ligitabl.model.shared.RuleViolationException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,13 +30,15 @@ public class AdvanceCurrentRoundNowUseCase {
 
         return hierarchyValidator
                 .resolveHierarchy(competitionDefaults.defaultCompetitionSlug())
-                .flatMap(ctx -> Either.catching(
-                        () -> {
-                            var roundId = ctx.round().getId();
-                            var advanced = roundAdvancementService.advanceManually(roundId);
-                            return new AdvanceAttempt(roundId, advanced);
-                        },
-                        UseCaseErrors::fromException))
+                .flatMap(ctx -> {
+                    var roundId = ctx.round().getId();
+                    try {
+                        var advanced = roundAdvancementService.advanceManually(roundId);
+                        return Either.<UseCaseError, AdvanceAttempt>right(new AdvanceAttempt(roundId, advanced));
+                    } catch (RuleViolationException e) {
+                        return Either.left(UseCaseErrors.conflict(e.getMessage()));
+                    }
+                })
                 .flatMap(attempt -> {
                     if (!attempt.advanced()) {
                         return Either.left(UseCaseErrors.conflict("Round already advanced"));

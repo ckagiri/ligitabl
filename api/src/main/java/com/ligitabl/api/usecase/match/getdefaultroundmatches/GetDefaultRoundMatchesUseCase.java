@@ -103,7 +103,7 @@ public class GetDefaultRoundMatchesUseCase
 
     private Either<UseCaseError, Round> resolveCurrentRound(Season season) {
         if (season.getCurrentRoundId() == null) {
-            return Either.left(UseCaseErrors.validation("Season has no current round"));
+            return Either.left(UseCaseErrors.conflict("Season has no current round"));
         }
 
         return requireFound(

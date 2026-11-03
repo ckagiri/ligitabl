@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.shared.exceptions.UseCaseErrorStatus;
 import com.ligitabl.api.usecase.matchadmin.reschedulematch.RescheduleMatchCommand;
 import com.ligitabl.api.usecase.matchadmin.reschedulematch.RescheduleMatchUseCase;
 import com.ligitabl.api.usecase.matchadmin.transitionmatchstatus.TransitionMatchCommand;
@@ -178,7 +179,7 @@ public class MatchAdminController {
                 .fold(
                         err -> {
                             log.warn("Transition failed for {}: {}", matchSlug, err.logMessage());
-                            response.setStatus(422);
+                            response.setStatus(UseCaseErrorStatus.of(err).value());
                             model.addAttribute("error", err.getMessage());
                             return "fragments/match-admin-modal :: error-message";
                         },
@@ -211,7 +212,7 @@ public class MatchAdminController {
                 .fold(
                         err -> {
                             log.warn("Move failed for {}: {}", matchSlug, err.logMessage());
-                            response.setStatus(422);
+                            response.setStatus(UseCaseErrorStatus.of(err).value());
                             model.addAttribute("error", err.getMessage());
                             return "fragments/match-admin-modal :: error-message";
                         },
@@ -265,7 +266,7 @@ public class MatchAdminController {
                 .fold(
                         err -> {
                             log.warn("Kickoff update failed for {}: {}", matchSlug, err.logMessage());
-                            response.setStatus(422);
+                            response.setStatus(UseCaseErrorStatus.of(err).value());
                             model.addAttribute("error", err.getMessage());
                             return "fragments/match-admin-modal :: error-message";
                         },

@@ -60,17 +60,17 @@ class AuthControllerRegisterFormIT extends AbstractPostgresIT {
     }
 
     @Test
-    void shouldReturn422AndCreateNoUserWhenTurnstileTokenMissing() {
+    void shouldReturn400AndCreateNoUserWhenTurnstileTokenMissing() {
         String newEmail = "web-form-no-token-" + UUID.randomUUID() + "@example.com";
 
         ResponseEntity<String> response = postRegisterForm(newEmail, "Web Form User", "testPassword123", null);
 
-        assertThat(response.getStatusCode().value()).isEqualTo(422);
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
         assertThat(userRepo.findByEmail(Email.create(newEmail))).isEmpty();
     }
 
     @Test
-    void shouldReturn422AndCreateNoUserWhenTurnstileVerificationFails() {
+    void shouldReturn400AndCreateNoUserWhenTurnstileVerificationFails() {
         given(turnstileClient.verify(any(), any()))
                 .willReturn(Either.left(new TurnstileError.VerificationFailed(List.of("invalid-input-response"))));
 
@@ -78,7 +78,7 @@ class AuthControllerRegisterFormIT extends AbstractPostgresIT {
 
         ResponseEntity<String> response = postRegisterForm(newEmail, "Web Form User", "testPassword123", "some-token");
 
-        assertThat(response.getStatusCode().value()).isEqualTo(422);
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
         assertThat(userRepo.findByEmail(Email.create(newEmail))).isEmpty();
     }
 
@@ -89,8 +89,8 @@ class AuthControllerRegisterFormIT extends AbstractPostgresIT {
         ResponseEntity<String> response = postRegisterForm(newEmail, "Web Form User", "testPassword123", "valid-token");
 
         // Success redirects to /my-table, which the following TestRestTemplate then gets a 403 from
-        // (no CSRF token), unrelated to Turnstile. The signal is no 422 and a persisted t_user row.
-        assertThat(response.getStatusCode().value()).isNotEqualTo(422);
+        // (no CSRF token), unrelated to Turnstile. The signal is no 400 and a persisted t_user row.
+        assertThat(response.getStatusCode().value()).isNotEqualTo(400);
         assertThat(userRepo.findByEmail(Email.create(newEmail))).isPresent();
     }
 
@@ -102,7 +102,7 @@ class AuthControllerRegisterFormIT extends AbstractPostgresIT {
 
         ResponseEntity<String> response = postRegisterForm(newEmail, "Web Form User", "testPassword123", null);
 
-        assertThat(response.getStatusCode().value()).isNotEqualTo(422);
+        assertThat(response.getStatusCode().value()).isNotEqualTo(400);
         assertThat(userRepo.findByEmail(Email.create(newEmail))).isPresent();
     }
 

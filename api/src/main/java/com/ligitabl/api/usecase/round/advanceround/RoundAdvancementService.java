@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +23,7 @@ import com.ligitabl.model.outbox.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
+import com.ligitabl.model.shared.RuleViolationException;
 
 import io.sentry.Sentry;
 import lombok.RequiredArgsConstructor;
@@ -96,7 +98,12 @@ public class RoundAdvancementService {
     public void attemptAutoAdvancement(UUID roundId, UUID seasonId) {
         try {
             // Not @Transactional: the scheduled task calls this directly, past the proxy.
-            transactionTemplate.executeWithoutResult(__ -> advanceIfDue(roundId, seasonId));
+            var advanced = transactionTemplate.execute(__ -> advanceIfDue(roundId, seasonId));
+            // Only after the commit, so it can't announce a round that then rolls back.
+            advanced.ifPresent(a -> {
+                log.info("Auto-advanced from round position={} (seasonId={})", a.position(), seasonId);
+                adminAlerts.notifyRoundAdvanced(a.position(), seasonId, a.lastRound());
+            });
         } catch (Exception e) {
             log.error("Failed to auto-advance round={}", roundId, e);
             Sentry.captureException(e);
@@ -104,23 +111,25 @@ public class RoundAdvancementService {
         }
     }
 
-    private void advanceIfDue(UUID roundId, UUID seasonId) {
+    private record AutoAdvanced(int position, boolean lastRound) {}
+
+    private Optional<AutoAdvanced> advanceIfDue(UUID roundId, UUID seasonId) {
         var round =
                 roundRepo.findById(roundId).orElseThrow(() -> new IllegalStateException("Round not found: " + roundId));
 
         if (round.getAdvanceAt() == null) {
             log.info("Skipping auto-advancement for round={}: advancement was cancelled", roundId);
-            return;
+            return Optional.empty();
         }
 
         if (round.isAdvanced()) {
             log.info("Skipping auto-advancement for round={}: already advanced (manual override)", roundId);
-            return;
+            return Optional.empty();
         }
 
         if (!round.isFinalized()) {
             log.warn("Skipping auto-advancement for round={}: status is not FINALIZED", roundId);
-            return;
+            return Optional.empty();
         }
 
         var season = seasonRepo
@@ -129,8 +138,7 @@ public class RoundAdvancementService {
 
         advanceToNextRound(season, round);
 
-        log.info("Auto-advanced from round position={} (seasonId={})", round.getPosition(), seasonId);
-        adminAlerts.notifyRoundAdvanced(round.getPosition(), seasonId, round.getPosition() >= season.getMaxRounds());
+        return Optional.of(new AutoAdvanced(round.getPosition(), round.getPosition() >= season.getMaxRounds()));
     }
 
     /** For the admin advance-now endpoint. Returns false if already advanced. */
@@ -145,7 +153,7 @@ public class RoundAdvancementService {
         }
 
         if (!round.isFinalized()) {
-            throw new IllegalStateException("Cannot advance non-finalized round: " + roundId);
+            throw new RuleViolationException("Cannot advance non-finalized round: " + roundId);
         }
 
         var season = seasonRepo
@@ -167,11 +175,11 @@ public class RoundAdvancementService {
                 .orElseThrow(() -> new IllegalArgumentException("Round not found: " + roundId));
 
         if (round.isAdvanced()) {
-            throw new IllegalStateException("Round already advanced: " + roundId);
+            throw new RuleViolationException("Round already advanced: " + roundId);
         }
 
         if (round.getAdvanceAt() == null) {
-            throw new IllegalStateException("No advancement scheduled for round: " + roundId);
+            throw new RuleViolationException("No advancement scheduled for round: " + roundId);
         }
 
         round.cancelScheduledAdvance();
@@ -188,8 +196,6 @@ public class RoundAdvancementService {
         int currentPosition = currentRound.getPosition();
         boolean isLastRound = currentPosition >= season.getMaxRounds();
 
-        // Looked up before the first write: AdvanceCurrentRoundNowUseCase turns this exception into
-        // a Left, which commits.
         Round nextRound = isLastRound
                 ? null
                 : roundRepo
@@ -218,7 +224,8 @@ public class RoundAdvancementService {
 
     /**
      * Records the round-advanced fact in the outbox, in the advancement's transaction. The relay
-     * expands it into per-user ROUND_RESULTS events; a failure here logs but never blocks advancing.
+     * expands it into per-user ROUND_RESULTS events. A failure here logs and doesn't block advancing,
+     * unless it's a SQL error, which aborts the transaction.
      */
     private void enqueueRoundResultsEmail(Season season, int roundPosition, int currentRoundPosition) {
         try {

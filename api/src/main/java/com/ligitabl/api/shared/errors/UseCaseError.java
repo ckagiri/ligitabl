@@ -6,7 +6,6 @@ public sealed interface UseCaseError
                 ConflictError,
                 NotFoundError,
                 UnexpectedError,
-                UnprocessableEntityError,
                 ValidationError {
 
     String getMessage();
