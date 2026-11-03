@@ -27,7 +27,7 @@
         <!--/* Page Header */-->
         <div class="bg-white rounded-lg shadow-sm mb-6">
           <div class="px-6 py-4 border-b border-gray-200">
-            <!--/* nowrap keeps "Premier League Gameweek N" on one line; the name may still wrap. */-->
+            <!--/* nowrap keeps "Gameweek N" on one line; the names around it may wrap. */-->
             <div class="mb-4 sm:mb-6">
               <h1 class="text-xl sm:text-2xl text-gray-900">
                 <span
@@ -36,9 +36,9 @@
                   th:text="${possessiveDisplayName}"
                   >Jane Doe's</span
                 >
-                <span class="text-gray-500 whitespace-nowrap">
+                <span class="text-gray-500">
                   <span th:text="${competitionName}">Premier League</span>
-                  <span class="text-sm sm:text-base text-gray-600">
+                  <span class="text-sm sm:text-base text-gray-600 whitespace-nowrap">
                     Gameweek <span th:text="${viewingRound}">13</span>
                   </span>
                 </span>
