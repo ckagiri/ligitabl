@@ -179,6 +179,9 @@
       >
         <!--/* The result table scrolls sideways if it must; the grid table reflows instead. */-->
         <th:block th:if="${revealed == true}">
+          <div class="mb-3 flex justify-end text-[11px] text-gray-500">
+            <span th:replace="~{fragments/delta-closeness-key :: key}"></span>
+          </div>
           <div class="overflow-x-auto">
             <div th:replace="~{fragments/final-table-rows :: result}"></div>
           </div>

@@ -186,6 +186,9 @@
                 Locked in. Each row shows where that club sits right now — your score
                 stays sealed until the season ends.
               </p>
+              <div class="mt-1.5 text-[11px] text-gray-600">
+                <span th:replace="~{fragments/delta-closeness-key :: key}"></span>
+              </div>
             </div>
           </th:block>
 
@@ -324,6 +327,9 @@
               th:insert on the same th:block as the th:if, not th:replace on an inner div: a
               th:block with only a th:if still renders its children, so both branches showed.
             */-->
+            <div th:if="${revealed == true}" class="mb-3 flex justify-end text-[11px] text-gray-500">
+              <span th:replace="~{fragments/delta-closeness-key :: key}"></span>
+            </div>
             <th:block
               th:if="${revealed == true}"
               th:insert="~{fragments/final-table-rows :: result}"

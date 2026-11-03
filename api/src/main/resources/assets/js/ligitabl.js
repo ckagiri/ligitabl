@@ -242,6 +242,13 @@ window.Ligitabl._readDeltaMode = function (savedPrefs) {
     return savedPrefs.deltaInverted ? "inverted" : "normal";
 };
 
+// How close a pick is, for read-only tables. Same bands as the server-rendered historical, public,
+// user-detail and final-result tables; change them together.
+window.Ligitabl._closenessClass = function (delta) {
+    if (delta === 0) return "text-green-600";
+    return delta <= 4 ? "text-yellow-600" : "text-red-600";
+};
+
 // Shared base for predictionPage and guestPredictionPage
 window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
     const prefsKey = userId ? 'ligitabl.prefs.' + userId : 'ligitabl.prefs.guest';
@@ -626,13 +633,17 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             return dir === "up" ? "down" : "up";
         },
 
-        // Colour says how close the pick is and the arrow says which way, so the mode never changes
-        // it. Same bands as the server-rendered historical and public tables; change them together.
+        // Colour for the delta number in whatever mode the table is in.
         deltaTextClass(teamCode) {
+            if (this.getDelta(teamCode) === 0) return "text-green-600";
+            return this.displayedDeltaDirection(teamCode) === "down"
+                ? "text-red-600"
+                : "text-green-600";
+        },
+
+        deltaClosenessClass(teamCode) {
             const delta = this.getDelta(teamCode);
-            if (delta === "-") return "text-gray-400";
-            if (delta === 0) return "text-green-600";
-            return delta <= 4 ? "text-yellow-600" : "text-red-600";
+            return delta === "-" ? "text-gray-400" : Ligitabl._closenessClass(delta);
         },
 
         toggleDeltaMode() {
@@ -1543,6 +1554,13 @@ window.Ligitabl.finalTablePage = function (el) {
             const change = team.position - current;
             if (change === 0) return null;
             return change > 0 ? '↑' + change : '↓' + Math.abs(change);
+        },
+
+        liveClosenessClass(teamCode) {
+            const current = this._livePositions[teamCode];
+            const team = this.teams.find((t) => t.code === teamCode);
+            if (current == null || !team) return '';
+            return Ligitabl._closenessClass(Math.abs(team.position - current));
         },
 
         /** Exact-position match against the live table. Per row only — never counted up. */

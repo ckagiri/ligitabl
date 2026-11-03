@@ -136,6 +136,9 @@
         </tbody>
       </table>
     </div>
+    <div th:if="${hasRoundResult}" class="mt-3 flex justify-end text-[11px] text-gray-500">
+      <span th:replace="~{fragments/delta-closeness-key :: key}"></span>
+    </div>
   </div>
 
   <!--/* Score Summary for Historical Rounds */-->
