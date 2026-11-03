@@ -98,7 +98,7 @@
                   <svg
                     x-show="getDelta(team.code) !== 0 && getDelta(team.code) !== '-'"
                     class="h-3.5 w-3.5"
-                    :class="getDeltaDirection(team.code) === 'down' ? 'text-red-600' : 'text-green-600'"
+                    :class="deltaTextClass(team.code)"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -116,7 +116,7 @@
                     />
                   </svg>
                   <span
-                    :class="getDelta(team.code) === 0 ? 'text-green-600' : (getDeltaDirection(team.code) === 'down' ? 'text-red-600' : 'text-green-600')"
+                    :class="deltaTextClass(team.code)"
                     x-text="getDelta(team.code)"
                   ></span>
                 </div>
