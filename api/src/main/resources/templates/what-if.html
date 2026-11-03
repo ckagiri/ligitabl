@@ -493,17 +493,14 @@
               </div>
 
               <!--/* Hit legend, always on rather than behind a hover tooltip on the column header:
-                   it's a short key, and hover discovery doesn't exist on touch anyway. */-->
+                   it's a two-symbol key, and hover discovery doesn't exist on touch anyway. */-->
               <p
-                :class="activeTab === 'standings' ? 'hidden md:flex' : 'flex'"
-                class="flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-gray-400 mt-1 md:justify-end"
+                :class="activeTab === 'standings' ? 'hidden md:block' : 'block'"
+                class="text-[11px] text-gray-400 mt-1 md:text-right"
               >
-                <span class="whitespace-nowrap">
-                  Hit: <span class="font-semibold">&uarr;</span> move up
-                  <span class="mx-1">·</span>
-                  <span class="font-semibold">&darr;</span> move down
-                </span>
-                <span th:replace="~{fragments/prediction-table :: delta-closeness-key}"></span>
+                Hit: <span class="text-green-600 font-semibold">&uarr;</span> move up
+                <span class="mx-1">·</span>
+                <span class="text-red-600 font-semibold">&darr;</span> move down
               </p>
             </div>
 

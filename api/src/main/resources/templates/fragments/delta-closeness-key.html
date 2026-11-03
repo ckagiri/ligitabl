@@ -1,0 +1,23 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <!--/* Colour key for read-only tables, where a delta's colour says how close the pick is. The caller sets the text size and colour. */-->
+    <span
+      th:fragment="key"
+      class="inline-flex shrink-0 items-center gap-2 whitespace-nowrap"
+    >
+      <span class="inline-flex items-center gap-1">
+        <span class="h-2 w-2 shrink-0 rounded-full bg-green-600" aria-hidden="true"></span>
+        Exact
+      </span>
+      <span class="inline-flex items-center gap-1">
+        <span class="h-2 w-2 shrink-0 rounded-full bg-yellow-600" aria-hidden="true"></span>
+        Within 4
+      </span>
+      <span class="inline-flex items-center gap-1">
+        <span class="h-2 w-2 shrink-0 rounded-full bg-red-600" aria-hidden="true"></span>
+        5+ off
+      </span>
+    </span>
+  </body>
+</html>

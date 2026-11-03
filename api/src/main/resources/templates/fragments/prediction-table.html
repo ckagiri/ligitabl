@@ -265,42 +265,28 @@
         <p
           th:if="${showMoveHelperText}"
           x-show="showStandings"
-          class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-gray-500 leading-snug pl-6 max-sm:pl-7"
+          class="text-[11px] text-gray-500 leading-snug pl-6 max-sm:pl-7"
         >
-          <span class="inline-flex shrink-0 items-center gap-2 whitespace-nowrap">
-            <span>
-              <span class="font-semibold">↑</span>
-              <span x-text="deltaMode === 'inverted' ? 'climb' : 'move'">move</span> up
-            </span>
-            <span>
-              <span class="font-semibold">↓</span>
-              <span x-text="deltaMode === 'inverted' ? 'drop' : 'move'">move</span> down
-            </span>
+          <span class="sm:hidden">
+            <span class="block"
+              ><span class="text-green-600 font-semibold">↑ Green:</span>
+              <span x-text="deltaMode === 'inverted' ? 'climb' : 'move'">move</span> up.</span
+            >
+            <span class="block"
+              ><span class="text-red-600 font-semibold">↓ Red:</span>
+              <span x-text="deltaMode === 'inverted' ? 'drop' : 'move'">move</span> down.</span
+            >
           </span>
-          <span th:replace="~{fragments/prediction-table :: delta-closeness-key}"></span>
+          <span class="hidden sm:inline">
+            <span class="text-green-600 font-semibold">↑ Green:</span>
+            <span x-text="deltaMode === 'inverted' ? 'climb' : 'move'">move</span> up.
+            <span class="text-red-600 font-semibold">↓ Red:</span>
+            <span x-text="deltaMode === 'inverted' ? 'drop' : 'move'">move</span> down.
+          </span>
         </p>
       </div>
     </div>
   </div>
-
-  <!--/* The delta's colour key: how close the pick is. The arrow gives the direction. */-->
-  <span
-    th:fragment="delta-closeness-key"
-    class="inline-flex shrink-0 items-center gap-2 whitespace-nowrap"
-  >
-    <span class="inline-flex items-center gap-1">
-      <span class="h-2 w-2 shrink-0 rounded-full bg-green-600" aria-hidden="true"></span>
-      Exact
-    </span>
-    <span class="inline-flex items-center gap-1">
-      <span class="h-2 w-2 shrink-0 rounded-full bg-yellow-600" aria-hidden="true"></span>
-      Within 4
-    </span>
-    <span class="inline-flex items-center gap-1">
-      <span class="h-2 w-2 shrink-0 rounded-full bg-red-600" aria-hidden="true"></span>
-      5+ off
-    </span>
-  </span>
 
   <!--/* Interactive Current-Round Table */-->
   <!--/* max-sm:pt-1: the compare-options panel above already ends in pb-2, so the full py-4 on a
@@ -335,19 +321,19 @@
         Read-only
       </span>
       <!--/* Short arrow key: covers for the compare-options panel being collapsed, where the
-           fuller legend is out of sight — so it hides when that panel is open, being the weaker
-           of the two. */-->
+           colour-naming legend is out of sight — so it hides when that panel is open, being
+           the weaker of the two. */-->
       <span
         x-show="!compareOptionsOpen"
         x-cloak
         class="inline-flex shrink-0 items-center gap-2 whitespace-nowrap text-[11px] text-gray-500"
       >
         <span class="inline-flex items-center gap-0.5">
-          <span class="font-semibold">↑</span>
+          <span class="text-green-600 font-semibold">↑</span>
           <span x-text="deltaMode === 'inverted' ? 'climb' : 'move'">move</span> up
         </span>
         <span class="inline-flex items-center gap-0.5">
-          <span class="font-semibold">↓</span>
+          <span class="text-red-600 font-semibold">↓</span>
           <span x-text="deltaMode === 'inverted' ? 'drop' : 'move'">move</span> down
         </span>
       </span>
@@ -381,7 +367,7 @@
             <span class="hidden max-[340px]:inline">Actual</span>
           </button>
         </div>
-        <!--/* Flips the delta column's arrows, never its number or colour. Offered in both views,
+        <!--/* Flips the delta column's arrows and colours, never its number. Offered in both views,
              since the delta reads the same way in each. aria-label because there is no text node
              to name it. */-->
         <button
@@ -389,7 +375,7 @@
           @click="toggleDeltaMode()"
           :aria-pressed="(deltaMode === 'inverted').toString()"
           aria-label="Invert delta direction"
-          title="Invert delta direction — flips the arrows. The number and colour stay the same."
+          title="Invert delta direction — flips the arrows and colours. The number stays the same."
           :class="deltaMode === 'inverted' ? 'bg-indigo-50 text-indigo-700 border-indigo-300' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50 hover:text-gray-700'"
           class="inline-flex shrink-0 items-center justify-center rounded-md border p-1.5 transition-colors max-sm:p-2"
         >
@@ -510,7 +496,8 @@
                   ></span>
                   <span
                     x-show="getPositionChange(team.code)"
-                    class="text-xs font-semibold text-gray-500 position-change"
+                    :class="{ 'text-green-600': getPositionChange(team.code)?.startsWith('↑'), 'text-red-600': getPositionChange(team.code)?.startsWith('↓') }"
+                    class="text-xs font-semibold position-change"
                     x-text="getPositionChange(team.code)"
                   ></span>
                 </div>
