@@ -122,11 +122,6 @@ public class CreatePredictionController {
                             "error", "MAIN_CONTEST_NOT_FOUND",
                             "message", "Main contest not found for the active season"));
 
-            case CreatePredictionError.TransactionFailed __ -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of(
-                            "error", "TRANSACTION_FAILED",
-                            "message", "Failed to create prediction"));
-
             case CreatePredictionError.CorruptPreSeasonRegistration e -> ResponseEntity.status(
                             HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(

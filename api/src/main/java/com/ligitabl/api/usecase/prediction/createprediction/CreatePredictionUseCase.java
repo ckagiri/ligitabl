@@ -72,30 +72,18 @@ public class CreatePredictionUseCase {
     public Either<CreatePredictionError, CreatePredictionResult> execute(UUID userId, JoinLockedRoundCommand command) {
         Season season = command.season();
         return resolveJoinPlan(userId, season)
-                .flatMap(plan -> autoJoinWrite(() -> executeJoinPlan(
+                .flatMap(plan -> executeJoinPlan(
                         userId,
                         season,
                         command.mainContest(),
                         NO_SWAPS,
                         plan,
-                        () -> Either.right(new RoundInfo(command.roundPosition(), command.roundPosition())))));
+                        () -> Either.right(new RoundInfo(command.roundPosition(), command.roundPosition()))));
     }
 
     public Either<CreatePredictionError, CreatePredictionResult> execute(
             UUID userId, RegisterDefaultTableCommand command) {
-        return autoJoinWrite(() -> registerPreSeason(userId, command.season(), command.mainContest(), NO_SWAPS));
-    }
-
-    // The auto-join loop treats a Left as one user's failure. The @Transactional overload doesn't
-    // come through here: its exceptions must leave the proxy to roll back.
-    private Either<CreatePredictionError, CreatePredictionResult> autoJoinWrite(
-            Supplier<Either<CreatePredictionError, CreatePredictionResult>> write) {
-        try {
-            return write.get();
-        } catch (Exception e) {
-            log.error("Auto-join write failed", e);
-            return Either.left(new CreatePredictionError.TransactionFailed(e.getMessage()));
-        }
+        return registerPreSeason(userId, command.season(), command.mainContest(), NO_SWAPS);
     }
 
     @Transactional

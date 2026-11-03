@@ -44,12 +44,10 @@ import com.ligitabl.model.repo.OutboxRepo;
  * upserts. Everything after the raise is production code:
  *
  * <ol>
- *   <li>the auto-join catches the error and returns {@code Either.left(TransactionFailed)}, so the
- *       loop sees no exception, but the transaction is dead;
- *   <li>the next user's query throws for real, and the narrowed catch stops the loop there instead
- *       of blaming that user;
- *   <li>{@code markSent}, then {@code recordFailure}, both fail inside the dead transaction, so
- *       the exception escapes {@code processOne};
+ *   <li>the error leaves the auto-join, and the narrowed catch stops the loop at that user, because
+ *       the transaction is dead for everyone after them;
+ *   <li>{@code recordFailure} fails inside the dead transaction, so the exception escapes
+ *       {@code processOne};
  *   <li>{@link OutboxRelayJob} records the failure from outside the rolled-back transaction.
  * </ol>
  */
@@ -141,8 +139,7 @@ class OutboxFailureIsolationIT extends AbstractPostgresIT {
     @Test
     @DisplayName("A poisoned event lands FAILED with backoff rather than stranded PROCESSING")
     void poisonedEventIsMarkedFailedOutOfBand() throws Exception {
-        // Three candidates: the first failure is swallowed, the second throws off the dead
-        // transaction, the third must never run. With two, the call count is the same either way.
+        // Three candidates: the first failure stops the loop, so the other two must never run.
         season.insertUser("first@example.com");
         season.insertUser("second@example.com");
         season.insertUser("third@example.com");
@@ -162,9 +159,9 @@ class OutboxFailureIsolationIT extends AbstractPostgresIT {
                 .as("the whole batch rolled back, so no half-written auto-join survives")
                 .isZero();
 
-        // The loop stopped at the user who actually threw: the third was never attempted, which
-        // no database state can show because nothing was written either way.
-        verify(createPredictionUseCase, times(2)).execute(any(), any(JoinLockedRoundCommand.class));
+        // The loop stopped at the user who actually threw, which no database state can show because
+        // nothing was written either way.
+        verify(createPredictionUseCase, times(1)).execute(any(), any(JoinLockedRoundCommand.class));
     }
 
     @Test
